@@ -5,44 +5,44 @@
 
 ## Engine & Language
 
-- **Engine**: [TO BE CONFIGURED — run /setup-engine]
-- **Language**: [TO BE CONFIGURED]
-- **Rendering**: [TO BE CONFIGURED]
-- **Physics**: [TO BE CONFIGURED]
+- **Engine**: Three.js r186
+- **Language**: JavaScript (ES modules)
+- **Rendering**: WebGLRenderer, PerspectiveCamera, forward rendering, no post-processing pipeline
+- **Physics**: None — custom raycast-based collision (AABB vs. static geometry) per spec §4, no physics engine
 
 ## Input & Platform
 
 <!-- Written by /setup-engine. Read by /ux-design, /ux-review, /test-setup, /team-ui, and /dev-story -->
 <!-- to scope interaction specs, test helpers, and implementation to the correct input methods. -->
 
-- **Target Platforms**: [TO BE CONFIGURED — e.g., PC, Console, Mobile, Web]
-- **Input Methods**: [TO BE CONFIGURED — e.g., Keyboard/Mouse, Gamepad, Touch, Mixed]
-- **Primary Input**: [TO BE CONFIGURED — the dominant input for this game]
-- **Gamepad Support**: [TO BE CONFIGURED — Full / Partial / None]
-- **Touch Support**: [TO BE CONFIGURED — Full / Partial / None]
-- **Platform Notes**: [TO BE CONFIGURED — any platform-specific UX constraints]
+- **Target Platforms**: Web (desktop browser)
+- **Input Methods**: Keyboard/Mouse
+- **Primary Input**: Keyboard/Mouse (WASD translate + mouse look, per spec §4)
+- **Gamepad Support**: None
+- **Touch Support**: None
+- **Platform Notes**: Pointer Lock API for mouse-look; no on-screen touch controls needed.
 
 ## Naming Conventions
 
-- **Classes**: [TO BE CONFIGURED]
-- **Variables**: [TO BE CONFIGURED]
-- **Signals/Events**: [TO BE CONFIGURED]
-- **Files**: [TO BE CONFIGURED]
-- **Scenes/Prefabs**: [TO BE CONFIGURED]
-- **Constants**: [TO BE CONFIGURED]
+- **Classes**: PascalCase (e.g., `MirrorNode`, `LaserEmitter`)
+- **Variables**: camelCase (e.g., `moveSpeed`)
+- **Signals/Events**: camelCase, present tense (e.g., `onReceiverActivated`)
+- **Files**: kebab-case matching module (e.g., `laser-emitter.js`)
+- **Scenes/Prefabs**: N/A — levels are declarative data objects (spec §10), not scene files
+- **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_REFLECTIONS`)
 
 ## Performance Budgets
 
-- **Target Framerate**: [TO BE CONFIGURED]
-- **Frame Budget**: [TO BE CONFIGURED]
-- **Draw Calls**: [TO BE CONFIGURED]
-- **Memory Ceiling**: [TO BE CONFIGURED]
+- **Target Framerate**: 60 fps (spec NFR "Desempenho")
+- **Frame Budget**: 16.6ms
+- **Draw Calls**: Low — small reused mesh set (wall/floor/mirror/emitter/receiver/door), instanced where possible
+- **Memory Ceiling**: Not specified — modest hardware target per spec NFR
 
 ## Testing
 
-- **Framework**: [TO BE CONFIGURED]
+- **Framework**: [TO BE CONFIGURED — spec does not mandate one; recommend Vitest if unit tests are added for laser raycasting/logic]
 - **Minimum Coverage**: [TO BE CONFIGURED]
-- **Required Tests**: Balance formulas, gameplay systems, networking (if applicable)
+- **Required Tests**: Laser reflection/raycast math, color composition (AND/OR/NOT logic), door/receiver state logic
 
 ## Forbidden Patterns
 
@@ -52,7 +52,7 @@
 ## Allowed Libraries / Addons
 
 <!-- Add approved third-party dependencies here -->
-- [None configured yet — add as dependencies are approved]
+- three (r186) — core rendering library
 
 ## Architecture Decisions Log
 
@@ -65,12 +65,12 @@
 <!-- Read by /code-review, /architecture-decision, /architecture-review, and team skills -->
 <!-- to know which specialist to spawn for engine-specific validation. -->
 
-- **Primary**: [TO BE CONFIGURED — run /setup-engine]
-- **Language/Code Specialist**: [TO BE CONFIGURED]
-- **Shader Specialist**: [TO BE CONFIGURED]
-- **UI Specialist**: [TO BE CONFIGURED]
-- **Additional Specialists**: [TO BE CONFIGURED]
-- **Routing Notes**: [TO BE CONFIGURED]
+- **Primary**: engine-programmer (no dedicated Three.js specialist exists in this framework)
+- **Language/Code Specialist**: engine-programmer (rendering/scene-graph code), gameplay-programmer (puzzle/interaction logic)
+- **Shader Specialist**: technical-artist (only if custom GLSL materials are added — spec does not require any)
+- **UI Specialist**: ui-programmer (minimal — no HUD beyond level/progress indicator per spec)
+- **Additional Specialists**: None
+- **Routing Notes**: Route rendering, scene graph, raycasting, and camera code to engine-programmer. Route puzzle rule logic (color composition, doors, level state) to gameplay-programmer. Route level layout/pacing (the 10-level data files) to level-designer for review, not implementation.
 
 ### File Extension Routing
 
@@ -79,9 +79,10 @@
 
 | File Extension / Type | Specialist to Spawn |
 |-----------------------|---------------------|
-| Game code (primary language) | [TO BE CONFIGURED] |
-| Shader / material files | [TO BE CONFIGURED] |
-| UI / screen files | [TO BE CONFIGURED] |
-| Scene / prefab / level files | [TO BE CONFIGURED] |
-| Native extension / plugin files | [TO BE CONFIGURED] |
-| General architecture review | Primary |
+| Game code (.js — rendering/scene) | engine-programmer |
+| Game code (.js — puzzle/interaction logic) | gameplay-programmer |
+| Shader / material files (.glsl, ShaderMaterial) | technical-artist |
+| UI / screen files (.html, .css) | ui-programmer |
+| Scene / prefab / level files (level data objects) | level-designer (design review), gameplay-programmer (implementation) |
+| Native extension / plugin files | N/A |
+| General architecture review | engine-programmer |
