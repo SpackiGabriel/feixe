@@ -6,10 +6,10 @@ System` GDD/implementation; the terminal shell (`tui.mjs`) is not.
 
 ## Question
 
-`design/gdd/systems-index.md` flags the Laser Simulation & Color System as
-the project's highest technical risk: per-frame reflection recomputation
-through successive mirrors, plus additive/subtractive color composition
-(spec §4-§8, RF04/RF05). Before writing that system's full GDD, this
+The laser/color system is the project's highest technical risk (see the
+build order in `design/game-concept.md`): per-frame reflection
+recomputation through successive mirrors, plus additive/subtractive color
+composition (spec §4-§8, RF04/RF05). Before implementing it for real, this
 prototype checks: **does the plane-segment reflection formula generalize
 cleanly to any mirror angle, does multi-emitter additive color composition
 at a receiver work as designed, and do filters/blockers behave as one-way

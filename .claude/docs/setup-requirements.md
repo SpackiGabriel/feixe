@@ -15,8 +15,8 @@ you'll lose validation features.
 
 | Tool | Used By | Purpose | Install |
 | ---- | ---- | ---- | ---- |
-| **jq** | Hooks (7 of 12) | JSON parsing in commit/push/asset/agent hooks | See below |
-| **Python 3** | Hooks (2 of 12) | JSON validation for data files | [python.org](https://www.python.org/) |
+| **jq** | Hooks (2 of 5) | JSON parsing in commit/asset validation hooks | See below |
+| **Python 3** | Hooks (2 of 5) | JSON validation for data files | [python.org](https://www.python.org/) |
 | **Bash** | All hooks | Shell script execution | Included with Git for Windows |
 
 ### Installing jq
@@ -68,7 +68,7 @@ python3 --version      # Should show python version (optional)
 
 | Missing Tool | Effect |
 | ---- | ---- |
-| **jq** | Commit validation, push protection, asset validation, and agent audit hooks silently skip their checks. Commits and pushes still work. |
+| **jq** | Commit validation and asset validation hooks silently skip their checks. Commits still work. |
 | **Python 3** | JSON data file validation in commit and asset hooks is skipped. Invalid JSON can be committed without warning. |
 | **Both** | All hooks still execute without error (exit 0) but provide no validation. You're flying without safety nets. |
 
