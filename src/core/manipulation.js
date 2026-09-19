@@ -14,6 +14,12 @@ export function createManipulation({ input, look, interaction }) {
       return;
     }
     const hovered = interaction.getHovered();
+    // A one-shot object (e.g. a switch) fires immediately and never enters
+    // manipulation mode — it has no degree of freedom to drag.
+    if (typeof hovered?.userData.activate === 'function') {
+      hovered.userData.activate();
+      return;
+    }
     const controller = hovered?.userData.controller;
     if (controller) enter(controller);
   }

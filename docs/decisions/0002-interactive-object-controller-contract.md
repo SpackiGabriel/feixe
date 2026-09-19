@@ -21,6 +21,11 @@ Any raycastable mesh that should be selectable sets on its own `userData`:
   object is confirmed. `manipulation.js` gates each call on the matching
   `*Enabled` flag (and the object's own function is a safe no-op if called
   anyway), so it never has to branch on object type.
+- `activate()` (optional, added for level 1's switch — spec §11) — a
+  one-shot action fired immediately on confirm, for objects with no degree
+  of freedom to drag (e.g. a switch's toggle). `manipulation.js` checks for
+  this *before* `controller`, so an object should define one or the other,
+  not both.
 - `setHovered(isHovered)` (optional) — overrides the default "tint gray"
   hover feedback in `interaction.js`. Used by the emitter so hovering
   doesn't overwrite its laser-color emissive hue; mirrors don't define it
@@ -43,9 +48,13 @@ formal interface — there's no shared base class between `Mirror` and
 
 ## Consequences
 
-Adding a new interactive object type (e.g. a future variant) only requires
-setting these three `userData` keys correctly — `interaction.js` and
-`manipulation.js` need no changes. The cost is that the contract is
+Adding a new interactive object type only requires setting the right
+`userData` keys — `interaction.js` needs no changes for any new type.
+`manipulation.js` needed one addition (the `activate` branch) the first
+time a *one-shot* object showed up, since `controller` alone assumed every
+interactive object enters a continuous drag mode; that branch is now
+generic and covers any future one-shot object too. The cost is that the
+contract is
 implicit (no TypeScript/interface to enforce it); a mismatched shape fails
 silently at the call site (e.g. `controller.applyPositionDelta` being
 `undefined`). Acceptable for this project's size — if it becomes a

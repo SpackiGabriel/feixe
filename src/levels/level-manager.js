@@ -1,10 +1,11 @@
+import { level1 } from './data/level-1.js';
 import { demoLevel } from './data/demo-level.js';
 
-// TEMPORARY: only the loader-validation level exists so far. Real
-// numbered levels 1-10 (design/game-concept.md §11) are separate future
-// work (STATUS.md's "Levels 1-10" row). Level 1 additionally needs a
-// laser-free "simple switch" interactive object that doesn't exist yet.
-const LEVELS = [demoLevel];
+// TEMPORARY: level 1 is real; levels 2-10 (design/game-concept.md §11)
+// are separate future work (STATUS.md's "Levels 1-10" row). demoLevel is
+// kept after it as the loader-validation rig for mirror/emitter/laser/
+// receiver/door until a real level exercises those systems too.
+const LEVELS = [level1, demoLevel];
 
 export function getLevels() {
   return LEVELS;

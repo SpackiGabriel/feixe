@@ -8,10 +8,15 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 
 ## Current focus
 
-Level system (declarative data + loader) is done, validated against the
-demo rig rewritten as real declarative data. Next up: building out the
-real numbered levels 1-10 (see build order/§11 in `design/game-concept.md`),
-or the Portal system, whichever is tackled first.
+Level 1 ("Primeiros passos") is built and playable end to end: a laser-free
+switch that toggles once on aim+confirm and opens the exit door. Next up:
+Levels 2-3 (mirror/emitter/receiver/door, no new gameplay objects needed),
+then the Portal system.
+
+**Needs a manual in-browser check**: the switch's aim+confirm toggle
+(pointer-lock click) hasn't been played through yet — only syntax-checked
+and covered by the existing (unrelated) unit tests. No headless-browser
+tooling exists in this project to automate that check.
 
 ## Implementation progress
 
@@ -22,10 +27,11 @@ or the Portal system, whichever is tackled first.
 | Mirror & emitter system | Done — `src/gameplay/{mirror,emitter}.js` |
 | Laser simulation & color composition | Done — `src/gameplay/{laser,laser-beam,laser-system}.js`, unit tested (`tests/unit/laser.test.js`) |
 | Receiver & door logic | Done — `src/gameplay/{receiver,door,door-logic}.js`, `src/core/audio.js`; unit tested (`tests/unit/door-logic.test.js`, plus `isReceiverSatisfied` in `laser.test.js`) |
+| Switch (laser-free one-shot toggle) | Done — `src/gameplay/switch.js`; reuses `door.js`/`door-logic.js` unchanged via the same `isActive()` shape as a receiver. Not yet manually playtested (see above) |
 | Level system (declarative data + loader) | Done — `src/levels/{level-loader,level-manager,level-runtime}.js`; unit tested (`tests/unit/level-manager.test.js`). Only gameplay objects are level data — room geometry is still hardcoded (`docs/decisions/0005`) |
 | Portal system | Not started |
 | Feedback / accessibility UI | Not started |
-| Levels 1-10 | Only a placeholder validation level exists (`src/levels/data/demo-level.js`) — none of the real numbered levels are built |
+| Levels 1-10 | **Level 1 done** (`src/levels/data/level-1.js`). Levels 2-10 not built yet |
 
 ## Known issues / blockers
 
@@ -33,13 +39,9 @@ None yet.
 
 ## Immediate next steps
 
-1. Build the real numbered levels (spec §11, `design/game-concept.md`).
-   Levels 2 and 3 ("Reflexo", "Ângulo") can be built directly with what
-   exists now (mirror + emitter + receiver + door). **Level 1**
-   ("Primeiros passos") additionally needs a laser-free "simple switch"
-   interactive object — aim + confirm toggles it once to open a door,
-   with no laser/color involved at all. That's a new small gameplay
-   object, not yet designed.
+1. Manually playtest Level 1 in-browser (see "Current focus" above), then
+   build Levels 2 and 3 ("Reflexo", "Ângulo") — they need no new gameplay
+   objects, just mirror + emitter + receiver + door level data.
 2. Filter and blocker scene objects don't exist yet — `traceBeam()`
    already supports those segment types (needed starting at level 7
    "Filtro" and level 9 "Circuito"), but nothing places them in a scene.
@@ -57,8 +59,9 @@ None yet.
 
 ## Known simplifications (not blockers)
 
-- `src/levels/data/demo-level.js` is the same mirror/emitter/receiver/
-  door rig used to validate the loader, not a real numbered level.
+- `src/levels/data/demo-level.js` is kept (loaded as level index 1, after
+  the real Level 1) as the mirror/emitter/receiver/door rig used to
+  validate the loader — it'll be replaced once Level 2 is built.
 - Room geometry (walls) is not level data — every level currently shares
   the same fixed room from `src/core/scene.js` (`docs/decisions/0005`).
 

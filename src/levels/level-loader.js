@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { createMirror } from '../gameplay/mirror.js';
 import { createEmitter } from '../gameplay/emitter.js';
 import { createReceiver } from '../gameplay/receiver.js';
+import { createSwitch } from '../gameplay/switch.js';
 import { createDoor } from '../gameplay/door.js';
 
 // The "construtor de cena comum" from spec §10: interprets a level's
@@ -46,11 +47,25 @@ export function instantiateLevel(data, scene, interactiveObjects) {
   });
   const receiversById = new Map(data.receivers.map((r, i) => [r.id, receivers[i]]));
 
+  const switches = (data.switches ?? []).map((s) => {
+    const sw = createSwitch({
+      position: new THREE.Vector3(...s.position),
+      rotationY: s.rotationY ?? 0,
+    });
+    scene.add(sw.mesh);
+    interactiveObjects.push(sw.button);
+    return sw;
+  });
+  const switchesById = new Map((data.switches ?? []).map((s, i) => [s.id, switches[i]]));
+
+  // A door doesn't care whether it's watching a receiver or a switch — both
+  // expose isActive() (spec §11: level 1's switch reuses RF07 door logic
+  // as-is, no laser/color involved).
   const doors = data.doors.map((d) => {
     const doorReceivers = d.receiverIds.map((id) => {
-      const receiver = receiversById.get(id);
-      if (!receiver) throw new Error(`Level "${data.id}": door "${d.id}" references unknown receiver "${id}"`);
-      return receiver;
+      const activatable = receiversById.get(id) ?? switchesById.get(id);
+      if (!activatable) throw new Error(`Level "${data.id}": door "${d.id}" references unknown receiver/switch "${id}"`);
+      return activatable;
     });
     const door = createDoor({
       position: new THREE.Vector3(...d.position),
@@ -62,7 +77,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     return door;
   });
 
-  return { mirrors, emitters, receivers, doors };
+  return { mirrors, emitters, receivers, switches, doors };
 }
 
 // Reverses instantiateLevel(): removes every object it added to the scene
@@ -90,6 +105,14 @@ export function disposeLevel(loaded, scene, interactiveObjects) {
     scene.remove(receiver.mesh);
     receiver.mesh.geometry.dispose();
     receiver.mesh.material.dispose();
+  }
+  for (const sw of loaded.switches) {
+    scene.remove(sw.mesh);
+    removeInteractive(sw.button);
+    sw.base.geometry.dispose();
+    sw.base.material.dispose();
+    sw.button.geometry.dispose();
+    sw.button.material.dispose();
   }
   for (const door of loaded.doors) {
     scene.remove(door.mesh);
