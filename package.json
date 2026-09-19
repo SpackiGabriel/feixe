@@ -1,0 +1,14 @@
+{
+  "name": "feixe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "3D first-person laser/mirror puzzle game — Computação Gráfica final project, UTFPR",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "vitest": "^5.0.1"
+  }
+}

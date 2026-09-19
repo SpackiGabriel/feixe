@@ -65,11 +65,25 @@ function createRoomColliders() {
   ];
 }
 
+// Wall line segments (inner surface) for the laser tracer (spec §4:
+// a beam is absorbed by static level geometry) — distinct from the
+// colliders above, which are padded rectangles for player collision.
+function createRoomWallSegments() {
+  const half = ROOM_SIZE / 2;
+  return [
+    { type: 'wall', a: { x: -half, z: -half }, b: { x: half, z: -half } }, // back
+    { type: 'wall', a: { x: -half, z: half }, b: { x: half, z: half } }, // front
+    { type: 'wall', a: { x: -half, z: -half }, b: { x: -half, z: half } }, // left
+    { type: 'wall', a: { x: half, z: -half }, b: { x: half, z: half } }, // right
+  ];
+}
+
 export function createScene() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1a1a1a);
   scene.add(createRoom());
   scene.add(createLights());
   const colliders = createRoomColliders();
-  return { scene, colliders };
+  const wallSegments = createRoomWallSegments();
+  return { scene, colliders, wallSegments };
 }
