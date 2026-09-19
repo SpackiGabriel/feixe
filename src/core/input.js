@@ -7,8 +7,14 @@ export function createInput(domElement) {
   const keys = new Set();
   const mouseMoveListeners = [];
   const confirmListeners = [];
+  const keyDownListeners = new Map(); // code -> Set<fn>
 
-  window.addEventListener('keydown', (event) => keys.add(event.code));
+  window.addEventListener('keydown', (event) => {
+    keys.add(event.code);
+    if (!event.repeat) {
+      for (const listener of keyDownListeners.get(event.code) ?? []) listener();
+    }
+  });
   window.addEventListener('keyup', (event) => keys.delete(event.code));
 
   domElement.addEventListener('click', () => {
@@ -30,5 +36,11 @@ export function createInput(domElement) {
     keys,
     onMouseMove: (listener) => mouseMoveListeners.push(listener),
     onConfirm: (listener) => confirmListeners.push(listener),
+    // Edge-triggered — fires once per physical press, not once per frame
+    // while held (unlike `keys`, which is continuous state for movement).
+    onKeyDown: (code, listener) => {
+      if (!keyDownListeners.has(code)) keyDownListeners.set(code, new Set());
+      keyDownListeners.get(code).add(listener);
+    },
   };
 }

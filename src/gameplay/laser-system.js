@@ -55,5 +55,14 @@ export function createLaserSystem({ scene, wallSegments, mirrors, emitters, rece
     for (const receiver of receivers) receiver.evaluate(traces);
   }
 
-  return { update };
+  // Called when a level restarts or changes (RF09) — the beam lines are
+  // this system's own scene objects, so nothing else will clean them up.
+  function dispose() {
+    for (const beam of beams) {
+      scene.remove(beam.renderer.line);
+      beam.renderer.dispose();
+    }
+  }
+
+  return { update, dispose };
 }

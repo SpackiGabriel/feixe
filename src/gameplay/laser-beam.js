@@ -42,5 +42,10 @@ export function createBeamRenderer() {
     }
   }
 
-  return { line, update };
+  function dispose() {
+    geometry.dispose();
+    material.dispose();
+  }
+
+  return { line, update, dispose };
 }

@@ -7,8 +7,7 @@ import { createLookController } from './core/look.js';
 import { createMovementController } from './core/movement.js';
 import { createInteraction } from './core/interaction.js';
 import { createManipulation } from './core/manipulation.js';
-import { createLaserSystem } from './gameplay/laser-system.js';
-import { createDemoLevel } from './levels/demo.js';
+import { createLevelRuntime } from './levels/level-runtime.js';
 
 const renderer = createRenderer();
 const { scene, colliders, wallSegments } = createScene();
@@ -23,9 +22,8 @@ const interactiveObjects = [];
 const interaction = createInteraction(camera, scene, interactiveObjects);
 createManipulation({ input, look, interaction });
 
-// TEMPORARY until the level loader (RF08/RF09) exists — see src/levels/demo.js.
-const { mirrors, emitters, receivers, doors } = createDemoLevel(scene, interactiveObjects);
-const laserSystem = createLaserSystem({ scene, wallSegments, mirrors, emitters, receivers });
+const levelRuntime = createLevelRuntime({ scene, wallSegments, interactiveObjects });
+input.onKeyDown('KeyR', () => levelRuntime.restart()); // RF09: quick restart of the current level
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -41,8 +39,7 @@ function animate(timestamp) {
   const deltaSeconds = timer.getDelta();
   movement.update(deltaSeconds);
   interaction.update();
-  laserSystem.update(); // must run before doors, since it updates receivers' active state
-  for (const door of doors) door.update(deltaSeconds);
+  levelRuntime.update(deltaSeconds);
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);
