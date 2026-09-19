@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { reflect, intersectRaySegment, traceBeam, composeReceiverColor, colorToHex } from '../../src/gameplay/laser.js';
+import {
+  reflect,
+  intersectRaySegment,
+  traceBeam,
+  composeReceiverColor,
+  isReceiverSatisfied,
+  colorToHex,
+} from '../../src/gameplay/laser.js';
 
 describe('reflect', () => {
   it('test_reflect_45degreeMirror_turnsHorizontalBeamVertical', () => {
@@ -217,6 +224,22 @@ describe('composeReceiverColor', () => {
     // Assert
     expect(result.composed).toEqual({ r: 0, g: 0, b: 0 });
     expect(result.hitCount).toBe(0);
+  });
+});
+
+describe('isReceiverSatisfied', () => {
+  it('test_isReceiverSatisfied_composedMatchesTargetWithHits_returnsTrue', () => {
+    expect(isReceiverSatisfied({ r: 1, g: 0, b: 1 }, { r: 1, g: 0, b: 1 }, 2)).toBe(true);
+  });
+
+  it('test_isReceiverSatisfied_composedDoesNotMatchTarget_returnsFalse', () => {
+    expect(isReceiverSatisfied({ r: 1, g: 0, b: 0 }, { r: 1, g: 0, b: 1 }, 1)).toBe(false);
+  });
+
+  it('test_isReceiverSatisfied_zeroHitsEvenIfColorsCoincidentallyMatch_returnsFalse', () => {
+    // No beam is hitting at all — composed is {0,0,0}, which must never
+    // "satisfy" a (nonsensical) black target just because it matches.
+    expect(isReceiverSatisfied({ r: 0, g: 0, b: 0 }, { r: 0, g: 0, b: 0 }, 0)).toBe(false);
   });
 });
 

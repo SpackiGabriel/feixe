@@ -24,8 +24,8 @@ const interaction = createInteraction(camera, scene, interactiveObjects);
 createManipulation({ input, look, interaction });
 
 // TEMPORARY until the level loader (RF08/RF09) exists — see src/levels/demo.js.
-const { mirrors, emitters } = createDemoLevel(scene, interactiveObjects);
-const laserSystem = createLaserSystem({ scene, wallSegments, mirrors, emitters });
+const { mirrors, emitters, receivers, doors } = createDemoLevel(scene, interactiveObjects);
+const laserSystem = createLaserSystem({ scene, wallSegments, mirrors, emitters, receivers });
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -41,7 +41,8 @@ function animate(timestamp) {
   const deltaSeconds = timer.getDelta();
   movement.update(deltaSeconds);
   interaction.update();
-  laserSystem.update();
+  laserSystem.update(); // must run before doors, since it updates receivers' active state
+  for (const door of doors) door.update(deltaSeconds);
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);

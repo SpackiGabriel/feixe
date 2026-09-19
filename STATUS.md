@@ -8,11 +8,11 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 
 ## Current focus
 
-Laser simulation & color composition is done. There's a TEMPORARY demo
-rig (`src/levels/demo.js`, one mirror + one emitter) standing in for the
-level loader so the system is actually visible in the running game — it's
-not real level content and should be deleted once the level system exists.
-Next up: Receiver & door logic (see build order in `design/game-concept.md`).
+Receiver & door logic is done. The TEMPORARY demo rig (`src/levels/demo.js`)
+now has a full loop: emitter → mirror → receiver → door — still just a
+placeholder standing in for the level loader, not real level content.
+Next up: Level system (declarative data + loader) — see build order in
+`design/game-concept.md`.
 
 ## Implementation progress
 
@@ -21,8 +21,8 @@ Next up: Receiver & door logic (see build order in `design/game-concept.md`).
 | Rendering & scene foundation | Done — `src/core/{renderer,camera,scene}.js`, `index.html`, `src/main.js` |
 | Movement & raycast interaction | Done — `src/core/{input,look,movement,interaction,manipulation}.js` |
 | Mirror & emitter system | Done — `src/gameplay/{mirror,emitter}.js` |
-| Laser simulation & color composition | Done — `src/gameplay/{laser,laser-beam,laser-system}.js`, unit tested (`tests/unit/laser.test.js`); receiver/filter/blocker segment types exist in the tracer but nothing places them in the scene yet |
-| Receiver & door logic | Not started |
+| Laser simulation & color composition | Done — `src/gameplay/{laser,laser-beam,laser-system}.js`, unit tested (`tests/unit/laser.test.js`) |
+| Receiver & door logic | Done — `src/gameplay/{receiver,door,door-logic}.js`, `src/core/audio.js`; unit tested (`tests/unit/door-logic.test.js`, plus `isReceiverSatisfied` in `laser.test.js`). Filter/blocker segment types still exist only in the tracer — no scene object for them yet |
 | Level system (declarative data + loader) | Not started |
 | Portal system | Not started |
 | Feedback / accessibility UI | Not started |
@@ -34,15 +34,23 @@ None yet.
 
 ## Immediate next steps
 
-1. Build receiver & door logic (RF06/RF07): a receiver object that reacts
-   (visual/audio pulse) when `composeReceiverColor()` (in
-   `src/gameplay/laser.js`) matches its target color, and a door that
-   opens/closes based on AND/OR over a set of receivers. Blocker and
-   filter segment types already exist in `traceBeam()` — this slice adds
-   the actual scene objects for `receiver`/`filter`/`blocker`/`door`.
-2. When building the level loader (item 6), apply the receiver-placement
-   constraint from `docs/findings.md`, and replace `src/levels/demo.js`
-   with real declarative level data.
+1. Build the level system (RF08/RF09): declarative level data (walls,
+   mirrors, emitters, receivers, doors — one file per level under
+   `src/levels/`) plus a shared scene constructor that interprets that
+   data into the scene graph, replacing `src/levels/demo.js`. Apply the
+   receiver-placement constraint from `docs/findings.md` when authoring
+   real levels (a level-load validation pass would catch it automatically
+   — worth doing here).
+2. Filter and blocker scene objects don't exist yet — `traceBeam()`
+   already supports those segment types, but nothing places them. Add
+   them either as part of the level system slice or as a small follow-up,
+   whichever the level data schema needs first.
+
+## Known simplifications (not blockers)
+
+- `src/levels/demo.js` is a hardcoded single-mirror/single-emitter/
+  single-receiver/single-door rig, not a real level — delete it once the
+  level system exists.
 
 ## How to run
 

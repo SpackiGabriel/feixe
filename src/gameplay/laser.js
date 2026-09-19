@@ -4,10 +4,6 @@
 // first in prototypes/mirror-reflection/engine.mjs; this is the
 // production rewrite of that validated model (2D in the XZ plane, since
 // mirrors/emitters only rotate around the vertical axis).
-//
-// "Satisfied" (does a receiver's composed color match its target) is
-// deliberately NOT here — that's the receiver/door system's job (RF06/07,
-// not built yet). This module only traces beams and composes color.
 
 export const MAX_REFLECTIONS = 8; // NFR "Desempenho": bounds cost per beam per frame
 const EPS = 1e-4;
@@ -121,6 +117,18 @@ export function composeReceiverColor(traces, receiverId) {
     }
   }
   return { composed, hitCount };
+}
+
+// Spec §8: a receiver activates only while the correct color continuously
+// hits it — no hits at all is never "satisfied", even if an empty
+// composition would otherwise equal a (nonsensical) black target.
+export function isReceiverSatisfied(composed, target, hitCount) {
+  return (
+    hitCount > 0 &&
+    composed.r === (target.r ? 1 : 0) &&
+    composed.g === (target.g ? 1 : 0) &&
+    composed.b === (target.b ? 1 : 0)
+  );
 }
 
 export function colorToHex(color) {

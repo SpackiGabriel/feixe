@@ -62,3 +62,31 @@ raycasting, rather than relying on render order.
 are draggable, this stays load-bearing — a mirror moved earlier in the
 same frame must still be raycast-accurate. Don't remove the explicit
 `updateMatrixWorld()` calls as a "redundant with the renderer" cleanup.
+
+## 2026-09-19 — A reused mutable trace-input object breaks once results outlive the loop
+
+Source: building `src/gameplay/laser-system.js` (receiver evaluation,
+spec §8).
+
+Same family of bug as the matrixWorld one above, different mechanism.
+The original per-beam loop reused one `traceEmitter` scratch object
+(mutating its `pos`/`dir`/`color` for each emitter) to avoid allocating —
+safe as long as each `trace` result was consumed immediately and thrown
+away, which is what the beam renderer did. `traceBeam()`'s very first
+`path` entry is a *reference* to the `emitter.pos` object passed in, not a
+copy, so the trace's path implicitly aliased the shared scratch object.
+
+Adding receiver evaluation broke the assumption: receivers need every
+beam's `trace` collected into an array and read *after* the whole
+per-beam loop finishes, by which point the shared scratch object had been
+mutated for every subsequent emitter. `composeReceiverColor()` doesn't
+happen to read `trace.path`, so this was never visibly wrong yet — but it
+was a landmine for anything that would (e.g. future debug rendering of
+all beam paths, or per-beam diagnostics).
+
+Fixed by giving each beam its own small `{pos, dir, color}` object per
+frame instead of a shared scratch one. **Rule of thumb**: a scratch/reused
+mutable object is only safe across a loop when nothing keeps a reference
+to it past the current iteration — the moment a result needs to survive
+past the loop (like `traces` does for receivers), every input that result
+transitively points to needs to stop being shared, too.

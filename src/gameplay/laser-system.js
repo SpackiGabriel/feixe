@@ -7,19 +7,29 @@ function emitterDirection(emitter) {
   return { x: -Math.sin(yaw), z: -Math.cos(yaw) };
 }
 
-// Traces every emitter's beam through the level's mirrors and walls each
-// frame (spec §4/§6, RF04) and drives their visuals. `mirrors`/`emitters`
+// Traces every emitter's beam through the level's mirrors, walls and
+// receivers each frame (spec §4/§6/§8, RF04) and drives their visuals,
+// then lets each receiver evaluate itself against the full set of traces
+// (a receiver needs every beam's result, not just "its own", since two
+// beams can converge on it — spec §7). `mirrors`/`emitters`/`receivers`
 // are fixed for the lifetime of this instance — the mirror *segments* are
 // mutated in place every frame instead of rebuilding the array, since only
 // their endpoints (not their count) change while dragging/rotating.
-export function createLaserSystem({ scene, wallSegments, mirrors, emitters }) {
+//
+// Each beam gets a fresh {x,z} pos/dir object per frame rather than a
+// shared scratch object: traces are collected into an array that outlives
+// the per-beam loop (receivers read it after all beams are traced), so a
+// reused-and-mutated scratch object would leave earlier beams pointing at
+// later beams' data by the time receivers read it.
+export function createLaserSystem({ scene, wallSegments, mirrors, emitters, receivers = [] }) {
   const mirrorSegments = mirrors.map(() => ({ type: 'mirror', a: { x: 0, z: 0 }, b: { x: 0, z: 0 } }));
-  const segments = [...wallSegments, ...mirrorSegments];
+  const receiverSegments = receivers.map((receiver) => receiver.segment);
+  const segments = [...wallSegments, ...mirrorSegments, ...receiverSegments];
 
   const beams = emitters.map((emitter) => ({ emitter, renderer: createBeamRenderer() }));
   for (const beam of beams) scene.add(beam.renderer.line);
 
-  const traceEmitter = { pos: { x: 0, z: 0 }, dir: { x: 0, z: 0 }, color: null };
+  const traces = [];
 
   function update() {
     scene.updateMatrixWorld();
@@ -28,17 +38,21 @@ export function createLaserSystem({ scene, wallSegments, mirrors, emitters }) {
       getReflectiveSegment(mirrors[i], mirrorSegments[i]);
     }
 
+    traces.length = 0;
     for (const beam of beams) {
-      traceEmitter.pos.x = beam.emitter.mesh.position.x;
-      traceEmitter.pos.z = beam.emitter.mesh.position.z;
       const dir = emitterDirection(beam.emitter);
-      traceEmitter.dir.x = dir.x;
-      traceEmitter.dir.z = dir.z;
-      traceEmitter.color = beam.emitter.color.rgb;
+      const traceEmitter = {
+        pos: { x: beam.emitter.mesh.position.x, z: beam.emitter.mesh.position.z },
+        dir,
+        color: beam.emitter.color.rgb,
+      };
 
       const trace = traceBeam(segments, traceEmitter, MAX_REFLECTIONS);
       beam.renderer.update(trace.path, beam.emitter.mesh.position.y, colorToHex(trace.color));
+      traces.push(trace);
     }
+
+    for (const receiver of receivers) receiver.evaluate(traces);
   }
 
   return { update };
