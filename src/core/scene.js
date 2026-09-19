@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 
-const ROOM_SIZE = 10;
+export const ROOM_SIZE = 10;
 const WALL_HEIGHT = 3;
+const WALL_THICKNESS = 0.2;
 
 function createRoom() {
   const room = new THREE.Group();
@@ -51,10 +52,24 @@ function createLights() {
   return lights;
 }
 
+// Static AABBs (xz-plane rectangles) for the room shell, used by the
+// movement collision system (spec §4: AABB vs. static level geometry).
+function createRoomColliders() {
+  const half = ROOM_SIZE / 2;
+  const outer = half + WALL_THICKNESS;
+  return [
+    { minX: -outer, maxX: outer, minZ: -outer, maxZ: -half }, // back wall
+    { minX: -outer, maxX: outer, minZ: half, maxZ: outer }, // front wall
+    { minX: -outer, maxX: -half, minZ: -outer, maxZ: outer }, // left wall
+    { minX: half, maxX: outer, minZ: -outer, maxZ: outer }, // right wall
+  ];
+}
+
 export function createScene() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1a1a1a);
   scene.add(createRoom());
   scene.add(createLights());
-  return scene;
+  const colliders = createRoomColliders();
+  return { scene, colliders };
 }

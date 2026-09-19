@@ -40,3 +40,25 @@ different-colored beams hitting the same receiver) composes correctly, and
 filters/blockers behave as pure pass-through/stop gates with no direction
 change — no hidden per-color behavior, matching spec §7's "no cor com
 comportamento oculto" requirement.
+
+## 2026-09-19 — Raycast/matrixWorld must be force-updated before `renderer.render()` runs
+
+Source: building `src/core/interaction.js` (raycast-based aim/select, spec
+§4).
+
+Three.js only recomputes an object's `matrixWorld` automatically inside
+`renderer.render()` (or on an explicit `updateMatrixWorld()` call). Our
+frame loop in `src/main.js` runs `movement.update()` and
+`interaction.update()` *before* `renderer.render()`, so a raycast taken at
+that point sees last frame's transforms for both the camera and any
+interactive object that moved — caught by a Playwright test where a target
+box placed directly ahead didn't register as hovered.
+
+Fixed by having `createInteraction()`'s `update()` call
+`camera.updateMatrixWorld()` and `scene.updateMatrixWorld()` itself before
+raycasting, rather than relying on render order.
+
+**Implication for the mirror/emitter system (RF02/RF03)**: once mirrors
+are draggable, this stays load-bearing — a mirror moved earlier in the
+same frame must still be raycast-accurate. Don't remove the explicit
+`updateMatrixWorld()` calls as a "redundant with the renderer" cleanup.

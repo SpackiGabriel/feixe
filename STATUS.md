@@ -8,15 +8,15 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 
 ## Current focus
 
-Rendering & scene foundation is done. Next up: Movement & raycast
-interaction (see build order in `design/game-concept.md`).
+Movement & raycast interaction is done. Next up: Mirror & emitter system
+(see build order in `design/game-concept.md`).
 
 ## Implementation progress
 
 | System | State |
 |---|---|
 | Rendering & scene foundation | Done — `src/core/{renderer,camera,scene}.js`, `index.html`, `src/main.js` |
-| Movement & raycast interaction | Not started |
+| Movement & raycast interaction | Done — `src/core/{input,movement,interaction}.js` |
 | Mirror & emitter system | Not started |
 | Laser simulation & color composition | Designed (validated in `prototypes/mirror-reflection/`), not implemented |
 | Receiver & door logic | Not started |
@@ -31,10 +31,11 @@ None yet.
 
 ## Immediate next steps
 
-1. Build movement & raycast interaction: WASD translate + mouse look
-   (Pointer Lock), AABB-vs-static-geometry collision, and the
-   raycasting groundwork for mirror/emitter selection (RF01, RF04
-   partial).
+1. Build the mirror & emitter system (RF02, RF03): parent/pivot + child
+   reflective-plate node pair, rail-constrained position and single-axis
+   rotation, driven through the aim/select interaction already in place
+   (`src/core/interaction.js`'s `interactiveObjects` list is currently
+   empty — mirrors/emitters should register themselves into it).
 2. When building the level loader, apply the receiver-placement
    constraint from `docs/findings.md`.
 

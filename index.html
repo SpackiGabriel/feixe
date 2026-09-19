@@ -7,9 +7,22 @@
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
   canvas { display: block; }
+  #crosshair {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0.8;
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
+<div id="crosshair"></div>
 <script type="importmap">
 {
   "imports": {
