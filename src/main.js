@@ -33,10 +33,12 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
+timer.connect(document); // avoids a huge delta on refocus after a hidden tab
 
-function animate() {
-  const deltaSeconds = clock.getDelta();
+function animate(timestamp) {
+  timer.update(timestamp);
+  const deltaSeconds = timer.getDelta();
   movement.update(deltaSeconds);
   interaction.update();
   laserSystem.update();
