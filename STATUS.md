@@ -8,17 +8,20 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 
 ## Current focus
 
-Levels 1-4 are built and manually verified end to end. Level 5
-("Convergência") is now real declarative data too — reuses Level 4's
-two-lane layout, but both beams bend toward the center and converge on
-one shared receiver requiring the additive Magenta composite — but not
-yet playtested. This closes out the tutorial block (levels 1-5); next up
-is Level 6 ("Bifurcação"), the first of the "quebra-cabeças" block, which
-needs three mirrors and an OR-gated door.
+Levels 1-5 (the full tutorial block) are built and manually verified end
+to end. Level 6 ("Bifurcação") opens the "quebra-cabeças" block: one
+emitter, three mirrors that both slide and rotate, and an OR door over
+two receivers reachable by two symmetric paths. No blocker object exists
+yet (that's level 7) — the geometry itself was verified against the real
+`traceBeam()` function (both solved branches hit their receiver, the
+unsolved state hits a wall), but not yet played through by hand. Next up:
+verify Level 6, then Level 7 ("Filtro"), which needs the filter and
+blocker scene objects `traceBeam()` already supports but nothing
+currently places.
 
-**Needs a manual in-browser check**: Level 5's convergence — confirm
-neither beam alone satisfies the receiver (each is a pure primary, not
-Magenta) and both together do.
+**Needs a manual in-browser check**: Level 6's two branches — confirm
+sliding+rotating the junction mirror picks a side, and the matching
+branch mirror (also slide+rotate) completes the path to its receiver.
 
 ## Implementation progress
 
@@ -34,7 +37,7 @@ Magenta) and both together do.
 | Level-to-level exit trigger | Done and manually playtested — `src/levels/exit-trigger.js` (proximity to an open `exit: true` door, `docs/decisions/0006`), wired into `level-runtime.js`; unit tested (`tests/unit/exit-trigger.test.js`) |
 | Portal system | Not started |
 | Feedback / accessibility UI | Not started |
-| Levels 1-10 | **Levels 1-4 done and manually verified, Level 5 done** (`src/levels/data/level-{1,2,3,4,5}.js`). Level 5 not yet playtested. Levels 6-10 not built |
+| Levels 1-10 | **Levels 1-5 done and manually verified, Level 6 done** (`src/levels/data/level-{1..6}.js`). Level 6's geometry is trace-verified but not yet manually played. Levels 7-10 not built |
 
 ## Known issues / blockers
 
@@ -42,14 +45,12 @@ None yet.
 
 ## Immediate next steps
 
-1. Manually playtest Level 5 (see "Current focus" above), then build
-   Level 6 ("Bifurcação") — three movable/rotatable mirrors, one emitter,
-   and an OR door over two receivers; the player picks one of two viable
-   beam paths.
-2. Filter and blocker scene objects don't exist yet — `traceBeam()`
-   already supports those segment types (needed starting at level 7
-   "Filtro" and level 9 "Circuito"), but nothing places them in a scene.
-3. When authoring each real level's data, apply the receiver-placement
+1. Manually playtest Level 6 (see "Current focus" above), then build
+   Level 7 ("Filtro") — this needs filter and blocker gameplay objects
+   (level-loader.js has no `data.filters`/`data.blockers` handling yet;
+   `traceBeam()` already supports the `filter`/`blocker` segment types,
+   they just aren't instantiated by anything).
+2. When authoring each real level's data, apply the receiver-placement
    constraint from `docs/findings.md` — a receiver must be the nearest
    segment along its beam's path, or it silently never activates. A
    level-load validation pass (trace each declared beam, flag receivers
