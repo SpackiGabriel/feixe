@@ -1,5 +1,6 @@
 import { traceBeam, MAX_REFLECTIONS, colorToHex } from './laser.js';
 import { getReflectiveSegment } from './mirror.js';
+import { getFilterSegment } from './filter.js';
 import { createBeamRenderer } from './laser-beam.js';
 
 function emitterDirection(emitter) {
@@ -21,10 +22,12 @@ function emitterDirection(emitter) {
 // the per-beam loop (receivers read it after all beams are traced), so a
 // reused-and-mutated scratch object would leave earlier beams pointing at
 // later beams' data by the time receivers read it.
-export function createLaserSystem({ scene, wallSegments, mirrors, emitters, receivers = [] }) {
+export function createLaserSystem({ scene, wallSegments, mirrors, emitters, receivers = [], filters = [], blockers = [] }) {
   const mirrorSegments = mirrors.map(() => ({ type: 'mirror', a: { x: 0, z: 0 }, b: { x: 0, z: 0 } }));
+  const filterSegments = filters.map((filter) => ({ type: 'filter', a: { x: 0, z: 0 }, b: { x: 0, z: 0 }, primary: filter.primary }));
   const receiverSegments = receivers.map((receiver) => receiver.segment);
-  const segments = [...wallSegments, ...mirrorSegments, ...receiverSegments];
+  const blockerSegments = blockers.map((blocker) => blocker.segment);
+  const segments = [...wallSegments, ...mirrorSegments, ...filterSegments, ...receiverSegments, ...blockerSegments];
 
   const beams = emitters.map((emitter) => ({ emitter, renderer: createBeamRenderer() }));
   for (const beam of beams) scene.add(beam.renderer.line);
@@ -36,6 +39,9 @@ export function createLaserSystem({ scene, wallSegments, mirrors, emitters, rece
 
     for (let i = 0; i < mirrors.length; i++) {
       getReflectiveSegment(mirrors[i], mirrorSegments[i]);
+    }
+    for (let i = 0; i < filters.length; i++) {
+      getFilterSegment(filters[i], filterSegments[i]);
     }
 
     traces.length = 0;

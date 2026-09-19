@@ -7,9 +7,13 @@ const BODY_LENGTH = 0.5;
 const BASE_EMISSIVE_INTENSITY = 0.4;
 const HOVER_EMISSIVE_INTENSITY = 1.0;
 
-// Spec §7: an emitter fires exactly one of the three fixed primaries
-// (colors.js also has the composites, which only receivers can target).
-const EMITTER_COLOR_NAMES = ['red', 'green', 'blue'];
+// Spec §7: an emitter usually fires one of the three fixed primaries.
+// 'white' (their sum) is the one composite an emitter can also fire —
+// spec §11 level 7 ("Filtro") requires a white emitter paired with a
+// subtractive filter to isolate a primary. No other composite is valid
+// here; a receiver's *target* can be any composite (colors.js), but what
+// an emitter emits stays restricted to this short list.
+const EMITTER_COLOR_NAMES = ['red', 'green', 'blue', 'white'];
 
 // An emitter is fixed in position but rotates around the vertical axis;
 // its laser color is fixed at creation (spec §6). The barrel points along

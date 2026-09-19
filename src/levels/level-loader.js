@@ -3,6 +3,8 @@ import { createMirror } from '../gameplay/mirror.js';
 import { createEmitter } from '../gameplay/emitter.js';
 import { createReceiver } from '../gameplay/receiver.js';
 import { createSwitch } from '../gameplay/switch.js';
+import { createFilter } from '../gameplay/filter.js';
+import { createBlocker } from '../gameplay/blocker.js';
 import { createDoor } from '../gameplay/door.js';
 
 // The "construtor de cena comum" from spec §10: interprets a level's
@@ -58,6 +60,28 @@ export function instantiateLevel(data, scene, interactiveObjects) {
   });
   const switchesById = new Map((data.switches ?? []).map((s, i) => [s.id, switches[i]]));
 
+  const filters = (data.filters ?? []).map((f) => {
+    const filter = createFilter({
+      railStart: new THREE.Vector3(...f.rail.start),
+      railEnd: new THREE.Vector3(...f.rail.end),
+      initialT: f.initialT,
+      rotationY: f.rotationY ?? 0,
+      primaryName: f.primaryName,
+    });
+    scene.add(filter.base);
+    interactiveObjects.push(filter.plate);
+    return filter;
+  });
+
+  const blockers = (data.blockers ?? []).map((b) => {
+    const blocker = createBlocker({
+      position: new THREE.Vector3(...b.position),
+      rotationY: b.rotationY ?? 0,
+    });
+    scene.add(blocker.mesh);
+    return blocker;
+  });
+
   // A door doesn't care whether it's watching a receiver or a switch — both
   // expose isActive() (spec §11: level 1's switch reuses RF07 door logic
   // as-is, no laser/color involved).
@@ -79,7 +103,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     return door;
   });
 
-  return { mirrors, emitters, receivers, switches, doors, exitDoor };
+  return { mirrors, emitters, receivers, switches, filters, blockers, doors, exitDoor };
 }
 
 // Reverses instantiateLevel(): removes every object it added to the scene
@@ -115,6 +139,17 @@ export function disposeLevel(loaded, scene, interactiveObjects) {
     sw.base.material.dispose();
     sw.button.geometry.dispose();
     sw.button.material.dispose();
+  }
+  for (const filter of loaded.filters) {
+    scene.remove(filter.base);
+    removeInteractive(filter.plate);
+    filter.plate.geometry.dispose();
+    filter.plate.material.dispose();
+  }
+  for (const blocker of loaded.blockers) {
+    scene.remove(blocker.mesh);
+    blocker.mesh.geometry.dispose();
+    blocker.mesh.material.dispose();
   }
   for (const door of loaded.doors) {
     scene.remove(door.mesh);

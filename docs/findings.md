@@ -90,3 +90,28 @@ mutable object is only safe across a loop when nothing keeps a reference
 to it past the current iteration — the moment a result needs to survive
 past the loop (like `traces` does for receivers), every input that result
 transitively points to needs to stop being shared, too.
+
+## 2026-09-19 — A `blocker` downstream of a `filter` can never actually be hit
+
+Source: designing `src/levels/data/level-7.js` ("Filtro", spec §11).
+
+A filter (`src/gameplay/filter.js`) never changes a beam's direction —
+only a mirror does. So on any level with no mirror, a beam's XZ line is
+fixed the moment it leaves the emitter, and `traceBeam()` always resolves
+to whichever segment is *nearest* along that fixed line (docs/findings.md's
+earlier receiver-placement entry). A `blocker` placed anywhere past the
+receiver on that same line is unreachable no matter what the player does
+— the receiver eats the beam first, every time. A `blocker` placed
+*before* the receiver, meanwhile, eats the beam unconditionally — solving
+the filter can't change the beam's path around it, so the level becomes
+unsolvable. There's no position on a straight, unmirrored line where a
+blocker is both reachable and avoidable depending on player action.
+
+**Implication**: a `blocker` only functions as real *trace* logic (something
+the player must route a beam around) on a level that also has a mirror to
+redirect the beam away from it. On a mirror-less level like 7, a blocker
+can still be placed as a spatial/visual cue (e.g. marking the "wrong"
+spot to leave a filter), but it won't intercept the beam in any solved or
+unsolved state — don't expect it to gate the puzzle. Level 9 ("Circuito")
+does have mirrors alongside its blocker, so that's where blocker-avoidance
+first becomes real trace logic worth testing for.

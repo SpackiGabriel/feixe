@@ -30,6 +30,8 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects }) 
       mirrors: currentLevel.mirrors,
       emitters: currentLevel.emitters,
       receivers: currentLevel.receivers,
+      filters: currentLevel.filters,
+      blockers: currentLevel.blockers,
     });
     exitTriggered = false;
     saveLevelIndex(currentIndex);
