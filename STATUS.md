@@ -8,20 +8,17 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 
 ## Current focus
 
-Levels 1-3 are built. Level 1 ("Primeiros passos") is fully manually
-verified end to end, including the exit trigger advancing to the next
-level. Levels 2 ("Reflexo") and 3 ("Ângulo") are real declarative data
-reusing the existing mirror/emitter/receiver/door systems — no new
-gameplay objects needed — but their specific mirror-bounce geometry
-hasn't been played through yet. Next up: manually verify 2-3, then build
-Level 4 ("Duas cores"), or the Portal system.
+Levels 1-3 are built and manually verified end to end. Level 4 ("Duas
+cores") is now real declarative data too — two independent red/blue
+emitter+mirror+receiver lanes gated by one AND door — but not yet
+playtested. Next up: verify Level 4, then Level 5 ("Convergência"), which
+needs the two lanes' beams aimed at the *same* receiver instead of two
+separate ones, exercising additive color composition for the first time
+in a real level.
 
-**Needs a manual in-browser check**: Level 2's slide-to-intercept mirror
-puzzle and Level 3's rotate-to-align mirror puzzle — the reflection math
-itself is unit-tested (`tests/unit/laser.test.js`) and validated by the
-prototype, but the specific positions/angles chosen for these two levels
-haven't been played through. No headless-browser tooling exists in this
-project to automate that check.
+**Needs a manual in-browser check**: Level 4's two lanes — confirm each
+color only satisfies its own receiver and the exit door needs both solved
+(AND rule) before it opens.
 
 ## Implementation progress
 
@@ -37,7 +34,7 @@ project to automate that check.
 | Level-to-level exit trigger | Done and manually playtested — `src/levels/exit-trigger.js` (proximity to an open `exit: true` door, `docs/decisions/0006`), wired into `level-runtime.js`; unit tested (`tests/unit/exit-trigger.test.js`) |
 | Portal system | Not started |
 | Feedback / accessibility UI | Not started |
-| Levels 1-10 | **Levels 1-3 done** (`src/levels/data/level-{1,2,3}.js`). Level 1 manually verified; Levels 2-3 not yet (see above). Levels 4-10 not built |
+| Levels 1-10 | **Levels 1-3 done and manually verified, Level 4 done** (`src/levels/data/level-{1,2,3,4}.js`). Level 4 not yet playtested. Levels 5-10 not built |
 
 ## Known issues / blockers
 
@@ -45,9 +42,9 @@ None yet.
 
 ## Immediate next steps
 
-1. Manually playtest Levels 2 and 3 in-browser (see "Current focus"
-   above), then build Level 4 ("Duas cores") — two emitters/receivers,
-   independent colors, no new gameplay objects needed either.
+1. Manually playtest Level 4 (see "Current focus" above), then build
+   Level 5 ("Convergência") — same two-lane setup as Level 4, but both
+   beams aim at one receiver requiring the composed color (Magenta).
 2. Filter and blocker scene objects don't exist yet — `traceBeam()`
    already supports those segment types (needed starting at level 7
    "Filtro" and level 9 "Circuito"), but nothing places them in a scene.

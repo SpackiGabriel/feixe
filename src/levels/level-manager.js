@@ -1,10 +1,11 @@
 import { level1 } from './data/level-1.js';
 import { level2 } from './data/level-2.js';
 import { level3 } from './data/level-3.js';
+import { level4 } from './data/level-4.js';
 
-// TEMPORARY: levels 1-3 are real; levels 4-10 (design/game-concept.md
+// TEMPORARY: levels 1-4 are real; levels 5-10 (design/game-concept.md
 // §11) are separate future work (STATUS.md's "Levels 1-10" row).
-const LEVELS = [level1, level2, level3];
+const LEVELS = [level1, level2, level3, level4];
 
 export function getLevels() {
   return LEVELS;
