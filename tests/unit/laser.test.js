@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   reflect,
+  rotateXZ,
   intersectRaySegment,
   traceBeam,
   composeReceiverColor,
@@ -35,6 +36,32 @@ describe('reflect', () => {
     // Assert
     expect(a.x).toBeCloseTo(b.x, 5);
     expect(a.z).toBeCloseTo(b.z, 5);
+  });
+});
+
+describe('rotateXZ', () => {
+  it('test_rotateXZ_ninetyDegrees_turnsPlusXIntoMinusZ', () => {
+    // Arrange
+    const v = { x: 1, z: 0 };
+
+    // Act
+    const result = rotateXZ(v, Math.PI / 2);
+
+    // Assert
+    expect(result.x).toBeCloseTo(0, 5);
+    expect(result.z).toBeCloseTo(-1, 5);
+  });
+
+  it('test_rotateXZ_zeroAngle_returnsUnchanged', () => {
+    // Arrange
+    const v = { x: 0.6, z: -0.8 };
+
+    // Act
+    const result = rotateXZ(v, 0);
+
+    // Assert
+    expect(result.x).toBeCloseTo(0.6, 5);
+    expect(result.z).toBeCloseTo(-0.8, 5);
   });
 });
 
@@ -194,6 +221,40 @@ describe('traceBeam', () => {
 
     // Assert
     expect(trace.status).toBe('absorbed-filter');
+  });
+
+  it('test_traceBeam_portalTeleportsAndRemapsDirection_hitsReceiverPastIt', () => {
+    // Arrange: emitter fires +X into a portal whose pair sits at the
+    // origin with a 90-degree orientation difference, so the beam exits
+    // heading -Z into a receiver further along that new heading.
+    const segments = [
+      { type: 'portal', a: { x: 5, z: -1 }, b: { x: 5, z: 1 }, exitPosition: { x: 0, z: 0 }, exitRotationDelta: Math.PI / 2 },
+      { id: 'r1', type: 'receiver', a: { x: -1, z: -5 }, b: { x: 1, z: -5 } },
+    ];
+    const emitter = { pos: { x: 0, z: 0 }, dir: { x: 1, z: 0 }, color: { r: 1, g: 0, b: 0 } };
+
+    // Act
+    const trace = traceBeam(segments, emitter, 8);
+
+    // Assert
+    expect(trace.status).toBe('hit-receiver');
+    expect(trace.segment.id).toBe('r1');
+    expect(trace.color).toEqual({ r: 1, g: 0, b: 0 }); // a portal doesn't alter color, like a mirror
+  });
+
+  it('test_traceBeam_portalPairPingPongsForever_stopsAtMaxReflections', () => {
+    // Arrange: two portals that just feed straight back into each other.
+    const segments = [
+      { type: 'portal', a: { x: 5, z: -1 }, b: { x: 5, z: 1 }, exitPosition: { x: -5, z: 0 }, exitRotationDelta: 0 },
+      { type: 'portal', a: { x: -5, z: -1 }, b: { x: -5, z: 1 }, exitPosition: { x: 5, z: 0 }, exitRotationDelta: 0 },
+    ];
+    const emitter = { pos: { x: 0, z: 0 }, dir: { x: 1, z: 0 }, color: { r: 1, g: 1, b: 1 } };
+
+    // Act
+    const trace = traceBeam(segments, emitter, 3);
+
+    // Assert
+    expect(trace.status).toBe('max-reflections');
   });
 });
 

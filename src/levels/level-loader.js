@@ -5,6 +5,7 @@ import { createReceiver } from '../gameplay/receiver.js';
 import { createSwitch } from '../gameplay/switch.js';
 import { createFilter } from '../gameplay/filter.js';
 import { createBlocker } from '../gameplay/blocker.js';
+import { createPortalPair } from '../gameplay/portal.js';
 import { createDoor } from '../gameplay/door.js';
 
 // The "construtor de cena comum" from spec §10: interprets a level's
@@ -77,9 +78,23 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     const blocker = createBlocker({
       position: new THREE.Vector3(...b.position),
       rotationY: b.rotationY ?? 0,
+      width: b.width,
+      height: b.height,
+      thickness: b.thickness,
     });
     scene.add(blocker.mesh);
     return blocker;
+  });
+
+  // Both ends of a pair are flattened into one list — laser-system.js and
+  // the player-crossing check (portal-crossing.js, driven from
+  // level-runtime.js) just need every portal in the level, not the pairing
+  // structure (each portal already carries a `linked` reference).
+  const portals = (data.portals ?? []).flatMap((p) => {
+    const [portalA, portalB] = createPortalPair(p);
+    scene.add(portalA.mesh);
+    scene.add(portalB.mesh);
+    return [portalA, portalB];
   });
 
   // A door doesn't care whether it's watching a receiver or a switch — both
@@ -103,7 +118,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     return door;
   });
 
-  return { mirrors, emitters, receivers, switches, filters, blockers, doors, exitDoor };
+  return { mirrors, emitters, receivers, switches, filters, blockers, portals, doors, exitDoor };
 }
 
 // Reverses instantiateLevel(): removes every object it added to the scene
@@ -150,6 +165,11 @@ export function disposeLevel(loaded, scene, interactiveObjects) {
     scene.remove(blocker.mesh);
     blocker.mesh.geometry.dispose();
     blocker.mesh.material.dispose();
+  }
+  for (const portal of loaded.portals) {
+    scene.remove(portal.mesh);
+    portal.mesh.geometry.dispose();
+    portal.mesh.material.dispose();
   }
   for (const door of loaded.doors) {
     scene.remove(door.mesh);

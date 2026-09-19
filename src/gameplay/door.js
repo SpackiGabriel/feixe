@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { evaluateDoorRule } from './door-logic.js';
+import { rotatedRectAABB } from './aabb.js';
 
 const DOOR_WIDTH = 2;
 const DOOR_HEIGHT = 3;
@@ -34,5 +35,17 @@ export function createDoor({ position, rotationY = 0, rule, receivers }) {
   // `position` is the door's fixed closed-position anchor (unlike
   // mesh.position, which animates while sliding) — used by the exit
   // trigger (src/levels/exit-trigger.js) to check player proximity.
-  return { mesh, update, isOpen: () => open, position: position.clone() };
+  //
+  // getCollider() gates *movement*, not just the visual slide (spec §11
+  // level 8's "open door 1, then reconfigure" puzzle only matters if a
+  // closed door actually blocks the player) — it follows `open`'s live
+  // logical state immediately, the same signal isOpen()/the exit trigger
+  // already use, not the slide animation's progress.
+  return {
+    mesh,
+    update,
+    isOpen: () => open,
+    position: position.clone(),
+    getCollider: () => (open ? null : rotatedRectAABB(position, rotationY, DOOR_WIDTH, DOOR_THICKNESS)),
+  };
 }

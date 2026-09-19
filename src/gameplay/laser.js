@@ -28,6 +28,20 @@ export function reflect(dir, normal) {
   return normalize(sub(dir, scale(n, d2)));
 }
 
+// Rotates a direction vector by `angle` around the vertical (Y) axis —
+// same rotation convention Three.js applies to a point when a mirror's
+// plate (or, here, a portal) has rotation.y = angle (see mirror.js's
+// getReflectiveSegment). Used by a portal's exit-direction remap (spec
+// §9: "a direção remapeada pela diferença de orientação entre os dois
+// portais") and reused as-is by src/levels/portal-crossing.js for the
+// player's own heading, so a beam and the player get the exact same
+// physics through a portal.
+export function rotateXZ(v, angle) {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return vec(v.x * cos + v.z * sin, -v.x * sin + v.z * cos);
+}
+
 // Ray (origin + dir) vs. segment (a-b). Returns {t, s, point} or null.
 // t = distance along the ray, s = position along the segment in [0,1].
 export function intersectRaySegment(origin, dir, a, b) {
@@ -44,7 +58,8 @@ export function intersectRaySegment(origin, dir, a, b) {
   return null;
 }
 
-// segment: { type: 'wall'|'mirror'|'blocker'|'filter'|'receiver', a, b, id?, primary? }
+// segment: { type: 'wall'|'mirror'|'blocker'|'filter'|'receiver'|'portal', a, b,
+//            id?, primary?, exitPosition?, exitRotationDelta? }
 // emitter: { pos: {x,z}, dir: {x,z}, color: {r,g,b} } (r/g/b are 0|1 booleans)
 export function traceBeam(segments, emitter, maxReflections = MAX_REFLECTIONS) {
   let pos = emitter.pos;
@@ -94,6 +109,19 @@ export function traceBeam(segments, emitter, maxReflections = MAX_REFLECTIONS) {
       const normal = perpendicular(sub(seg.b, seg.a));
       dir = reflect(dir, normal);
       pos = add(closest.hit.point, scale(dir, EPS));
+      reflections++;
+      continue;
+    }
+
+    if (seg.type === 'portal') {
+      // Same reflection budget as a mirror bounce — bounds a beam
+      // ping-ponging between a badly-paired portal (or a portal/mirror
+      // loop) to the same NFR "Desempenho" cost cap.
+      if (reflections >= maxReflections) {
+        return { path, status: 'max-reflections', segment: seg, color };
+      }
+      dir = normalize(rotateXZ(dir, seg.exitRotationDelta));
+      pos = add(seg.exitPosition, scale(dir, EPS));
       reflections++;
       continue;
     }

@@ -16,14 +16,17 @@ const camera = createCamera();
 const input = createInput(renderer.domElement);
 const look = createLookController(camera);
 input.onMouseMove(look.handleMouseMove);
-const movement = createMovementController(camera, input.keys, colliders);
 
 const interactiveObjects = [];
 const interaction = createInteraction(camera, scene, interactiveObjects);
 createManipulation({ input, look, interaction });
 
+// Created before movement so its getColliders() can be passed in directly —
+// level-runtime.js doesn't depend on movement/camera, so this order is safe.
 const levelRuntime = createLevelRuntime({ scene, wallSegments, interactiveObjects });
 input.onKeyDown('KeyR', () => levelRuntime.restart()); // RF09: quick restart of the current level
+
+const movement = createMovementController(camera, input.keys, colliders, levelRuntime.getColliders);
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -39,7 +42,7 @@ function animate(timestamp) {
   const deltaSeconds = timer.getDelta();
   movement.update(deltaSeconds);
   interaction.update();
-  levelRuntime.update(deltaSeconds, camera.position);
+  levelRuntime.update(deltaSeconds, camera);
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);

@@ -22,12 +22,13 @@ function emitterDirection(emitter) {
 // the per-beam loop (receivers read it after all beams are traced), so a
 // reused-and-mutated scratch object would leave earlier beams pointing at
 // later beams' data by the time receivers read it.
-export function createLaserSystem({ scene, wallSegments, mirrors, emitters, receivers = [], filters = [], blockers = [] }) {
+export function createLaserSystem({ scene, wallSegments, mirrors, emitters, receivers = [], filters = [], blockers = [], portals = [] }) {
   const mirrorSegments = mirrors.map(() => ({ type: 'mirror', a: { x: 0, z: 0 }, b: { x: 0, z: 0 } }));
   const filterSegments = filters.map((filter) => ({ type: 'filter', a: { x: 0, z: 0 }, b: { x: 0, z: 0 }, primary: filter.primary }));
   const receiverSegments = receivers.map((receiver) => receiver.segment);
   const blockerSegments = blockers.map((blocker) => blocker.segment);
-  const segments = [...wallSegments, ...mirrorSegments, ...filterSegments, ...receiverSegments, ...blockerSegments];
+  const portalSegments = portals.map((portal) => portal.segment); // static — a portal never moves or rotates at runtime
+  const segments = [...wallSegments, ...mirrorSegments, ...filterSegments, ...receiverSegments, ...blockerSegments, ...portalSegments];
 
   const beams = emitters.map((emitter) => ({ emitter, renderer: createBeamRenderer() }));
   for (const beam of beams) scene.add(beam.renderer.line);

@@ -115,3 +115,61 @@ spot to leave a filter), but it won't intercept the beam in any solved or
 unsolved state — don't expect it to gate the puzzle. Level 9 ("Circuito")
 does have mirrors alongside its blocker, so that's where blocker-avoidance
 first becomes real trace logic worth testing for.
+
+## 2026-09-19 — A portal's `rotationY` serves two purposes that can point opposite ways
+
+Source: building `src/levels/data/level-8.js` ("Sequência", spec §9/§11) —
+caught by the trace-verification script, not by inspection.
+
+A portal's `rotationY` feeds two independent calculations: (1) the beam's
+exit-direction remap (`exitRotationDelta` in `src/gameplay/portal.js`,
+consumed by `laser.js`'s `rotateXZ`), and (2) the player's landing
+clearance push (`computePortalLanding` in `src/levels/portal-crossing.js`,
+which pushes the player out along `dir(rotationY)` — same `(-sinθ,-cosθ)`
+convention as every other rotationY in this codebase). (1) only cares
+about the *relative* rotation between the pair — any consistent pair of
+angles that produces the right relative delta works, including one where
+each portal's individual `rotationY` doesn't literally point away from
+its own wall. (2) genuinely needs each portal's `rotationY` to be its
+real physical "front face" direction, or the player gets pushed back
+*into* whatever they just walked through instead of clear of it.
+
+First pass at level 8 picked `rotationY` values purely to make the beam
+continue straight through the pair (0 and π) — the math checked out in
+`traceBeam()`, but `computePortalLanding()` landed the player 0.2m in
+*front* of the dividing wall (almost inside its collider) instead of
+clear of it, because π happened to face back toward the wall rather than
+away from it. Fixed by picking each portal's `rotationY` from its own
+"which way does this open into my room" fact first, then deriving
+whatever `exitRotationDelta` falls out of that — never the other way
+around. **Implication**: always author a portal pair's `rotationY`
+values as "outward-facing, away from the wall it's mounted on" and let
+`createPortalPair` compute the beam delta from that, and verify a new
+pair's *player* landing spot (not just the beam trace) before shipping —
+levels 9 and 10 both need more portals.
+
+## 2026-09-19 — Aim-based interaction ignores scene occlusion, doors/blockers included
+
+Source: designing level 8's door/blocker gating (`docs/decisions/0007`)
+— found by reading `src/core/interaction.js`, not by manual testing.
+
+`interaction.js`'s raycast for aim/select calls
+`raycaster.intersectObjects(interactiveObjects, false)` — Three.js only
+tests the objects in that array, it does not check the rest of the scene
+for anything blocking the line of sight. A mirror behind a closed door,
+inside a walled-off section, or on the far side of a blocker is still
+selectable and rotatable/draggable from across the room, as long as the
+aim ray geometrically passes through its bounding geometry — the door,
+wall, or blocker mesh doesn't occlude the raycast just because it's
+solid and in the way visually.
+
+**Implication**: `docs/decisions/0007`'s new door/blocker collision only
+gates player *movement*, never *manipulation*. Don't design a puzzle
+around "the player can't reach the mirror until X" — they always could,
+via aim, regardless of X. What a closed door or dividing wall can gate is
+*where the player can physically stand* (relevant for the exit trigger's
+proximity check, or reaching a portal/switch), not what they can adjust.
+Levels 9 and 10 pack more mirrors behind more obstacles than any level
+so far — worth keeping this in mind when authoring their layouts, and
+worth a proper occlusion check if this ever becomes an actual exploit
+worth closing (it hasn't yet).
