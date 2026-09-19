@@ -61,6 +61,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
   // A door doesn't care whether it's watching a receiver or a switch — both
   // expose isActive() (spec §11: level 1's switch reuses RF07 door logic
   // as-is, no laser/color involved).
+  let exitDoor = null;
   const doors = data.doors.map((d) => {
     const doorReceivers = d.receiverIds.map((id) => {
       const activatable = receiversById.get(id) ?? switchesById.get(id);
@@ -74,10 +75,11 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       receivers: doorReceivers,
     });
     scene.add(door.mesh);
+    if (d.exit) exitDoor = door;
     return door;
   });
 
-  return { mirrors, emitters, receivers, switches, doors };
+  return { mirrors, emitters, receivers, switches, doors, exitDoor };
 }
 
 // Reverses instantiateLevel(): removes every object it added to the scene

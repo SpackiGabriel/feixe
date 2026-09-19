@@ -31,5 +31,8 @@ export function createDoor({ position, rotationY = 0, rule, receivers }) {
     mesh.position.y += Math.abs(remaining) <= step ? remaining : Math.sign(remaining) * step;
   }
 
-  return { mesh, update, isOpen: () => open };
+  // `position` is the door's fixed closed-position anchor (unlike
+  // mesh.position, which animates while sliding) — used by the exit
+  // trigger (src/levels/exit-trigger.js) to check player proximity.
+  return { mesh, update, isOpen: () => open, position: position.clone() };
 }

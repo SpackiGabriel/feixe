@@ -39,7 +39,7 @@ function animate(timestamp) {
   const deltaSeconds = timer.getDelta();
   movement.update(deltaSeconds);
   interaction.update();
-  levelRuntime.update(deltaSeconds);
+  levelRuntime.update(deltaSeconds, camera.position);
   renderer.render(scene, camera);
 }
 renderer.setAnimationLoop(animate);

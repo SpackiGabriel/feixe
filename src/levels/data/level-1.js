@@ -11,6 +11,6 @@ export const level1 = {
   receivers: [],
   switches: [{ id: 's1', position: [0, 0, 1], rotationY: 0 }],
   doors: [
-    { id: 'd1', position: [0, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['s1'] },
+    { id: 'd1', position: [0, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['s1'], exit: true },
   ],
 };

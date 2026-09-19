@@ -1,6 +1,9 @@
 import { createLaserSystem } from '../gameplay/laser-system.js';
 import { instantiateLevel, disposeLevel } from './level-loader.js';
 import { getLevels, loadSavedLevelIndex, saveLevelIndex } from './level-manager.js';
+import { isPlayerAtExit } from './exit-trigger.js';
+
+const EXIT_TRIGGER_RADIUS = 1.2; // meters — see exit-trigger.js for why this stands in for physically walking through
 
 // Owns the currently-loaded level's objects and its laser system, and
 // handles what RF09 requires: a fixed level sequence, quick restart of
@@ -10,6 +13,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects }) 
   let currentIndex = loadSavedLevelIndex(levels.length);
   let currentLevel = null;
   let laserSystem = null;
+  let exitTriggered = false; // guards against re-firing every frame while the player lingers at an open exit
 
   function teardown() {
     if (currentLevel) disposeLevel(currentLevel, scene, interactiveObjects);
@@ -27,6 +31,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects }) 
       emitters: currentLevel.emitters,
       receivers: currentLevel.receivers,
     });
+    exitTriggered = false;
     saveLevelIndex(currentIndex);
   }
 
@@ -34,9 +39,26 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects }) 
     load(currentIndex);
   }
 
-  function update(deltaSeconds) {
+  function update(deltaSeconds, playerPosition) {
     laserSystem.update(); // must run before doors, since it updates receivers' active state
     for (const door of currentLevel.doors) door.update(deltaSeconds);
+
+    const exitDoor = currentLevel.exitDoor;
+    if (
+      !exitTriggered &&
+      exitDoor &&
+      isPlayerAtExit({
+        doorOpen: exitDoor.isOpen(),
+        doorX: exitDoor.position.x,
+        doorZ: exitDoor.position.z,
+        playerX: playerPosition.x,
+        playerZ: playerPosition.z,
+        radius: EXIT_TRIGGER_RADIUS,
+      })
+    ) {
+      exitTriggered = true;
+      load(currentIndex + 1);
+    }
   }
 
   load(currentIndex);
