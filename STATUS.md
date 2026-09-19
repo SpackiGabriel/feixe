@@ -8,16 +8,17 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 
 ## Current focus
 
-Movement & raycast interaction is done. Next up: Mirror & emitter system
-(see build order in `design/game-concept.md`).
+Mirror & emitter system is done (as reusable modules, not yet placed in
+any level — there's no level loader yet). Next up: Laser simulation &
+color composition (see build order in `design/game-concept.md`).
 
 ## Implementation progress
 
 | System | State |
 |---|---|
 | Rendering & scene foundation | Done — `src/core/{renderer,camera,scene}.js`, `index.html`, `src/main.js` |
-| Movement & raycast interaction | Done — `src/core/{input,movement,interaction}.js` |
-| Mirror & emitter system | Not started |
+| Movement & raycast interaction | Done — `src/core/{input,look,movement,interaction,manipulation}.js` |
+| Mirror & emitter system | Done — `src/gameplay/{mirror,emitter}.js`; not yet instantiated by any level |
 | Laser simulation & color composition | Designed (validated in `prototypes/mirror-reflection/`), not implemented |
 | Receiver & door logic | Not started |
 | Level system (declarative data + loader) | Not started |
@@ -31,12 +32,18 @@ None yet.
 
 ## Immediate next steps
 
-1. Build the mirror & emitter system (RF02, RF03): parent/pivot + child
-   reflective-plate node pair, rail-constrained position and single-axis
-   rotation, driven through the aim/select interaction already in place
-   (`src/core/interaction.js`'s `interactiveObjects` list is currently
-   empty — mirrors/emitters should register themselves into it).
-2. When building the level loader, apply the receiver-placement
+1. Build laser simulation & color composition (RF04, RF05) — trace each
+   emitter's beam through successive mirror reflections each frame,
+   render it as a thin emissive polyline, and compose additive color
+   where beams converge. Highest technical risk item; validated
+   separately in `prototypes/mirror-reflection/`. Mirror plates now
+   expose their orientation via `plate.rotation.y` / world quaternion for
+   the reflection math to read.
+2. `src/core/interaction.js`'s `interactiveObjects` list is still empty —
+   nothing places mirrors/emitters into the running scene yet. That's the
+   level system's job (item 6 in the build order); wire it up once that
+   or a temporary test level exists.
+3. When building the level loader, apply the receiver-placement
    constraint from `docs/findings.md`.
 
 ## How to run

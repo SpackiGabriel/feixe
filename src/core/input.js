@@ -1,25 +1,34 @@
-const MOUSE_SENSITIVITY = 0.0025;
-const PITCH_LIMIT = Math.PI / 2 - 0.01; // clamp just short of straight up/down (spec §4)
-
-export function createInput(camera, domElement) {
+// Raw input capture only — keyboard state, and pointer-lock mouse deltas /
+// confirm clicks handed to subscribers. What a mouse delta or a confirm
+// click *does* (look around vs. manipulate a mirror) lives elsewhere
+// (see look.js, manipulation.js), since that mapping changes depending on
+// whether the player is aiming freely or manipulating an object (spec §4).
+export function createInput(domElement) {
   const keys = new Set();
-  let pitch = 0;
+  const mouseMoveListeners = [];
+  const confirmListeners = [];
 
   window.addEventListener('keydown', (event) => keys.add(event.code));
   window.addEventListener('keyup', (event) => keys.delete(event.code));
 
   domElement.addEventListener('click', () => {
-    domElement.requestPointerLock();
+    if (document.pointerLockElement !== domElement) {
+      domElement.requestPointerLock();
+      return;
+    }
+    for (const listener of confirmListeners) listener();
   });
 
   document.addEventListener('mousemove', (event) => {
     if (document.pointerLockElement !== domElement) return;
-
-    const yaw = camera.rotation.y - event.movementX * MOUSE_SENSITIVITY;
-    pitch -= event.movementY * MOUSE_SENSITIVITY;
-    pitch = Math.max(-PITCH_LIMIT, Math.min(PITCH_LIMIT, pitch));
-    camera.rotation.set(pitch, yaw, 0, 'YXZ');
+    for (const listener of mouseMoveListeners) {
+      listener(event.movementX, event.movementY);
+    }
   });
 
-  return keys;
+  return {
+    keys,
+    onMouseMove: (listener) => mouseMoveListeners.push(listener),
+    onConfirm: (listener) => confirmListeners.push(listener),
+  };
 }

@@ -7,6 +7,18 @@ const _raycaster = new THREE.Raycaster();
 const _origin = new THREE.Vector3();
 const _direction = new THREE.Vector3();
 
+// Default hover feedback: tint the object gray. Objects whose material
+// already carries meaning through emissive color (e.g. an emitter's laser
+// color) provide their own `userData.setHovered` instead of using this.
+function setHoverState(object, isHovered) {
+  if (!object) return;
+  if (typeof object.userData.setHovered === 'function') {
+    object.userData.setHovered(isHovered);
+    return;
+  }
+  object.material.emissive.setHex(isHovered ? HOVER_EMISSIVE : NO_EMISSIVE);
+}
+
 // "Aim and select" model (spec §4): a ray from the camera center picks the
 // nearest interactive object under the crosshair. `interactiveObjects` is
 // populated by later systems (mirrors, emitters); it starts empty here.
@@ -29,8 +41,8 @@ export function createInteraction(camera, scene, interactiveObjects) {
     const next = hits.length > 0 ? hits[0].object : null;
 
     if (next !== hovered) {
-      if (hovered) hovered.material.emissive.setHex(NO_EMISSIVE);
-      if (next) next.material.emissive.setHex(HOVER_EMISSIVE);
+      setHoverState(hovered, false);
+      setHoverState(next, true);
       hovered = next;
     }
   }
