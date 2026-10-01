@@ -43,4 +43,5 @@ export const level5 = {
   doors: [
     { id: 'd1', position: [0, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['r1'], exit: true },
   ],
+  solution: { mirrors: { 'm-red': { rotationY: Math.PI / 4 }, 'm-blue': { rotationY: -Math.PI / 4 } } },
 };

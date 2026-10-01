@@ -16,8 +16,12 @@ Tests live in `tests/unit/<module>.test.js` and run in plain Node.
 - Test data is defined in the test. No shared mutable state, no network,
   no real `localStorage` (inject a fake — see `level-manager.test.js`).
 - Pure modules (no `three` import — `laser.js`, `aabb.js`, `door-logic.js`,
-  `exit-trigger.js`, `portal-crossing.js`) are tested directly. Code that
-  imports `three` can be tested too once `three` is a devDependency; see
-  `docs/decisions/0004`.
+  `exit-trigger.js`, `portal-crossing.js`) are the preferred style for
+  branching logic. Code that imports `three` is testable headlessly too
+  (`three` is a pinned devDependency — `docs/decisions/0004`, amended);
+  see `levels.test.js` for building real scene objects without a renderer.
+- Every level must declare a `solution` in its data (see
+  `docs/level-authoring.md`); `levels.test.js` checks it opens the exit
+  door and that the level starts closed.
 - Every bug fix gets a regression test that would have caught it.
 - Never import from `prototypes/` in a test.

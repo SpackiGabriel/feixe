@@ -13,4 +13,6 @@ export const level1 = {
   doors: [
     { id: 'd1', position: [0, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['s1'], exit: true },
   ],
+  // Test-only: a configuration that opens the exit door (tests/unit/levels.test.js).
+  solution: { switches: ['s1'] },
 };

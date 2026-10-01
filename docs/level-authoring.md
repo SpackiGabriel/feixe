@@ -9,7 +9,11 @@ Practical checklists. For *why* each rule exists, follow the links to
    `./constants.js` (don't redeclare them).
 2. Register it in `src/levels/level-manager.js`'s `LEVELS` array.
 3. Exactly one door has `exit: true`; the level must start **unsolved**
-   (exit door closed).
+   (exit door closed), and must declare a test-only `solution` —
+   `{ mirrors: { id: { t?, rotationY? } }, filters: { id: { t } }, switches: [ids] }`
+   — that opens the exit door. `tests/unit/levels.test.js` enforces all of
+   this headlessly, applying the solution through the objects' own
+   controls (so a solution needing a disabled degree of freedom fails).
 4. **Receiver must be the nearest segment on its beam's path.** A beam
    hits whatever is nearest; a receiver behind a mirror/wall never
    activates. (findings 2026-09-15)
@@ -51,4 +55,4 @@ on the mesh and push the mesh to `interactiveObjects`.
 
 ## Verifying
 
-`npm run lint && npm test`, then play the level in the browser (`npm start`).
+`npm run lint && npm test` (the level tests catch most placement mistakes), then play the level in the browser (`npm start`).

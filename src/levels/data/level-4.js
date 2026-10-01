@@ -48,4 +48,5 @@ export const level4 = {
       exit: true,
     },
   ],
+  solution: { mirrors: { 'm-red': { rotationY: -Math.PI / 4 }, 'm-blue': { rotationY: Math.PI / 4 } } },
 };

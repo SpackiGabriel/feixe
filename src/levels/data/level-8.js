@@ -56,4 +56,5 @@ export const level8 = {
     { id: 'd1', position: [2, 1.5, 2], rotationY: Math.PI, rule: 'AND', receiverIds: ['r1'] },
     { id: 'd2', position: [0, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['r2'], exit: true },
   ],
+  solution: { mirrors: { m1: { rotationY: Math.PI / 2 } } }, // edge-on: beam passes straight through to the portal
 };

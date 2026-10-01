@@ -35,4 +35,5 @@ export const level7 = {
   doors: [
     { id: 'd1', position: [0, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['r1'], exit: true },
   ],
+  solution: { filters: { f1: { t: 0.5 } } }, // x = BEAM_X on the 0.5..3.5 rail
 };

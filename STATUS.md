@@ -46,10 +46,8 @@ None yet.
    mirrors.
 2. Before authoring it, read `docs/level-authoring.md` (placement and
    portal gotchas).
-3. Test/quality follow-ups, not started: install `three` as a devDependency
-   so loader/laser-system code is testable headlessly (amends
-   `docs/decisions/0004`); a per-level validation test (exit door starts
-   closed, a declared solution opens it); simplify `disposeLevel`; CI.
+3. Quality follow-ups, not started: simplify `disposeLevel`, CI, a
+   `?debug` level-jump hook.
 
 ## Known simplifications (not blockers)
 

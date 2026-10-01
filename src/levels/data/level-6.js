@@ -61,4 +61,10 @@ export const level6 = {
       exit: true,
     },
   ],
+  solution: {
+    mirrors: {
+      'm-junction': { t: 0.5, rotationY: -Math.PI / 4 }, // onto the beam line, bend left
+      'm-left': { t: 0.5, rotationY: Math.PI / 4 }, // onto the z=2 bounce line
+    },
+  },
 };

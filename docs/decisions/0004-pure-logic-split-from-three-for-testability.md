@@ -49,3 +49,19 @@ portal) should follow the same split: pure decision logic in its own
 file, `three`-dependent mesh code importing it. A file that mixes both
 can only be verified via Playwright, never Vitest — that's the tell for
 when a pure extraction is worth doing.
+
+## Amendment (2026-10-01): `three` is now a devDependency
+
+The "add `three` as a devDependency" alternative above was rejected over
+version-sync cost. That cost is now paid by a test
+(`tests/unit/three-version.test.js`: the `index.html` import-map version
+must equal `package.json`'s pinned `three`), and the benefit turned out to
+be larger than expected: `tests/unit/levels.test.js` builds every level's
+real scene objects and laser system headlessly (no renderer needed) and
+checks each level's declared `solution` opens its exit door.
+
+So: files that import `three` *can* now be unit-tested. The pure/Three
+split above is still the preferred style for logic with real branching
+(it's cheaper to test and read) — it's no longer a hard requirement.
+`src/core/audio.js` no-ops when `AudioContext` is undefined so receivers
+can activate under Node.
