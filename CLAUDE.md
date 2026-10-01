@@ -10,11 +10,18 @@ boundaries: `design/game-concept.md`. Current state: `STATUS.md`.
 This is a small, fixed-scope, deadline-driven university project — not a
 commercial game or a studio production. Keep process proportional to that.
 
+## Commands
+
+`npm install` once, then `npm start` (serve at :8000), `npm run lint`,
+`npm test` (Vitest, ~1 s; single file: `npx vitest run tests/unit/<file>`).
+Run lint + tests before committing. Details in `README.md`.
+
 ## Read order for a fresh session
 
 1. This file.
 2. `STATUS.md` — current focus, what's implemented, what's next.
-3. `design/game-concept.md` — if unfamiliar with the game.
+3. `design/game-concept.md` — if unfamiliar with the game. Building a
+   level or a new gameplay object: `docs/level-authoring.md`.
 4. `docs/decisions/` and `docs/findings.md` — skim for anything relevant
    to the task at hand.
 5. The actual code in `src/` for what's really implemented — see the

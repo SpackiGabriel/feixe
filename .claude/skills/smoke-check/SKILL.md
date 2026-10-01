@@ -14,8 +14,8 @@ not a formal QA gate.
 
 ## Steps
 
-1. If `tests/` exists, run the test suite and report pass/fail counts and
-   any failures in full.
+1. Run `npm run lint` and `npm test`; report pass/fail counts and any
+   failures in full.
 2. Check the relevant spec requirement(s) are satisfied — walk through
    what should happen and confirm the code does it (read the code; if a
    dev server is running, actually try it per the `run` skill/workflow if

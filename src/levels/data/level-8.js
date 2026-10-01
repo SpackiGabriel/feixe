@@ -13,8 +13,7 @@
 // manipulated from anywhere in range) and a closed door has never
 // blocked beams (only receivers/blockers/portals/mirrors/walls do — see
 // laser-system.js's segment list), only player *movement* past it.
-const BEAM_HEIGHT = 1.2;
-const ROOM_HALF = 5; // must match src/core/scene.js's ROOM_SIZE / 2
+import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
 
 export const level8 = {
   id: 'level-8',

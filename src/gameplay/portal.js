@@ -1,18 +1,9 @@
 import * as THREE from 'three';
+import { segmentFromCenter } from './aabb.js';
 
 const PORTAL_WIDTH = 1.2;
 const PORTAL_HEIGHT = 2.2;
 const PORTAL_THICKNESS = 0.1;
-
-function computeSegment(position, rotationY) {
-  const half = PORTAL_WIDTH / 2;
-  const cos = Math.cos(rotationY);
-  const sin = Math.sin(rotationY);
-  return {
-    a: { x: position.x - half * cos, z: position.z + half * sin },
-    b: { x: position.x + half * cos, z: position.z - half * sin },
-  };
-}
 
 function createPortalMesh(hex) {
   const geometry = new THREE.BoxGeometry(PORTAL_WIDTH, PORTAL_HEIGHT, PORTAL_THICKNESS);
@@ -52,8 +43,8 @@ export function createPortalPair({ id, a, b }) {
   const portalB = { id: `${id}-b`, mesh: meshB, position: posB, rotationY: rotB, exitRotationDelta: deltaBtoA };
   portalA.linked = portalB;
   portalB.linked = portalA;
-  portalA.segment = { type: 'portal', ...computeSegment(posA, rotA), exitPosition: posB, exitRotationDelta: deltaAtoB };
-  portalB.segment = { type: 'portal', ...computeSegment(posB, rotB), exitPosition: posA, exitRotationDelta: deltaBtoA };
+  portalA.segment = { type: 'portal', ...segmentFromCenter(posA, rotA, PORTAL_WIDTH), exitPosition: posB, exitRotationDelta: deltaAtoB };
+  portalB.segment = { type: 'portal', ...segmentFromCenter(posB, rotB, PORTAL_WIDTH), exitPosition: posA, exitRotationDelta: deltaBtoA };
 
   return [portalA, portalB];
 }

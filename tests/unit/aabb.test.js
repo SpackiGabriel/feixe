@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rotatedRectAABB } from '../../src/gameplay/aabb.js';
+import { rotatedRectAABB, segmentFromCenter } from '../../src/gameplay/aabb.js';
 
 describe('rotatedRectAABB', () => {
   it('test_rotatedRectAABB_axisAligned_matchesWidthAndDepthDirectly', () => {
@@ -42,5 +42,24 @@ describe('rotatedRectAABB', () => {
     const half = Math.SQRT2 / 2;
     expect(box.maxX).toBeCloseTo(half, 5);
     expect(box.maxZ).toBeCloseTo(half, 5);
+  });
+});
+
+describe('segmentFromCenter', () => {
+  it('test_segmentFromCenter_noRotation_spansWidthAlongX', () => {
+    const { a, b } = segmentFromCenter({ x: 2, z: 3 }, 0, 4);
+    expect(a.x).toBeCloseTo(0);
+    expect(a.z).toBeCloseTo(3);
+    expect(b.x).toBeCloseTo(4);
+    expect(b.z).toBeCloseTo(3);
+  });
+
+  it('test_segmentFromCenter_quarterTurn_spansWidthAlongZ', () => {
+    // Three.js rotation.y = +90° maps local +X to world -Z
+    const { a, b } = segmentFromCenter({ x: 0, z: 0 }, Math.PI / 2, 2);
+    expect(a.x).toBeCloseTo(0);
+    expect(a.z).toBeCloseTo(1);
+    expect(b.x).toBeCloseTo(0);
+    expect(b.z).toBeCloseTo(-1);
   });
 });

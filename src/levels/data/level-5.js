@@ -5,8 +5,8 @@
 // (Magenta) instead of two separate receivers. Teaches additive mixing
 // and the "AND" condition (spec §7 — a receiver only activates while both
 // colors land on it at once).
-const BEAM_HEIGHT = 1.2;
-const ROOM_HALF = 5; // must match src/core/scene.js's ROOM_SIZE / 2
+import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
+
 const LANE_X = 2.5; // matches level 4's lane spacing
 
 export const level5 = {

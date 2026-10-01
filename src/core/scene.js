@@ -1,6 +1,6 @@
 import * as THREE from 'three';
+import { ROOM_SIZE } from '../levels/data/constants.js';
 
-export const ROOM_SIZE = 10;
 const WALL_HEIGHT = 3;
 const WALL_THICKNESS = 0.2;
 

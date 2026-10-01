@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { rotatedRectAABB } from './aabb.js';
+import { rotatedRectAABB, segmentFromCenter } from './aabb.js';
 
 const DEFAULT_WIDTH = 1;
 const DEFAULT_HEIGHT = 1.4;
@@ -23,14 +23,7 @@ export function createBlocker({ position, rotationY = 0, width = DEFAULT_WIDTH, 
   mesh.position.copy(position);
   mesh.rotation.y = rotationY;
 
-  const half = width / 2;
-  const cos = Math.cos(rotationY);
-  const sin = Math.sin(rotationY);
-  const segment = {
-    type: 'blocker',
-    a: { x: position.x - half * cos, z: position.z + half * sin },
-    b: { x: position.x + half * cos, z: position.z - half * sin },
-  };
+  const segment = { type: 'blocker', ...segmentFromCenter(position, rotationY, width) };
 
   const collider = rotatedRectAABB(position, rotationY, width, thickness);
 

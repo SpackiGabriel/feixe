@@ -2,7 +2,7 @@
 // person movement and one switch that opens the exit door on aim+confirm.
 // Teaches camera/movement control and the "mirar e ativar" gesture RF01,
 // RF07 build on later.
-const ROOM_HALF = 5; // must match src/core/scene.js's ROOM_SIZE / 2
+import { ROOM_HALF } from './constants.js';
 
 export const level1 = {
   id: 'level-1',

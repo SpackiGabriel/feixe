@@ -1,6 +1,6 @@
 #!/bin/bash
-# PreToolUse hook: blocks `git commit` if staged assets/data/*.json is invalid JSON.
-# Exit 0 = allow, Exit 2 = block (stderr shown to Claude).
+# PreToolUse hook: before a `git commit`, run lint + unit tests and block the
+# commit (exit 2, stderr shown to Claude) if either fails.
 #
 # Input schema (PreToolUse for Bash):
 # { "tool_name": "Bash", "tool_input": { "command": "git commit -m ..." } }
@@ -17,33 +17,17 @@ if ! echo "$COMMAND" | grep -qE '^git[[:space:]]+commit'; then
     exit 0
 fi
 
-STAGED=$(git diff --cached --name-only 2>/dev/null)
-if [ -z "$STAGED" ]; then
-    exit 0
+# Nothing to validate without installed tooling — don't block on a fresh clone.
+[ -d node_modules ] || exit 0
+
+if ! OUT=$(npm run lint --silent 2>&1); then
+    echo "BLOCKED: npm run lint failed" >&2
+    echo "$OUT" | tail -30 >&2
+    exit 2
 fi
-
-DATA_FILES=$(echo "$STAGED" | grep -E '^assets/data/.*\.json$')
-if [ -n "$DATA_FILES" ]; then
-    PYTHON_CMD=""
-    for cmd in python python3 py; do
-        if command -v "$cmd" >/dev/null 2>&1; then
-            PYTHON_CMD="$cmd"
-            break
-        fi
-    done
-
-    while IFS= read -r file; do
-        if [ -f "$file" ]; then
-            if [ -n "$PYTHON_CMD" ]; then
-                if ! "$PYTHON_CMD" -m json.tool "$file" > /dev/null 2>&1; then
-                    echo "BLOCKED: $file is not valid JSON" >&2
-                    exit 2
-                fi
-            else
-                echo "WARNING: Cannot validate JSON (python not found): $file" >&2
-            fi
-        fi
-    done <<< "$DATA_FILES"
+if ! OUT=$(npm test --silent 2>&1); then
+    echo "BLOCKED: npm test failed" >&2
+    echo "$OUT" | tail -40 >&2
+    exit 2
 fi
-
 exit 0

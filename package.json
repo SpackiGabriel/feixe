@@ -5,10 +5,18 @@
   "description": "3D first-person laser/mirror puzzle game — Computação Gráfica final project, UTFPR",
   "type": "module",
   "scripts": {
+    "start": "python3 -m http.server 8000",
+    "lint": "eslint .",
     "test": "vitest run"
   },
   "license": "ISC",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "globals": "^17.13.0",
     "vitest": "^5.0.1"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

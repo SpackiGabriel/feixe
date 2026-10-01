@@ -8,8 +8,7 @@
 // either receiver, so the player has to work out a full path (junction
 // mirror, then the matching branch mirror) rather than solving each
 // mirror in isolation.
-const BEAM_HEIGHT = 1.2;
-const ROOM_HALF = 5; // must match src/core/scene.js's ROOM_SIZE / 2
+import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
 
 export const level6 = {
   id: 'level-6',

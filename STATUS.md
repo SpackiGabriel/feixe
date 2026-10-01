@@ -8,27 +8,14 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 
 ## Current focus
 
-Levels 1-7 are built and manually verified end to end. Level 8
-("Sequência") adds the Portal system (spec §9) — `src/gameplay/portal.js`
-(a fixed, non-interactive teleport pair; direction remapped by the pair's
-orientation difference, `laser.js`'s new `rotateXZ`) and
-`src/levels/portal-crossing.js` (the player's own walk-through, pure
-proximity + landing-position/heading math, mirroring `exit-trigger.js`'s
-pattern). Building this level also surfaced a real gap: closed doors and
-blockers didn't physically block the player at all before now (only
-visuals/lasers) — RF07's "abrir a primeira porta impossibilita a segunda"
-puzzle needs that to be real, so `docs/decisions/0007` adds it (doors and
-blockers now feed `movement.js`'s collision check; **aim-based
-interaction is unaffected** — see `docs/findings.md`'s newest entries for
-both this and a portal-orientation gotcha the trace-verification script
-caught before it shipped). Next up: verify Level 8, then Level 9
-("Circuito") — reuses everything now built (mirrors, filter, blocker,
-AND/OR doors) with no new systems needed.
+Levels 1-8 are built (1-7 manually verified; 8 trace-verified only). Next:
+manually play Level 8, then build Level 9 ("Circuito") — reuses every
+system already built, no new ones needed.
 
-**Needs a manual in-browser check**: Level 8 — confirm door 1 opens with
-the mirror at +45°, walking through the (now-solid) dividing wall
-requires the portal, and reconfiguring to 90° (edge-on, straight through)
-re-closes door 1 but opens the exit via the portal-routed beam.
+**Needs a manual in-browser check**: Level 8 — door 1 opens with the
+mirror at +45°; walking through the (solid) dividing wall requires the
+portal; reconfiguring to 90° re-closes door 1 but opens the exit via the
+portal-routed beam.
 
 ## Implementation progress
 
@@ -54,21 +41,15 @@ None yet.
 
 ## Immediate next steps
 
-1. Manually playtest Level 8 (see "Current focus" above), then build
-   Level 9 ("Circuito") — two emitters, a filter, a blocker, an AND door
-   and an OR door sharing four mirrors, all systems already built.
-2. When authoring each real level's data: apply the receiver-placement
-   constraint from `docs/findings.md` (a receiver must be nearest along
-   its beam's path); remember a `blocker` can't gate a mirror-less
-   level's puzzle; author a new portal pair's `rotationY` as "outward-
-   facing, away from its wall" and verify the *player* landing spot, not
-   just the beam trace (`docs/findings.md`'s portal-orientation entry);
-   and don't rely on a closed door/blocker to gate mirror *manipulation*
-   — only movement is gated (`docs/findings.md`'s newest entry). A
-   level-load validation pass (trace each declared beam, flag receivers
-   that aren't nearest) would catch the first kind automatically and is
-   worth building once there are enough levels that debugging this by
-   hand gets painful.
+1. Manually playtest Level 8, then build Level 9 ("Circuito") — two
+   emitters, a filter, a blocker, an AND door and an OR door sharing four
+   mirrors.
+2. Before authoring it, read `docs/level-authoring.md` (placement and
+   portal gotchas).
+3. Test/quality follow-ups, not started: install `three` as a devDependency
+   so loader/laser-system code is testable headlessly (amends
+   `docs/decisions/0004`); a per-level validation test (exit door starts
+   closed, a declared solution opens it); simplify `disposeLevel`; CI.
 
 ## Known simplifications (not blockers)
 
@@ -82,10 +63,5 @@ None yet.
 
 ## How to run
 
-`python3 -m http.server` from the repo root, then open
-`http://localhost:8000/` (ES modules don't load from `file://`; see
-`docs/decisions/0001-three-via-cdn-import-map.md` for why Three.js is
-loaded from a CDN import map instead of npm). Press `R` in-game to
-restart the current level.
-
-Run unit tests with `npm test` (Vitest — `npm install` first).
+See `README.md` (`npm start`, `npm run lint`, `npm test`). Press `R`
+in-game to restart the current level.

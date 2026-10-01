@@ -29,4 +29,5 @@ one reasonable option.
 What this makes easier, harder, or forecloses.
 ```
 
-No decisions have been recorded yet — nothing has been implemented.
+Existing ADRs are numbered `0001`–`0007` in this directory; list it to see
+the latest number.

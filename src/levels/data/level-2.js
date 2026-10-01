@@ -3,8 +3,8 @@
 // emitter's fixed beam line at a right angle, so the beam only reflects
 // once the mirror is slid into that exact spot — teaching reflection and
 // moving an interactive object along a rail (RF02).
-const BEAM_HEIGHT = 1.2;
-const ROOM_HALF = 5; // must match src/core/scene.js's ROOM_SIZE / 2
+import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
+
 const BEAM_X = -2; // the emitter's fixed downrange line — the mirror must slide onto this x
 
 export const level2 = {
