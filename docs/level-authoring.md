@@ -33,21 +33,23 @@ Practical checklists. For *why* each rule exists, follow the links to
 
 ## Adding a new gameplay object type
 
-Currently this touches four places — keep them in sync:
-
 1. `src/gameplay/<thing>.js` — a `createX({...})` factory returning the
    Three.js node(s) plus any `segment` (for laser tracing) / `collider`
    (for player movement). Keep any branching logic in a Three-free module
-   so it's unit-testable (`docs/decisions/0004`).
-2. `src/levels/level-loader.js` — build it in `instantiateLevel()` **and**
-   free it in `disposeLevel()` (scene removal, `interactiveObjects`
-   removal, geometry/material dispose). Forgetting the dispose half is a
-   silent leak across level restarts.
-3. `src/gameplay/laser-system.js` — if it affects beams, add its segments
-   to the `segments` list (and a new `type` branch in `laser.js`'s
-   `traceBeam` with a unit test).
-4. `src/levels/level-runtime.js` — pass it to `createLaserSystem`, and
-   (if it blocks the player) add its collider to `levelColliders`.
+   when it's worth testing in isolation (`docs/decisions/0004`).
+2. `src/levels/level-loader.js` — build it in `instantiateLevel()`, add
+   its node(s) with `addToScene()` (**not** `scene.add`), and include the
+   new array in the returned object. Disposal is then automatic —
+   `disposeLevel()` frees everything in `roots`.
+3. If it affects beams: `src/gameplay/laser-system.js` takes it as a
+   parameter (it receives the whole loaded level via spread) and adds its
+   segments to `segments`; add a new `type` branch in `laser.js`'s
+   `traceBeam` with a unit test.
+4. If it blocks the player: add its collider in `src/levels/level-runtime.js`
+   (`levelColliders`).
+
+`tests/unit/levels.test.js` (including its dispose/leak check) covers every
+level that uses it once a level does.
 
 If it's interactive: set `userData.controller` (drag/rotate —
 `docs/decisions/0002`) or `userData.activate` (one-shot, like `switch.js`)

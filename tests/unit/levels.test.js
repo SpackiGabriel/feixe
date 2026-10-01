@@ -72,12 +72,24 @@ describe.each(getLevels().map((data) => [data.id, data]))('%s', (_id, data) => {
     expect(loaded.level.exitDoor.isOpen()).toBe(true);
   });
 
-  it('test_level_dispose_leavesSceneAndInteractiveListClean', () => {
+  it('test_level_dispose_leavesSceneAndInteractiveListClean_andFreesGpuResources', () => {
     const { scene, interactiveObjects, level, laserSystem } = load(data);
     const childrenBefore = createScene().scene.children.length; // room + lights only
+    const resources = [];
+    for (const root of level.roots) {
+      root.traverse((o) => {
+        if (o.geometry) resources.push(o.geometry);
+        if (o.material) resources.push(o.material);
+      });
+    }
+    let disposed = 0;
+    for (const resource of resources) resource.addEventListener('dispose', () => disposed++);
+
     laserSystem.dispose();
     disposeLevel(level, scene, interactiveObjects);
+
     expect(interactiveObjects).toHaveLength(0);
     expect(scene.children).toHaveLength(childrenBefore);
+    expect(disposed).toBe(resources.length);
   });
 });

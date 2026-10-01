@@ -28,7 +28,7 @@ portal-routed beam.
 | Receiver & door logic | Done — `src/gameplay/{receiver,door,door-logic}.js`, `src/core/audio.js`; unit tested (`tests/unit/door-logic.test.js`, plus `isReceiverSatisfied` in `laser.test.js`) |
 | Switch (laser-free one-shot toggle) | Done and manually playtested — `src/gameplay/switch.js`; reuses `door.js`/`door-logic.js` unchanged via the same `isActive()` shape as a receiver |
 | Filter & blocker | Done and manually playtested — `src/gameplay/{filter,blocker}.js`, wired into `level-loader.js`/`laser-system.js` |
-| Level system (declarative data + loader) | Done — `src/levels/{level-loader,level-manager,level-runtime}.js`; unit tested (`tests/unit/level-manager.test.js`). Only gameplay objects are level data — room geometry is still hardcoded (`docs/decisions/0005`) |
+| Level system (declarative data + loader) | Done — `src/levels/{level-loader,level-manager,level-runtime}.js`; unit tested (`tests/unit/level-manager.test.js`), plus headless per-level validation (`tests/unit/levels.test.js`: starts closed, declared `solution` opens the exit, dispose frees everything). Only gameplay objects are level data — room geometry is still hardcoded (`docs/decisions/0005`) |
 | Level-to-level exit trigger | Done and manually playtested — `src/levels/exit-trigger.js` (proximity to an open `exit: true` door, `docs/decisions/0006`), wired into `level-runtime.js`; unit tested (`tests/unit/exit-trigger.test.js`) |
 | Portal system | Done — `src/gameplay/portal.js` + `src/levels/portal-crossing.js` (beam and player both supported); unit tested (`tests/unit/{laser,portal-crossing}.test.js`). Not yet manually playtested (see above) |
 | Door/blocker movement collision | Done — `src/gameplay/aabb.js`, `door.js`'s/`blocker.js`'s `getCollider()`, wired into `movement.js`/`level-runtime.js` (`docs/decisions/0007`); unit tested (`tests/unit/aabb.test.js`). Doesn't gate aim-based manipulation — see `docs/findings.md` |
@@ -46,9 +46,6 @@ None yet.
    mirrors.
 2. Before authoring it, read `docs/level-authoring.md` (placement and
    portal gotchas).
-3. Quality follow-ups, not started: simplify `disposeLevel`, CI, a
-   `?debug` level-jump hook.
-
 ## Known simplifications (not blockers)
 
 - Room geometry (walls) is not level data — every level currently shares

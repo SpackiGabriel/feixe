@@ -26,6 +26,15 @@ createManipulation({ input, look, interaction });
 const levelRuntime = createLevelRuntime({ scene, wallSegments, interactiveObjects });
 input.onKeyDown('KeyR', () => levelRuntime.restart()); // RF09: quick restart of the current level
 
+// Dev/agent aid: `?debug` exposes the runtime on window.__feixe, and
+// `?debug&level=N` jumps straight to level N (1-based) without playing through.
+const params = new URLSearchParams(location.search);
+if (params.has('debug')) {
+  window.__feixe = { levelRuntime, camera, scene };
+  const jumpTo = parseInt(params.get('level'), 10);
+  if (Number.isInteger(jumpTo)) levelRuntime.loadLevel(jumpTo - 1);
+}
+
 const movement = createMovementController(camera, input.keys, colliders, levelRuntime.getColliders);
 
 window.addEventListener('resize', () => {

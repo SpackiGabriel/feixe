@@ -13,6 +13,8 @@ Three.js r186, plain ES modules, no build step.
 | `npm test` | Vitest unit tests (~1 s). Single file: `npx vitest run tests/unit/laser.test.js`. |
 
 Node ≥ 22. In-game: WASD + mouse, click to lock the pointer, `R` restarts the current level.
+Debug: open `http://localhost:8000/?debug&level=8` to jump to a level (1-based); `window.__feixe` exposes the runtime.
+CI (`.github/workflows/ci.yml`) runs lint + tests on every push.
 
 ## Where to read next
 
