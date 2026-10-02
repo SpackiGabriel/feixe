@@ -35,6 +35,20 @@ portal-routed beam.
 | Feedback / accessibility UI | Not started |
 | Levels 1-10 | **Levels 1-7 done and manually verified, Level 8 done** (`src/levels/data/level-{1..8}.js`). Level 8's geometry/color/collision logic is trace-verified but not yet manually played. Levels 9-10 not built |
 
+## Visual design system (discovery only — nothing implemented)
+
+Visual identity and asset pipeline are being specified, not built:
+`design/visual/design-premise.md` (art direction), `design-system-discovery.md`
+(established vs. open decisions), `docs/research/pipeline-assessment.md`,
+`assets/README.md`. A grey-box evaluation page lives in `gallery/` (reuses the
+real factories; `npm start` → `/gallery/`); first-pass screenshots in
+`design/visual/evidence/`. No GLB loading, no Blender scripts, no tokens exist
+yet; gameplay visuals in `src/` are still the placeholder primitives.
+
+Asset toolchain is installed and smoke-tested (Blender 4.5 LTS headless,
+`@gltf-transform/cli`, `playwright-core`): `bash assets/src/smoke.sh`, details
+in `assets/README.md`. Not yet used for any real asset.
+
 ## Known issues / blockers
 
 None yet.

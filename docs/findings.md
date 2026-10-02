@@ -173,3 +173,16 @@ Levels 9 and 10 pack more mirrors behind more obstacles than any level
 so far — worth keeping this in mind when authoring their layouts, and
 worth a proper occlusion check if this ever becomes an actual exploit
 worth closing (it hasn't yet).
+
+## 2026-10-01 — Asset toolchain: axis mapping and headless-render notes
+
+Source: toolchain smoke test (`assets/src/smoke.sh`).
+
+Blender is Z-up and exports to glTF Y-up with Blender +Z → glTF +Y and
+Blender +Y → glTF −Z. A flat device whose thickness is meant to run along
+the game's local Z (e.g. a 0.8×0.8×0.05 receiver) must therefore be modeled
+**thin along Blender Y**; modeling it thin along Z silently yields a
+horizontal slab. Checked by exporting and reading the glTF bounding box
+(0.8 × 0.8 × 0.08). Also: headless Blender under WSL2 prints harmless
+EGL/MESA warnings but renders fine, and the PyPI `bpy` module is not used
+because Blender's bundled Python is 3.11 and the system Python is 3.14.

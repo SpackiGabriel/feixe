@@ -23,8 +23,12 @@
 │       └── exit-trigger.js, portal-crossing.js   # pure proximity/landing math
 ├── tests/unit/                  # Vitest — see .claude/rules/test-standards.md
 ├── design/game-concept.md       # Pillars, scope boundaries, build order
+├── design/visual/               # Design premise, design-system discovery, gallery screenshots (evidence/)
+├── gallery/                     # Grey-box visual-evaluation page (not game code; see gallery/README.md)
+├── assets/                      # README only for now: planned layout for asset sources + GLBs
 ├── docs/
 │   ├── decisions/               # ADRs — written when a decision is worth recording, not a gate
+│   ├── research/                # Asset-pipeline research briefs/assessment (not specs)
 │   ├── findings.md              # Append-only log of implementation discoveries/gotchas
 │   ├── level-authoring.md       # Level data checklist + "adding a gameplay object" checklist
 │   └── engine-reference/threejs/VERSION.md    # Engine pin + version-risk notes
@@ -33,5 +37,5 @@
 ```
 
 Level data lives in `src/levels/data/*.js` (plain JS objects), not JSON —
-there is no `assets/` directory. Create one only when a real texture/audio
-asset is added.
+`assets/` holds only a README (planned layout); create its subfolders when
+the first real asset file exists.
