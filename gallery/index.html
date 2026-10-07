@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Feixe — grey-box gallery</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; font: 12px/1.35 ui-monospace, monospace; color: #ddd; }
+  canvas { display: block; }
+  #crosshair { position: fixed; top: 50%; left: 50%; width: 2px; height: 2px; margin: -3px 0 0 -3px; border-radius: 50%; background: #fff; opacity: .5; pointer-events: none; }
+  #panel { position: fixed; top: 8px; left: 8px; width: 270px; max-height: calc(100% - 16px); overflow: auto; padding: 8px 10px; background: rgba(10,10,10,.82); border: 1px solid #333; z-index: 2; }
+  #panel.hidden { display: none; }
+  #panel h1 { font-size: 12px; margin: 0 0 6px; color: #fff; }
+  #panel h2 { font-size: 11px; margin: 10px 0 4px; color: #8a8; text-transform: uppercase; letter-spacing: .06em; }
+  #panel label { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin: 3px 0; }
+  #panel input[type=range] { width: 120px; }
+  #panel select, #panel button { font: inherit; background: #222; color: #ddd; border: 1px solid #444; }
+  #panel .row { display: flex; gap: 4px; flex-wrap: wrap; }
+  #readout { white-space: pre-wrap; color: #9a9; margin: 4px 0 0; }
+  .note { color: #888; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <filter id="protan"><feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0"/></filter>
+  <filter id="deutan"><feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0"/></filter>
+  <filter id="tritan"><feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0"/></filter>
+</svg>
+<div id="crosshair"></div>
+<div id="panel">
+  <h1>Feixe grey-box gallery</h1>
+  <div class="note">Click the scene to lock the mouse; WASD + mouse as in the game, Esc to use this panel. Values here are knobs for visual evaluation, not decisions. <b>H</b> hides this panel.</div>
+
+  <h2>Scene</h2>
+  <label>Content <select id="scene"></select></label>
+  <div class="row" id="stations"></div>
+  <label><span>Beams on <small>(B)</small></span><input type="checkbox" id="beams"></label>
+  <label><span>Door open <small>(O, lineup)</small></span><input type="checkbox" id="doorOpen"></label>
+  <button id="solve">Apply level solution</button>
+
+  <h2>Lighting</h2>
+  <label>Preset <small>(L)</small> <select id="lighting"><option value="premise">premise (low ambient)</option><option value="current">current game</option></select></label>
+  <label>Ambient <input type="range" id="ambient" min="0" max="0.6" step="0.01"></label>
+  <label>Hemisphere fill <input type="range" id="hemi" min="0" max="0.6" step="0.01"></label>
+  <label>Directional <input type="range" id="dir" min="0" max="1" step="0.01"></label>
+  <label>Env map <input type="checkbox" id="env"></label>
+  <label>Env intensity <input type="range" id="envIntensity" min="0" max="1" step="0.01"></label>
+  <label>Beam light × <input type="range" id="beamLight" min="0" max="20" step="0.5"></label>
+  <label>Tone mapping <select id="tone"><option value="none">none (game)</option><option value="neutral">neutral</option><option value="aces">ACES</option></select></label>
+
+  <h2>Beam look</h2>
+  <label>Thick beams <input type="checkbox" id="thick"></label>
+  <label>Thickness (m) <input type="range" id="thickness" min="0.005" max="0.08" step="0.005"></label>
+
+  <h2>Environment</h2>
+  <label>Room palette <select id="roomPalette"></select></label>
+  <label>Ceiling <input type="checkbox" id="ceiling"></label>
+  <label>Scale figure (1.7 m) <input type="checkbox" id="figure"></label>
+  <label>View <small>(V)</small> <select id="view"><option value="normal">normal</option><option value="silhouette">silhouette</option><option value="gray">grayscale</option><option value="protan">protanopia sim.</option><option value="deutan">deuteranopia sim.</option><option value="tritan">tritanopia sim.</option></select></label>
+
+  <h2>Symbol study <span class="note">(flat decals; not a decision)</span></h2>
+  <label>Show <input type="checkbox" id="symbols"></label>
+  <label>Primary mapping <select id="symbolMap"></select></label>
+  <label>Composites <select id="symbolStyle"><option value="side">side by side</option><option value="overlay">overlaid outlines</option><option value="new">new symbols</option></select></label>
+  <label>When lit <select id="symbolActive"><option value="dark">dark on lit face</option><option value="same">same hue</option></select></label>
+  <label>Size (m) <input type="range" id="symbolSize" min="0.1" max="0.6" step="0.01"></label>
+
+  <h2>Readout</h2>
+  <div class="row"><button id="copy">Copy settings JSON</button></div>
+  <pre id="readout"></pre>
+</div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "../node_modules/three/build/three.module.js",
+    "three/addons/": "../node_modules/three/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="./gallery.js"></script>
+</body>
+</html>

@@ -18,3 +18,18 @@ export function rotatedRectAABB(position, rotationY, width, depth) {
     maxZ: position.z + extentZ,
   };
 }
+
+// World-space XZ segment of a flat panel centered at `position`, `width`
+// wide, rotated by `rotationY` around the vertical axis — the beam
+// tracer's view of a static receiver/blocker/portal (laser.js segments).
+// Same rotation convention as Three.js's rotation.y on a point at local
+// (±width/2, 0, 0).
+export function segmentFromCenter(position, rotationY, width) {
+  const half = width / 2;
+  const cos = Math.cos(rotationY);
+  const sin = Math.sin(rotationY);
+  return {
+    a: { x: position.x - half * cos, z: position.z + half * sin },
+    b: { x: position.x + half * cos, z: position.z - half * sin },
+  };
+}

@@ -30,9 +30,8 @@
 
 ## Testing
 
-See `.claude/rules/test-standards.md`. No framework chosen yet — pick one
-(e.g. Vitest) when the first unit test is actually written, not before.
-Required coverage per spec: laser reflection/raycast math, color
+Vitest (`npm test`) — see `.claude/rules/test-standards.md`. Required
+coverage per spec: laser reflection/raycast math, color
 composition (AND/OR/NOT), door/receiver state logic.
 
 ## Allowed Libraries

@@ -6,6 +6,7 @@
 let audioContext = null;
 
 function getAudioContext() {
+  if (typeof AudioContext === 'undefined') return null; // headless (Vitest/Node) — no audio
   if (!audioContext) audioContext = new AudioContext();
   if (audioContext.state === 'suspended') audioContext.resume();
   return audioContext;
@@ -19,6 +20,7 @@ const TONE_GAIN = 0.2;
 // confirmação").
 export function playConfirmTone() {
   const ctx = getAudioContext();
+  if (!ctx) return;
   const oscillator = ctx.createOscillator();
   const gain = ctx.createGain();
 

@@ -3,53 +3,39 @@
 ```text
 /
 ├── CLAUDE.md                    # Entry point — read this first
+├── README.md                    # How to run / test / lint
 ├── STATUS.md                    # Current focus / progress / next steps (the "hot" doc)
 ├── feixe-especificacao.pdf      # Authoritative spec — closed, never edited
-├── .claude/                     # Skills, hooks, rules, docs (see below)
-├── design/
-│   └── game-concept.md          # Pillars, scope boundaries, build order
+├── index.html                   # Import map (Three.js via CDN) + canvas host
+├── package.json                 # Dev tooling only (vitest, eslint); the game has no build step
+├── src/
+│   ├── main.js                  # Wiring + animation loop
+│   ├── core/                    # renderer, scene (room), camera, input, look, movement,
+│   │                            #   interaction (aim raycast), manipulation (drag/rotate), audio
+│   ├── gameplay/                # one factory per object (mirror, emitter, receiver, door,
+│   │                            #   switch, filter, blocker, portal) + pure logic
+│   │                            #   (laser.js, door-logic.js, aabb.js, colors.js) + laser-system.js
+│   └── levels/
+│       ├── data/level-N.js      # declarative level data (spec §10) — one file per level
+│       ├── level-loader.js      # instantiateLevel / disposeLevel
+│       ├── level-runtime.js     # current level, restart, exit + portal triggers
+│       ├── level-manager.js     # level list + saved-level persistence
+│       └── exit-trigger.js, portal-crossing.js   # pure proximity/landing math
+├── tests/unit/                  # Vitest — see .claude/rules/test-standards.md
+├── design/game-concept.md       # Pillars, scope boundaries, build order
+├── design/visual/               # Design premise, design-system discovery, gallery screenshots (evidence/)
+├── gallery/                     # Grey-box visual-evaluation page (not game code; see gallery/README.md)
+├── assets/                      # README only for now: planned layout for asset sources + GLBs
 ├── docs/
-│   ├── decisions/                # ADRs — written when a decision is worth recording, not a gate
-│   ├── findings.md               # Append-only log of implementation discoveries/gotchas
-│   └── engine-reference/
-│       └── threejs/VERSION.md    # Engine pin + version-risk notes
-└── prototypes/                   # Throwaway validation code, isolated from src/
-    └── mirror-reflection/
+│   ├── decisions/               # ADRs — written when a decision is worth recording, not a gate
+│   ├── research/                # Asset-pipeline research briefs/assessment (not specs)
+│   ├── findings.md              # Append-only log of implementation discoveries/gotchas
+│   ├── level-authoring.md       # Level data checklist + "adding a gameplay object" checklist
+│   └── engine-reference/threejs/VERSION.md    # Engine pin + version-risk notes
+├── prototypes/                  # Throwaway validation code, isolated from src/
+└── .claude/                     # settings.json (permissions + hooks), rules/, skills/, hooks/, docs/
 ```
 
-## Created on first real content (not pre-scaffolded)
-
-- `src/` — game source, created when implementation of the first system
-  begins. Expected shape once it exists: `src/core/` (renderer, scene,
-  camera, input, raycasting), `src/gameplay/` (mirrors, emitters, laser
-  sim, receivers/doors, portals), `src/levels/` (declarative level data,
-  one file per level), `src/ui/` (minimal HUD / color-blind symbols).
-- `tests/` — created when the first unit test is written (see
-  `.claude/rules/test-standards.md`).
-- `assets/` — created when the first real asset (texture, audio stinger)
-  is added; `assets/data/` for level/config JSON (see
-  `.claude/rules/data-files.md`).
-
-Don't create these directories empty just to match this shape — create
-them along with the file that actually needs them.
-
-## `.claude/`
-
-```text
-.claude/
-├── settings.json      # Hooks + permissions
-├── statusline.sh
-├── docs/
-│   ├── directory-structure.md    # This file
-│   ├── technical-preferences.md  # Engine/naming/performance reference
-│   ├── setup-requirements.md
-│   ├── CLAUDE-local-template.md
-│   └── settings-local-template.md
-├── rules/              # Path-scoped, auto-loaded when matching files are touched
-│   ├── code-conventions.md   # THE source for code conventions (src/**)
-│   ├── data-files.md         # assets/data/**
-│   ├── prototype-code.md     # prototypes/**
-│   └── test-standards.md     # tests/**
-├── skills/              # ~9 slash commands — implement/review/decide/setup, no production ceremony
-└── hooks/                # Session context, compaction preservation, JSON validation
-```
+Level data lives in `src/levels/data/*.js` (plain JS objects), not JSON —
+`assets/` holds only a README (planned layout); create its subfolders when
+the first real asset file exists.

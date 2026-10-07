@@ -18,12 +18,14 @@ export function createDoor({ position, rotationY = 0, rule, receivers }) {
   mesh.position.copy(position);
   mesh.rotation.y = rotationY;
 
+  const states = new Array(receivers.length); // reused every update() — see .claude/rules/code-conventions.md
+  const collider = rotatedRectAABB(position, rotationY, DOOR_WIDTH, DOOR_THICKNESS); // static — the closed footprint never changes
   const closedY = position.y;
   const openY = position.y + DOOR_HEIGHT;
   let open = false;
 
   function update(deltaSeconds) {
-    const states = receivers.map((receiver) => receiver.isActive());
+    for (let i = 0; i < receivers.length; i++) states[i] = receivers[i].isActive();
     open = evaluateDoorRule(states, rule);
 
     const targetY = open ? openY : closedY;
@@ -46,6 +48,6 @@ export function createDoor({ position, rotationY = 0, rule, receivers }) {
     update,
     isOpen: () => open,
     position: position.clone(),
-    getCollider: () => (open ? null : rotatedRectAABB(position, rotationY, DOOR_WIDTH, DOOR_THICKNESS)),
+    getCollider: () => (open ? null : collider),
   };
 }

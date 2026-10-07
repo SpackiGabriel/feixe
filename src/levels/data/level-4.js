@@ -5,8 +5,8 @@
 // reading the color language (no receiver accepts the other's color).
 // Both mirrors reuse level 3's fixed-position/rotate-only mechanic —
 // the new thing here is running two independent instances of it at once.
-const BEAM_HEIGHT = 1.2;
-const ROOM_HALF = 5; // must match src/core/scene.js's ROOM_SIZE / 2
+import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
+
 const LANE_X = 2.5; // half-distance between the two lanes, keeps them well clear of each other
 
 export const level4 = {
@@ -48,4 +48,5 @@ export const level4 = {
       exit: true,
     },
   ],
+  solution: { mirrors: { 'm-red': { rotationY: -Math.PI / 4 }, 'm-blue': { rotationY: Math.PI / 4 } } },
 };

@@ -19,20 +19,22 @@ elsewhere; if something here needs to change, change it here.
 ## Data-driven values
 
 Gameplay-tunable numbers (reflection limits, move speed, colors, level
-layout) belong in level/config data (`assets/data/*.json`, see
-`data-files.md`), not hardcoded in `src/`. This isn't about enterprise
-config-management — it's so tuning a level doesn't mean editing JS, and so
-`src/gameplay/` code reads the same for every level instead of branching
-on level number.
+layout) belong in level data (`src/levels/data/level-N.js`, plain JS
+objects) or a named constant, not inline magic numbers in `src/`. This is
+so `src/gameplay/` code reads the same for every level instead of
+branching on level number. Shared level values (room size, beam height)
+live in `src/levels/data/constants.js` — don't re-declare them per level.
 
 ## Render loop
 
 Avoid allocating new objects (`new THREE.Vector3()`, arrays, etc.) inside
-`requestAnimationFrame`/render-loop code — reuse pre-allocated vectors and
-mutate in place. This matters concretely here: the laser trace recomputes
-every frame (spec NFR "Desempenho" — 60fps, O(reflections × emitters) per
-frame), so allocation churn in that path is the one place it'll actually
-show up as jank.
+`requestAnimationFrame`/render-loop code *where it's free to avoid* —
+reuse pre-allocated vectors and mutate in place (see `mirror.js`,
+`door.js`, `laser-beam.js`). Exception: `laser.js`'s `traceBeam` is
+deliberately written as small pure functions that return `{x,z}` objects;
+it's bounded (≤ `MAX_REFLECTIONS` bounces per beam, 1-2 beams per level)
+and fully unit-tested, so don't rewrite it for zero-allocation unless a
+profile shows jank (spec NFR "Desempenho" — 60fps).
 
 ## Structure
 

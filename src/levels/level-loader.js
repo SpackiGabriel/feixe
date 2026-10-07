@@ -13,6 +13,15 @@ import { createDoor } from '../gameplay/door.js';
 // gameplay-object factories for every level instead of hand-building each
 // one — this is the whole point of RF08.
 export function instantiateLevel(data, scene, interactiveObjects) {
+  // Every scene object goes through addToScene() so disposeLevel() can free
+  // it without a per-type list — a new gameplay object type only needs to
+  // use this helper to be cleaned up on restart/level change.
+  const roots = [];
+  function addToScene(object) {
+    scene.add(object);
+    roots.push(object);
+  }
+
   const mirrors = data.mirrors.map((m) => {
     const mirror = createMirror({
       railStart: new THREE.Vector3(...m.rail.start),
@@ -23,7 +32,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       rotationEnabled: m.rotationEnabled,
       rotationStepDegrees: m.rotationStepDegrees ?? null,
     });
-    scene.add(mirror.base);
+    addToScene(mirror.base);
     interactiveObjects.push(mirror.plate);
     return mirror;
   });
@@ -34,7 +43,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       colorName: e.colorName,
       initialRotationY: e.initialRotationY ?? 0,
     });
-    scene.add(emitter.mesh);
+    addToScene(emitter.mesh);
     interactiveObjects.push(emitter.mesh);
     return emitter;
   });
@@ -45,7 +54,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       rotationY: r.rotationY ?? 0,
       colorName: r.colorName,
     });
-    scene.add(receiver.mesh);
+    addToScene(receiver.mesh);
     return receiver;
   });
   const receiversById = new Map(data.receivers.map((r, i) => [r.id, receivers[i]]));
@@ -55,7 +64,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       position: new THREE.Vector3(...s.position),
       rotationY: s.rotationY ?? 0,
     });
-    scene.add(sw.mesh);
+    addToScene(sw.mesh);
     interactiveObjects.push(sw.button);
     return sw;
   });
@@ -69,7 +78,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       rotationY: f.rotationY ?? 0,
       primaryName: f.primaryName,
     });
-    scene.add(filter.base);
+    addToScene(filter.base);
     interactiveObjects.push(filter.plate);
     return filter;
   });
@@ -82,7 +91,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       height: b.height,
       thickness: b.thickness,
     });
-    scene.add(blocker.mesh);
+    addToScene(blocker.mesh);
     return blocker;
   });
 
@@ -92,8 +101,8 @@ export function instantiateLevel(data, scene, interactiveObjects) {
   // structure (each portal already carries a `linked` reference).
   const portals = (data.portals ?? []).flatMap((p) => {
     const [portalA, portalB] = createPortalPair(p);
-    scene.add(portalA.mesh);
-    scene.add(portalB.mesh);
+    addToScene(portalA.mesh);
+    addToScene(portalB.mesh);
     return [portalA, portalB];
   });
 
@@ -113,67 +122,26 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       rule: d.rule,
       receivers: doorReceivers,
     });
-    scene.add(door.mesh);
+    addToScene(door.mesh);
     if (d.exit) exitDoor = door;
     return door;
   });
 
-  return { mirrors, emitters, receivers, switches, filters, blockers, portals, doors, exitDoor };
+  return { mirrors, emitters, receivers, switches, filters, blockers, portals, doors, exitDoor, roots };
 }
 
 // Reverses instantiateLevel(): removes every object it added to the scene
-// and interactiveObjects, and frees their GPU resources. Needed for
-// restart/level-change (RF09) — nothing else owns these objects.
+// (and any of their descendants it registered as interactive) and frees
+// their GPU resources. Needed for restart/level-change (RF09) — nothing
+// else owns these objects.
 export function disposeLevel(loaded, scene, interactiveObjects) {
-  function removeInteractive(object) {
-    const index = interactiveObjects.indexOf(object);
-    if (index !== -1) interactiveObjects.splice(index, 1);
-  }
-
-  for (const mirror of loaded.mirrors) {
-    scene.remove(mirror.base);
-    removeInteractive(mirror.plate);
-    mirror.plate.geometry.dispose();
-    mirror.plate.material.dispose();
-  }
-  for (const emitter of loaded.emitters) {
-    scene.remove(emitter.mesh);
-    removeInteractive(emitter.mesh);
-    emitter.mesh.geometry.dispose();
-    emitter.mesh.material.dispose();
-  }
-  for (const receiver of loaded.receivers) {
-    scene.remove(receiver.mesh);
-    receiver.mesh.geometry.dispose();
-    receiver.mesh.material.dispose();
-  }
-  for (const sw of loaded.switches) {
-    scene.remove(sw.mesh);
-    removeInteractive(sw.button);
-    sw.base.geometry.dispose();
-    sw.base.material.dispose();
-    sw.button.geometry.dispose();
-    sw.button.material.dispose();
-  }
-  for (const filter of loaded.filters) {
-    scene.remove(filter.base);
-    removeInteractive(filter.plate);
-    filter.plate.geometry.dispose();
-    filter.plate.material.dispose();
-  }
-  for (const blocker of loaded.blockers) {
-    scene.remove(blocker.mesh);
-    blocker.mesh.geometry.dispose();
-    blocker.mesh.material.dispose();
-  }
-  for (const portal of loaded.portals) {
-    scene.remove(portal.mesh);
-    portal.mesh.geometry.dispose();
-    portal.mesh.material.dispose();
-  }
-  for (const door of loaded.doors) {
-    scene.remove(door.mesh);
-    door.mesh.geometry.dispose();
-    door.mesh.material.dispose();
+  for (const root of loaded.roots) {
+    scene.remove(root);
+    root.traverse((object) => {
+      const index = interactiveObjects.indexOf(object);
+      if (index !== -1) interactiveObjects.splice(index, 1);
+      object.geometry?.dispose();
+      object.material?.dispose();
+    });
   }
 }

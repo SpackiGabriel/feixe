@@ -10,8 +10,8 @@
 // spatial cue to slide clear of it toward the correct spot — no mirror
 // in this level, so the blocker never actually intercepts the beam
 // itself.
-const BEAM_HEIGHT = 1.2;
-const ROOM_HALF = 5; // must match src/core/scene.js's ROOM_SIZE / 2
+import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
+
 const BEAM_X = 2; // offset from center so the receiver clears the centered exit door
 
 export const level7 = {
@@ -35,4 +35,5 @@ export const level7 = {
   doors: [
     { id: 'd1', position: [0, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['r1'], exit: true },
   ],
+  solution: { filters: { f1: { t: 0.5 } } }, // x = BEAM_X on the 0.5..3.5 rail
 };
