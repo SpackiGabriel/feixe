@@ -219,3 +219,30 @@ horizontal slab. Checked by exporting and reading the glTF bounding box
 (0.8 × 0.8 × 0.08). Also: headless Blender under WSL2 prints harmless
 EGL/MESA warnings but renders fine, and the PyPI `bpy` module is not used
 because Blender's bundled Python is 3.11 and the system Python is 3.14.
+
+## 2026-09-22 — N emitters can light at most N receivers at once (beam budget)
+
+Source: designing `src/levels/data/level-9.js` ("Circuito", spec §11).
+
+In `traceBeam()` (`src/gameplay/laser.js`) a beam terminates at exactly
+one segment: `receiver`, `wall`, and `blocker` end the trace; `mirror` and
+`portal` redirect it; `filter` only recolors it and passes through. So a
+single beam can satisfy at most one receiver, and a level with N emitters
+can have at most **N receivers lit simultaneously** — there is no beam
+splitting, and a receiver is opaque (a beam can't pass through one to reach
+a second).
+
+This is a real design constraint, not just a rendering detail. It made
+level 9's first instinct — an AND door and an *independent* OR door both
+open at once — arithmetically impossible with two emitters: a genuine AND
+(two receivers) already uses both beams, so an independent OR door's third
+receiver can never also be lit. The fix was to have both doors watch the
+same two receivers (`docs/decisions/0008`); the operator contrast then
+shows up *during* the solve, not as two independently-satisfiable gates.
+
+**Implication for level 10** ("Prisma"): its three emitters raise the
+ceiling to three simultaneous receivers, which is exactly what its spec'd
+"condição E (cor composta) e uma condição OU (qualquer um de dois
+receptores secundários)" needs — a composite receiver (two converging
+beams) plus one more for the OR, = three lit at once, = three emitters.
+Budget the beams before authoring, not after.

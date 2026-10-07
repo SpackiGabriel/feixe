@@ -44,7 +44,12 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       initialRotationY: e.initialRotationY ?? 0,
     });
     addToScene(emitter.mesh);
-    interactiveObjects.push(emitter.mesh);
+    // A level can lock an emitter's aim (`rotationEnabled: false`) — it then
+    // isn't added to the aim-selectable set, so the player can't rotate it.
+    // Used where the puzzle is solved purely by the mirrors (e.g. level 9),
+    // which also stops a free-aimed emitter from trivially crossing the room
+    // straight to a receiver. Defaults to interactive (spec §6).
+    if (e.rotationEnabled !== false) interactiveObjects.push(emitter.mesh);
     return emitter;
   });
 
