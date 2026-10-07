@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feixe · Visualizador de assets</title>
+<style>
+  :root { color-scheme: dark; --bg: #2a2c2e; --bar: #1f2123; --line: #3a3d40; --fg: #d8d8d6; --muted: #8e9296; --on: #d8d8d6; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.4 system-ui, sans-serif; }
+  #gl { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+  #bar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding: 10px 14px; background: var(--bar); border-bottom: 1px solid var(--line); }
+  #bar h1 { font-size: 14px; margin: 0; font-weight: 600; }
+  .grp { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .grp > span { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+  button, select { font: inherit; background: #2f3235; color: var(--fg); border: 1px solid var(--line); padding: 5px 9px; cursor: pointer; }
+  button:hover { border-color: var(--muted); }
+  button[aria-pressed="true"] { background: var(--on); color: #1a1a1a; border-color: var(--on); }
+  label.chk { display: flex; gap: 5px; align-items: center; cursor: pointer; }
+  #grid { position: relative; z-index: 1; display: grid; gap: 10px; padding: 10px 14px 40px; grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); }
+  .cell { position: relative; aspect-ratio: 4 / 5; border: 1px solid var(--line); touch-action: none; cursor: grab; }
+  .cell:active { cursor: grabbing; }
+  .tag { position: absolute; left: 0; top: 0; right: 0; padding: 8px 10px; pointer-events: none; background: linear-gradient(#0008, #0000); }
+  .tag b { font-size: 15px; display: block; }
+  .tag small { color: #cfcfcf; display: block; }
+  .stats { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 10px; font: 11px ui-monospace, monospace; color: #d0d0d0; pointer-events: none; background: linear-gradient(#0000, #0008); }
+  .msg { padding: 30px 14px; color: var(--muted); max-width: 70ch; }
+  code { font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="bar">
+  <h1>Visualizador de assets <span id="assetName" style="color:var(--muted)"></span></h1>
+  <div class="grp"><span>colunas</span><select id="cols"><option>1</option><option>2</option><option selected>3</option><option>4</option></select></div>
+  <div class="grp"><span>vista</span>
+    <button data-view="persp">Perspectiva</button><button data-view="front">Frente (−Z)</button><button data-view="back">Trás</button><button data-view="side">Lado</button><button data-view="top">Topo</button>
+  </div>
+  <div class="grp"><span>exibir</span>
+    <button id="tClay" aria-pressed="true">Clay</button><button id="tWire" aria-pressed="false">Wireframe</button><button id="tGrid" aria-pressed="true">Chão</button><button id="tHelp" aria-pressed="true">Guias</button>
+    <label class="chk"><input id="sync" type="checkbox" checked> câmeras sincronizadas</label>
+  </div>
+  <div class="grp"><span>variações</span><span id="chips"></span></div>
+  <button id="reload" title="Recarrega o manifest e os GLBs (tecla R)">Recarregar</button>
+</div>
+<div id="grid"></div>
+<script type="importmap">
+{ "imports": { "three": "../../node_modules/three/build/three.module.js", "three/addons/": "../../node_modules/three/examples/jsm/" } }
+</script>
+<script type="module" src="./viewer.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "asset": "receiver",
+  "variants": [
+    {
+      "id": "a-painel-instrumento",
+      "label": "A · painel de instrumento",
+      "note": "corpo fundo em camadas, alça, orelhas, berço basculante",
+      "file": "receiver-a-painel-instrumento.glb"
+    },
+    {
+      "id": "b-consola-industrial",
+      "label": "B · consola industrial",
+      "note": "gabinete alto, porta de acesso, aletas, base de patins",
+      "file": "receiver-b-consola-industrial.glb"
+    },
+    {
+      "id": "c-tubo-catodico",
+      "label": "C · tubo catódico",
+      "note": "funil de chapa, pescoço com bobina, prato fundido",
+      "file": "receiver-c-tubo-catodico.glb"
+    }
+  ]
+}

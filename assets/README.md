@@ -1,17 +1,28 @@
 # assets/
 
-**Nothing here is implemented yet.** This file only reserves the layout for the asset pipeline so work doesn't scatter. Create the subfolders when the first file needs one — not before. Rationale: `docs/research/pipeline-assessment.md`; design decisions: `design/visual/`.
+**Prototype stage.** Only placeholder Receiver variants exist, to iterate on the look in the viewer; nothing here is a final design and the game doesn't load any GLB yet. Rationale: `docs/research/pipeline-assessment.md`; design decisions: `design/visual/`.
 
 ```text
 assets/
-├── src/            # source of truth (committed): per-asset specs, Blender Python scripts, preview images
-│   ├── specs/      #   one Markdown spec per asset family (dimensions, origin, anchors, material slots, states)
-│   ├── blender/    #   build_<asset>.py + a small shared lib (materials built from tokens, export helper)
-│   └── previews/   #   engine-rendered PNGs for human review
-└── models/         # compiled runtime GLBs (committed, never hand-edited; regenerate from src/)
+├── src/
+│   ├── build.sh          # bash assets/src/build.sh <asset>: Blender -> GLBs -> gltf-transform validate -> check-glb.mjs
+│   ├── check-glb.mjs     # nothing in front of the face plane, floor at -1.2 m, face recess <= 6 cm; prints size/tris
+│   ├── blender/          # build_<asset>.py (variants are a table at the top) + smoke_test.py
+│   └── specs/            # (not created yet) one Markdown spec per asset family
+├── models/<asset>/       # generated GLBs + manifest.json (committed; regenerate, never hand-edit)
+└── viewer/               # neutral side-by-side GLB viewer (index.html + viewer.js)
 ```
 
 Served straight from the repo root (`npm start`); no `public/`, no bundler.
+
+## Iteration loop
+
+```bash
+bash assets/src/build.sh receiver     # after editing assets/src/blender/build_receiver.py
+npm start                             # then open http://localhost:8000/assets/viewer/
+```
+
+In the viewer press **R** (or Recarregar) after each build. Add a variant by adding one entry to `VARIANTS` in the Blender script. Viewer: clay material and fixed neutral lighting on every cell, linked cameras (toggle), Perspectiva/Frente/Trás/Lado/Topo, wireframe, floor, and guides (origin axes, the 0.8 m active-face outline, a yellow arrow for the front = −Z, bounding box). `?asset=<name>` picks another family. This is separate from `gallery/`, which shows the game's real grey-box in a room.
 
 ## Toolchain (installed and smoke-tested 2026-10-01 on WSL2 Ubuntu 24.04)
 
