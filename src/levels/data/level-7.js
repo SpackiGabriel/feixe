@@ -1,55 +1,50 @@
-// Level 7 — "Filtro" (spec §11): a white emitter (the sum of the three
-// primaries) and a red receiver far away on the west wall. A rotate-only
-// mirror (taught in level 3) chooses where the beam goes: west, through
-// the filter's rail, toward the receiver; or east into a nearby trap
-// blocker (spec §7 NOT: while any beam hits it, the exit stays shut). The
-// filter must be slid onto the beam's line to strip green and blue off the
-// white beam — unfiltered white reaches the receiver but never satisfies
-// its red target. Teaches subtractive decomposition and the "NOT" rule.
+// Level 7 — "Filtro" (spec §11): a white emitter, a red filter that must
+// be slid into the beam to isolate red for a distant receiver, and a trap
+// next to the mirror.
+//
+// Idea (design/campaign.md, L7): two short stages, one new rule each.
+//   1. Never feed the hazard. The mirror starts sending the beam into the
+//      trap: its diamond pip on the door flashes and its conduit flares,
+//      so the reason the door is shut is on screen before anything moves.
+//   2. A filter removes colors. Turned west, the white beam reaches the red
+//      receiver, which flickers: white contains red, but it isn't red.
+//      Sliding the filter into the row strips green and blue away.
+// A new-rule level is kept easy on purpose (two moves).
 import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
 
-const BEAM_X = 2; // emitter/mirror column, offset from the centered exit door
-const BOUNCE_Z = 0; // the mirror's row; the reflected beam runs along it
+const H = BEAM_HEIGHT;
+const BEAM_X = 2;
+const ROW = 1;
 
 export const level7 = {
   id: 'level-7',
   name: 'Filtro',
+  spawn: { position: [0.3, 4], yaw: -0.25 },
   mirrors: [
     {
       id: 'm1',
-      rail: { start: [BEAM_X, BEAM_HEIGHT, BOUNCE_Z], end: [BEAM_X, BEAM_HEIGHT, BOUNCE_Z] }, // fixed position
+      rail: { start: [BEAM_X, H, ROW], end: [BEAM_X, H, ROW] },
       initialT: 0.5,
-      initialRotationY: Math.PI / 4, // starts sending the beam east, into the trap
+      initialRotationY: Math.PI / 4, // east, into the trap
       positionEnabled: false,
       rotationEnabled: true,
+      rotationStepDegrees: 45,
     },
   ],
-  emitters: [{ id: 'e1', position: [BEAM_X, BEAM_HEIGHT, 4], colorName: 'white', initialRotationY: 0 }],
-  receivers: [
-    { id: 'r1', position: [-(ROOM_HALF - 0.1), BEAM_HEIGHT, BOUNCE_Z], rotationY: Math.PI / 2, colorName: 'red' },
-  ],
-  switches: [],
+  emitters: [{ id: 'e1', position: [BEAM_X, H, 4.6], colorName: 'white' }],
+  receivers: [{ id: 'r1', position: [-(ROOM_HALF - 0.1), H, ROW], rotationY: Math.PI / 2, colorName: 'red' }],
   filters: [
-    {
-      id: 'f1',
-      // Crosses the westward beam line at a right angle; starts off it.
-      rail: { start: [-2, BEAM_HEIGHT, -3], end: [-2, BEAM_HEIGHT, 1] },
-      initialT: 0,
-      rotationY: Math.PI / 2, // panel spans z, facing the beam
-      primaryName: 'red',
-    },
+    // Crosses the westward row at a right angle; starts north of it.
+    { id: 'f1', rail: { start: [-2, H, -2.5], end: [-2, H, 2.5] }, initialT: 0, rotationY: Math.PI / 2, primaryName: 'red' },
   ],
-  blockers: [{ id: 'trap', position: [3.6, BEAM_HEIGHT, BOUNCE_Z], rotationY: Math.PI / 2, trap: true }],
+  blockers: [{ id: 'trap', position: [ROOM_HALF - 0.6, H, ROW], rotationY: Math.PI / 2, trap: true }],
+  switches: [],
   doors: [
-    {
-      id: 'd1',
-      position: [0, 1.5, -(ROOM_HALF - 0.1)],
-      rotationY: Math.PI,
-      rule: 'AND',
-      receiverIds: ['r1'],
-      forbidIds: ['trap'],
-      exit: true,
-    },
+    { id: 'd1', position: [0, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['r1'], forbidIds: ['trap'], exit: true },
   ],
-  solution: { mirrors: { m1: { rotationY: -Math.PI / 4 } }, filters: { f1: { t: 0.75 } } }, // z = 0 on the -3..1 rail
+  scenarios: [
+    { name: 'filtered but still aimed at the trap stays shut', config: { filters: { f1: { t: 0.7 } } }, doors: { d1: false } },
+    { name: 'unfiltered white on the red receiver stays shut', config: { mirrors: { m1: { rotationY: -Math.PI / 4 } } }, doors: { d1: false } },
+  ],
+  solution: { mirrors: { m1: { rotationY: -Math.PI / 4 } }, filters: { f1: { t: 0.7 } } }, // z = 1 on the -2.5..2.5 rail
 };

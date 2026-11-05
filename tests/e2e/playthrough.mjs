@@ -135,8 +135,8 @@ try {
     return g.eval(() => window.__feixe.interaction.getHovered()?.userData.debugInfo?.() ?? null);
   };
   await g.load(7);
-  check((await aimAt(0, 4.5, 0))?.startsWith('espelho m1'), 'mirror is selectable in plain view');
-  check((await aimAt(0, -2, Math.PI)) === null, 'mirror behind the dividing wall is not selectable');
+  check((await aimAt(0.45, 4.5, 0))?.startsWith('espelho m1'), 'mirror is selectable in plain view');
+  check((await aimAt(0.45, -2, Math.PI)) === null, 'mirror behind the dividing wall is not selectable');
 
   console.log('door reversal (level 2)');
   await g.load(1);

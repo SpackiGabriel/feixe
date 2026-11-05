@@ -1,48 +1,48 @@
-// Level 5 — "Convergência" (spec §11): the same two-lane layout as level
-// 4 (independent rotate-only mirrors for a fixed red and blue emitter),
-// but both beams now bend *toward* the center instead of away from it,
-// converging on one shared receiver that requires the additive composite
-// (Magenta) instead of two separate receivers. Teaches additive mixing
-// and the "AND" condition (spec §7 — a receiver only activates while both
-// colors land on it at once).
+// Level 5 — "Convergência" (spec §11): the two beams of level 4 (same
+// emitters, same mirror spots) must now reach one magenta receiver
+// together.
+//
+// Idea (design/campaign.md, L5): beams that crossed without effect in L4
+// add up where they land. Blue's mirror starts already aimed at the
+// magenta receiver, so the receiver flickers from the first frame:
+// something arrives, but blue alone is not magenta. The receiver's face
+// shows both symbols (circle + diamond). Turning red onto it completes
+// the color.
 import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
 
-const LANE_X = 2.5; // matches level 4's lane spacing
+const H = BEAM_HEIGHT;
+const LANE_X = 2.5;
+const RED_ROW = 1;
+const BLUE_ROW = -1;
+// Blue leaves its mirror 30° west of south and meets red's row here:
+// 2.5 - 2 × tan 30° ≈ 1.35.
+const MEET_X = LANE_X - 2 * Math.tan(Math.PI / 6);
+const mirror = (id, x, z, initialRotationY) => ({
+  id,
+  rail: { start: [x, H, z], end: [x, H, z] },
+  initialT: 0.5,
+  initialRotationY,
+  positionEnabled: false,
+  rotationEnabled: true,
+  rotationStepDegrees: 15,
+});
 
 export const level5 = {
   id: 'level-5',
   name: 'Convergência',
-  mirrors: [
-    {
-      id: 'm-red',
-      rail: { start: [-LANE_X, BEAM_HEIGHT, 0], end: [-LANE_X, BEAM_HEIGHT, 0] },
-      initialT: 0.5,
-      initialRotationY: 0, // unsolved — target is +45° (Math.PI / 4), bends the beam to +X, toward center
-      positionEnabled: false,
-      rotationEnabled: true,
-    },
-    {
-      id: 'm-blue',
-      rail: { start: [LANE_X, BEAM_HEIGHT, 0], end: [LANE_X, BEAM_HEIGHT, 0] },
-      initialT: 0.5,
-      initialRotationY: 0, // unsolved — target is -45° (-Math.PI / 4), bends the beam to -X, toward center
-      positionEnabled: false,
-      rotationEnabled: true,
-    },
-  ],
+  spawn: { position: [0, 4.2], yaw: 0 },
+  mirrors: [mirror('m-red', -LANE_X, RED_ROW, 0), mirror('m-blue', LANE_X, BLUE_ROW, -Math.PI / 12)],
   emitters: [
-    { id: 'e-red', position: [-LANE_X, BEAM_HEIGHT, 4], colorName: 'red', initialRotationY: 0 },
-    { id: 'e-blue', position: [LANE_X, BEAM_HEIGHT, 4], colorName: 'blue', initialRotationY: 0 },
+    { id: 'e-red', position: [-LANE_X, H, 4.6], colorName: 'red' },
+    { id: 'e-blue', position: [LANE_X, H, 4.6], colorName: 'blue' },
   ],
-  receivers: [
-    // Sits between the two mirrors on their shared bounce line (z=0), well
-    // clear of the opposite mirror's segment either way, so it's always
-    // the nearest hit regardless of solve order (docs/findings.md).
-    { id: 'r1', position: [0, BEAM_HEIGHT, 0], rotationY: Math.PI / 2, colorName: 'magenta' },
-  ],
+  receivers: [{ id: 'r1', position: [MEET_X, H, RED_ROW], rotationY: Math.PI / 2, colorName: 'magenta' }],
   switches: [],
   doors: [
     { id: 'd1', position: [0, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['r1'], exit: true },
   ],
-  solution: { mirrors: { 'm-red': { rotationY: Math.PI / 4 }, 'm-blue': { rotationY: -Math.PI / 4 } } },
+  scenarios: [
+    { name: 'red alone on the magenta receiver is not enough', config: { mirrors: { 'm-red': { rotationY: Math.PI / 4 }, 'm-blue': { rotationY: 0 } } }, doors: { d1: false } },
+  ],
+  solution: { mirrors: { 'm-red': { rotationY: Math.PI / 4 } } }, // blue is already on it
 };

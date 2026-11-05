@@ -9,7 +9,16 @@
 // 1, walk into the strip, then turn the mirror (aimed through the open
 // doorway) and take the portal north. Introduces the first portal pair,
 // used to get past the dividing wall without more mirrors.
+//
+// Redesign notes (design/campaign.md, L8): the idea is kept. The mirror
+// snaps to 45°: edge-on only works within ±1° at this range, which is
+// pixel-precise with a free mouse. The beam runs 0.45 m east of the
+// portal's center and leaves the far end from its center, so the player
+// sees once, harmlessly, that a portal re-emits from its middle (L10
+// builds on it).
 import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
+
+const BEAM_X = 0.45; // off the portal's center on purpose (see above)
 
 export const level8 = {
   id: 'level-8',
@@ -20,14 +29,15 @@ export const level8 = {
       // 90° (edge-on, beam passes through unchanged) satisfies door 2 via
       // the portal. Starts at neither.
       id: 'm1',
-      rail: { start: [0, BEAM_HEIGHT, 3], end: [0, BEAM_HEIGHT, 3] },
+      rail: { start: [BEAM_X, BEAM_HEIGHT, 3], end: [BEAM_X, BEAM_HEIGHT, 3] },
       initialT: 0.5,
       initialRotationY: -Math.PI / 4,
       positionEnabled: false,
       rotationEnabled: true,
+      rotationStepDegrees: 45,
     },
   ],
-  emitters: [{ id: 'e1', position: [0, BEAM_HEIGHT, 4], colorName: 'red', initialRotationY: 0 }],
+  emitters: [{ id: 'e1', position: [BEAM_X, BEAM_HEIGHT, 4], colorName: 'red', initialRotationY: 0 }],
   receivers: [
     { id: 'r1', position: [ROOM_HALF - 0.1, BEAM_HEIGHT, 3], rotationY: Math.PI / 2, colorName: 'red' },
     { id: 'r2', position: [0, BEAM_HEIGHT, -(ROOM_HALF - 0.1)], rotationY: 0, colorName: 'red' },
