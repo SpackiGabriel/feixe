@@ -30,7 +30,7 @@ Next is **human** work:
 ## Verified (evidence from this checkpoint)
 
 - **Mirror reflection prototype** (2026-11-05, branch
-  `feat/mirror-reflection`): on "Qualidade: alta" each mirror face is a
+  `feat/mirror-reflection`, PR #3): on "Qualidade: alta" each mirror face is a
   Three.js `Reflector` (vendored `vendor/three/addons/Reflector.js`):
   the scene re-rendered from the camera mirrored across the plate, oblique
   near plane, 512² texture, tinted below the beams. Code:
@@ -41,6 +41,15 @@ Next is **human** work:
   texture size barely matter (the extra scene pass does). **Not measured
   on the presentation machine; not playtested** (do reflected beams read
   as extra beams?).
+
+- Playtest fixes (2026-11-05): camera flick (Chromium/Windows pointer-lock
+  delta spikes) handled in `core/input.js` with raw `unadjustedMovement`
+  where supported, dropping one-event deltas > 250 px and the first 2
+  events after locking; menu "Sensibilidade" 0.25×–3× (look only,
+  persisted, `core/look.js`); level 8 door 1 is a framed glass pane
+  (`style: 'glass'` on a door, visual only). `npm test`: 264 pass; menu
+  and L8 door checked in the browser. **The flick fix is not verified
+  with a physical mouse.**
 
 - Redesign: `npm test` 258 tests pass (new scenarios pin each level's
   intended wrong turns); `npm run analyze`: every level self-checks, and
@@ -74,6 +83,7 @@ Next is **human** work:
 
 ## Not verified (needs a human)
 
+- Camera flick gone with a real mouse (fast swipes, Esc → resume).
 - Mouse feel of grab/slide/rotate, the FOV lean-in and the door rumble
   (camera comfort). Sound mix and levels (headless has no audio output).
 - Whether the atmosphere reads as intended, and clarity for a first-time
@@ -137,6 +147,8 @@ chamber numerals, spawns that frame the mechanism.
   (`core/manipulation.js`).
 - Timing: `TEMPO` (`presentation/motion.js`), `DOOR_TIMING`
   (`door-motion.js`), `CHAIN` (`conduits.js`).
+- Mouse: spike threshold `MAX_MOUSE_DELTA` (`core/input.js`) if fast
+  swipes feel swallowed; `SENSITIVITY_STEPS` (`core/look.js`).
 - Camera: grab FOV offset, rumble amplitude (`camera-fx.js`); walking
   accel/decel (`movement.js`).
 - Look: lighting/fog (`scene.js` `setAtmosphere`), beam thickness/halo

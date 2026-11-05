@@ -161,6 +161,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       receivers: doorReceivers,
       forbidden,
       exit: d.exit ?? false,
+      style: d.style,
     });
     addToScene(door.mesh);
     door.levelId = d.id;
