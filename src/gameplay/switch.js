@@ -61,6 +61,7 @@ export function createSwitch({ position, rotationY = 0 }) {
 
   button.userData.interactive = true;
   button.userData.activate = activate;
+  button.userData.prompt = 'Clique: ativar';
   // Hovering must not clobber the active/inactive color (interaction.js's
   // generic hover tint would), so it gets its own feedback like emitter.js.
   button.userData.setHovered = (isHovered) => {

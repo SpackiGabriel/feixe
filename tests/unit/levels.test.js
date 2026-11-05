@@ -72,6 +72,28 @@ describe.each(getLevels().map((data) => [data.id, data]))('%s', (_id, data) => {
     expect(loaded.level.exitDoor.isOpen()).toBe(true);
   });
 
+  // Shortcut guard: with every mirror/filter left untouched, rotating the
+  // emitters alone (all of them together, 1° steps) must never open the exit
+  // — otherwise the player can skip the puzzle by aiming the beam directly.
+  it('test_level_emitterRotationAlone_cannotOpenExit', () => {
+    const loaded = load(data);
+    const rotatable = loaded.level.emitters.filter((e) => e.rotationEnabled);
+    for (const emitter of rotatable) {
+      for (let deg = 0; deg < 360; deg++) {
+        emitter.applyRotationDelta(Math.PI / 180);
+        tick(loaded);
+        expect(loaded.level.exitDoor.isOpen(), `exit opened with emitter at +${deg + 1}°`).toBe(false);
+      }
+    }
+  });
+
+  it('test_level_fixedEmitters_areNotInteractive', () => {
+    const loaded = load(data);
+    for (const emitter of loaded.level.emitters) {
+      expect(loaded.interactiveObjects.includes(emitter.mesh)).toBe(emitter.rotationEnabled);
+    }
+  });
+
   it('test_level_dispose_leavesSceneAndInteractiveListClean_andFreesGpuResources', () => {
     const { scene, interactiveObjects, level, laserSystem } = load(data);
     const childrenBefore = createScene().scene.children.length; // room + lights only

@@ -42,9 +42,11 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       position: new THREE.Vector3(...e.position),
       colorName: e.colorName,
       initialRotationY: e.initialRotationY ?? 0,
+      rotationEnabled: e.rotationEnabled ?? false,
+      rotationStepDegrees: e.rotationStepDegrees ?? null,
     });
     addToScene(emitter.mesh);
-    interactiveObjects.push(emitter.mesh);
+    if (emitter.rotationEnabled) interactiveObjects.push(emitter.mesh);
     return emitter;
   });
 

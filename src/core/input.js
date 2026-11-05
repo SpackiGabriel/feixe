@@ -8,6 +8,7 @@ export function createInput(domElement) {
   const mouseMoveListeners = [];
   const confirmListeners = [];
   const keyDownListeners = new Map(); // code -> Set<fn>
+  const wheelListeners = [];
 
   window.addEventListener('keydown', (event) => {
     keys.add(event.code);
@@ -32,8 +33,15 @@ export function createInput(domElement) {
     }
   });
 
+  document.addEventListener('wheel', (event) => {
+    if (document.pointerLockElement !== domElement) return;
+    for (const listener of wheelListeners) listener(Math.sign(event.deltaY));
+  }, { passive: true });
+
   return {
     keys,
+    isLocked: () => document.pointerLockElement === domElement,
+    onWheel: (listener) => wheelListeners.push(listener),
     onMouseMove: (listener) => mouseMoveListeners.push(listener),
     onConfirm: (listener) => confirmListeners.push(listener),
     // Edge-triggered — fires once per physical press, not once per frame

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createSteppedAngle } from './rotation.js';
 
 const PLATE_WIDTH = 1;
 const PLATE_HEIGHT = 1;
@@ -29,6 +30,7 @@ export function createMirror({
   );
   plate.rotation.y = initialRotationY;
   base.add(plate);
+  const angle = createSteppedAngle(initialRotationY, rotationStepDegrees);
 
   let t = THREE.MathUtils.clamp(initialT, 0, 1);
 
@@ -45,17 +47,22 @@ export function createMirror({
 
   function applyRotationDelta(delta) {
     if (!rotationEnabled) return;
-    plate.rotation.y += delta;
-    if (rotationStepDegrees) {
-      const step = THREE.MathUtils.degToRad(rotationStepDegrees);
-      plate.rotation.y = Math.round(plate.rotation.y / step) * step;
-    }
+    plate.rotation.y = angle.add(delta);
   }
 
   plate.userData.interactive = true;
-  plate.userData.controller = { positionEnabled, rotationEnabled, applyPositionDelta, applyRotationDelta };
+  plate.userData.controller = { positionEnabled, rotationEnabled, rotationStep: angle.step, applyPositionDelta, applyRotationDelta };
+  plate.userData.prompt = promptFor(positionEnabled, rotationEnabled);
 
   return { base, plate, applyPositionDelta, applyRotationDelta };
+}
+
+// Short Portuguese hint shown under the crosshair while aiming (src/ui/hud.js).
+export function promptFor(positionEnabled, rotationEnabled) {
+  if (positionEnabled && rotationEnabled) return 'Clique: mover e girar';
+  if (positionEnabled) return 'Clique: mover';
+  if (rotationEnabled) return 'Clique: girar';
+  return null;
 }
 
 // World-space XZ segment of the plate's reflective face, for the laser

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { COLOR_NAMES } from './colors.js';
 import { colorToHex } from './laser.js';
+import { createSteppedAngle } from './rotation.js';
 
 const BODY_RADIUS = 0.15;
 const BODY_LENGTH = 0.5;
@@ -15,10 +16,13 @@ const HOVER_EMISSIVE_INTENSITY = 1.0;
 // an emitter emits stays restricted to this short list.
 const EMITTER_COLOR_NAMES = ['red', 'green', 'blue', 'white'];
 
-// An emitter is fixed in position but rotates around the vertical axis;
-// its laser color is fixed at creation (spec §6). The barrel points along
+// An emitter is fixed in position; its laser color is fixed at creation
+// (spec §6). It rotates around the vertical axis only when the level says
+// so (`rotationEnabled`, default off) — spec §11's tutorials use "um
+// emissor fixo", and a freely rotatable emitter lets the player aim
+// straight at the receiver and skip every mirror. The barrel points along
 // local -Z by default (matches the camera's forward convention).
-export function createEmitter({ position, colorName, initialRotationY = 0 }) {
+export function createEmitter({ position, colorName, initialRotationY = 0, rotationEnabled = false, rotationStepDegrees = null }) {
   if (!EMITTER_COLOR_NAMES.includes(colorName)) {
     throw new Error(`Emitter color must be one of ${EMITTER_COLOR_NAMES.join(', ')}, got "${colorName}"`);
   }
@@ -38,22 +42,26 @@ export function createEmitter({ position, colorName, initialRotationY = 0 }) {
   mesh.position.copy(position);
   mesh.rotation.y = initialRotationY;
 
+  const angle = createSteppedAngle(initialRotationY, rotationStepDegrees);
   function applyRotationDelta(delta) {
-    mesh.rotation.y += delta;
+    if (!rotationEnabled) return;
+    mesh.rotation.y = angle.add(delta);
   }
 
   mesh.userData.interactive = true;
   mesh.userData.controller = {
     positionEnabled: false,
-    rotationEnabled: true,
+    rotationEnabled,
+    rotationStep: angle.step,
     applyPositionDelta: () => {},
     applyRotationDelta,
   };
+  mesh.userData.prompt = rotationEnabled ? 'Clique: girar emissor' : null;
   // Hovering must not overwrite the emitter's color identity, so it gets
   // its own feedback instead of interaction.js's generic emissive tint.
   mesh.userData.setHovered = (isHovered) => {
     material.emissiveIntensity = isHovered ? HOVER_EMISSIVE_INTENSITY : BASE_EMISSIVE_INTENSITY;
   };
 
-  return { mesh, color, applyRotationDelta };
+  return { mesh, color, applyRotationDelta, rotationEnabled };
 }

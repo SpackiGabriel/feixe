@@ -53,6 +53,7 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
     applyPositionDelta,
     applyRotationDelta: () => {},
   };
+  plate.userData.prompt = 'Clique: mover filtro';
 
   return { base, plate, primary, applyPositionDelta };
 }
