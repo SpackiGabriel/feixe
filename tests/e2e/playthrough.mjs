@@ -59,7 +59,10 @@ async function openGame(browser, { reducedMotion = 'no-preference', level = 1 } 
     errors,
     external,
     // Resolve once `fn` (run in the page) is truthy; false on timeout.
-    until: (fn, arg, timeout = 8000) => page.waitForFunction(fn, arg, { timeout, polling: 50 }).then(() => true, () => false),
+    // Generous: on a slow CI runner a software-WebGL frame takes ~0.7 s and
+    // game time advances at most 0.1 s per frame, so game seconds cost
+    // several real seconds. These are waits, not assertions on speed.
+    until: (fn, arg, timeout = 40000) => page.waitForFunction(fn, arg, { timeout, polling: 50 }).then(() => true, () => false),
     eval: (fn, arg) => page.evaluate(fn, arg),
     load: (index) => page.evaluate((i) => window.__feixe.levelRuntime.loadLevel(i), index),
     pos: () => page.evaluate(() => ({ x: window.__feixe.camera.position.x, z: window.__feixe.camera.position.z })),
@@ -68,7 +71,7 @@ async function openGame(browser, { reducedMotion = 'no-preference', level = 1 } 
       window.__feixe.look.setOrientation(pyaw);
     }, [x, z, yaw]),
     // Hold W until `fn` is true (or give up).
-    walkUntil: async (fn, arg, timeout = 6000) => {
+    walkUntil: async (fn, arg, timeout = 30000) => {
       await page.keyboard.down('KeyW');
       const ok = await g.until(fn, arg, timeout);
       await page.keyboard.up('KeyW');
@@ -129,14 +132,15 @@ try {
   console.log('aim occlusion (level 8)');
   // Wait for a few rendered frames (interaction updates once per frame;
   // a software-WebGL frame can take ~200 ms), then read what's aimed at.
-  const aimAt = async (x, z, yaw) => {
+  const aimAt = async (x, z, yaw, expectSomething) => {
     await g.place(x, z, yaw);
-    await g.eval(() => new Promise((resolve) => { let n = 3; const step = () => (--n <= 0 ? resolve() : requestAnimationFrame(step)); requestAnimationFrame(step); }));
+    if (expectSomething) await g.until(() => window.__feixe.interaction.getHovered() !== null, null, 20000);
+    else await g.eval(() => new Promise((resolve) => { let n = 4; const step = () => (--n <= 0 ? resolve() : requestAnimationFrame(step)); requestAnimationFrame(step); }));
     return g.eval(() => window.__feixe.interaction.getHovered()?.userData.debugInfo?.() ?? null);
   };
   await g.load(7);
-  check((await aimAt(0.45, 4.5, 0))?.startsWith('espelho m1'), 'mirror is selectable in plain view');
-  check((await aimAt(0.45, -2, Math.PI)) === null, 'mirror behind the dividing wall is not selectable');
+  check((await aimAt(0.45, 4.5, 0, true))?.startsWith('espelho m1'), 'mirror is selectable in plain view');
+  check((await aimAt(0.45, -2, Math.PI, false)) === null, 'mirror behind the dividing wall is not selectable');
 
   console.log('door reversal (level 2)');
   await g.load(1);
