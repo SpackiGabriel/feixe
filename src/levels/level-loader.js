@@ -205,6 +205,7 @@ export function disposeLevel(loaded, scene, interactiveObjects) {
     root.traverse((object) => {
       const index = interactiveObjects.indexOf(object);
       if (index !== -1) interactiveObjects.splice(index, 1);
+      if (object.isReflector) object.dispose(); // its render target
       object.geometry?.dispose();
       if (object.material && !isShared(object.material)) object.material.dispose();
     });

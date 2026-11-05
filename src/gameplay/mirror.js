@@ -3,6 +3,7 @@ import { railAxis, createRailMesh } from './rail.js';
 import { createSteppedAngle } from './rotation.js';
 import { events } from '../core/events.js';
 import { getEnvMap } from '../presentation/env-map.js';
+import { createMirrorReflection } from '../presentation/mirror-reflection.js';
 import { createDial, createRailState, createManipulable } from '../presentation/affordances.js';
 
 const PLATE_WIDTH = 1;
@@ -69,6 +70,9 @@ export function createMirror({
     clamp.position.y = side * (PLATE_HEIGHT / 2 + 0.03);
     plate.add(clamp);
   }
+  // Real reflection on both faces (high quality); null otherwise.
+  const reflection = createMirrorReflection(PLATE_WIDTH, PLATE_HEIGHT, PLATE_THICKNESS);
+  if (reflection) plate.add(reflection.object);
 
   const dial = rotationEnabled ? createDial() : null;
   if (dial) {
@@ -111,7 +115,10 @@ export function createMirror({
     dial,
     rail,
     events,
-    onHover: (isHovered) => plateMaterial.emissive.setHex(isHovered ? HOVER_EMISSIVE : BASE_EMISSIVE),
+    onHover: (isHovered) => {
+      plateMaterial.emissive.setHex(isHovered ? HOVER_EMISSIVE : BASE_EMISSIVE);
+      reflection?.setHighlight(isHovered);
+    },
   });
   manipulable.rotated(plate.rotation.y);
 

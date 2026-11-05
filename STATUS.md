@@ -29,6 +29,19 @@ Next is **human** work:
 
 ## Verified (evidence from this checkpoint)
 
+- **Mirror reflection prototype** (2026-11-05, branch
+  `feat/mirror-reflection`): on "Qualidade: alta" each mirror face is a
+  Three.js `Reflector` (vendored `vendor/three/addons/Reflector.js`):
+  the scene re-rendered from the camera mirrored across the plate, oblique
+  near plane, 512² texture, tinted below the beams. Code:
+  `presentation/mirror-reflection.js`. Mirrors don't see other mirrors'
+  reflections (layer 1), so no recursion. Seen working on L3 and L10.
+  Cost measured on an Intel UHD (this machine, pane hidden, noisy):
+  +3.5–6 ms/frame at 1920×1080 with L10's four mirrors in view; MSAA and
+  texture size barely matter (the extra scene pass does). **Not measured
+  on the presentation machine; not playtested** (do reflected beams read
+  as extra beams?).
+
 - Redesign: `npm test` 258 tests pass (new scenarios pin each level's
   intended wrong turns); `npm run analyze`: every level self-checks, and
   only the intended route families open each exit (two in L10, one

@@ -14,6 +14,7 @@ import { loadSavedLevelIndex, getLevels } from './levels/level-manager.js';
 import { connectSfx, sfx, isMuted, setMuted } from './presentation/sfx.js';
 import { createCameraFx } from './presentation/camera-fx.js';
 import { setEnvMap } from './presentation/env-map.js';
+import { setMirrorReflections, REFLECTOR_LAYER } from './presentation/mirror-reflection.js';
 import { loadQuality, saveQuality, pixelRatioFor } from './presentation/quality.js';
 import { createHud, manipulationHint } from './ui/hud.js';
 import { createMenu } from './ui/menu.js';
@@ -36,6 +37,10 @@ if (quality === 'high') {
   setEnvMap(pmrem.fromScene(new RoomEnvironment(), 0.04).texture);
   pmrem.dispose();
 }
+// Real mirror reflections: high quality only; like the env map, a quality
+// change applies from the next chamber on.
+setMirrorReflections(quality === 'high');
+camera.layers.enable(REFLECTOR_LAYER);
 
 const input = createInput(renderer.domElement);
 const look = createLookController(camera);
@@ -85,6 +90,7 @@ const menu = createMenu(uiRoot, {
   onToggleQuality: () => {
     quality = quality === 'high' ? 'low' : 'high';
     saveQuality(quality);
+    setMirrorReflections(quality === 'high');
     renderer.setPixelRatio(currentPixelRatio());
     hud.showToast(quality === 'high' ? 'Qualidade alta · reflexos na próxima câmara' : 'Qualidade baixa');
   },
@@ -178,7 +184,7 @@ document.addEventListener('pointerlockchange', () => {
 // pointer lock, and `?debug&level=N` jumps straight to level N (1-based).
 let debugVisible = debugMode;
 if (debugMode) {
-  window.__feixe = { levelRuntime, camera, scene, hud, menu, transitions, look, interaction, events };
+  window.__feixe = { levelRuntime, camera, scene, renderer, hud, menu, transitions, look, interaction, events };
   const jumpTo = parseInt(params.get('level'), 10);
   if (Number.isInteger(jumpTo)) levelRuntime.loadLevel(jumpTo - 1);
   input.onKeyDown('F3', () => { debugVisible = !debugVisible; });
