@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { railAxis } from './rail.js';
 import { COLOR_NAMES } from './colors.js';
 import { colorToHex } from './laser.js';
 import { symbolFaceTexture } from './textures.js';
@@ -50,6 +51,7 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
   plate.userData.controller = {
     positionEnabled: true,
     rotationEnabled: false,
+    railAxis: railAxis(railStart, railEnd),
     applyPositionDelta,
     applyRotationDelta: () => {},
   };

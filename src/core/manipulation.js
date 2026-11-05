@@ -1,14 +1,22 @@
 const ROTATE_SENSITIVITY = 0.01; // radians per pixel of mouse movement
-const RAIL_SENSITIVITY = 0.0015; // rail fraction (0..1) per pixel
+const RAIL_METRES_PER_PIXEL = 0.008;
 const KEY_ROTATE_STEP = Math.PI / 12; // 15° per Q/E press or wheel notch, unless the object snaps to its own step
 
 // Pure mapping from one mouse delta to "what moves" (spec §4: drag along a
-// rail *or* rotate around the axis). With a single enabled degree of
-// freedom, horizontal mouse drives it. With both, horizontal mouse slides
-// and rotation moves to the wheel / Q-E — otherwise one drag would slide
-// and spin the mirror at once, which made level 6 nearly unplayable.
-export function mouseDeltaToManipulation(controller, movementX) {
-  if (controller.positionEnabled) return { position: movementX * RAIL_SENSITIVITY, rotation: 0 };
+// rail *or* rotate around the axis). Sliding follows the screen: the mouse
+// delta is projected onto the rail's direction as seen from the camera
+// (right = mouse right, away = mouse up), in metres, so it feels the same
+// for any rail orientation and length. Rotation uses horizontal mouse when
+// it's the only degree of freedom; with both, rotation moves to the wheel /
+// Q-E — otherwise one drag would slide and spin the mirror at once.
+export function mouseDeltaToManipulation(controller, movementX, movementY = 0, cameraYaw = 0) {
+  if (controller.positionEnabled) {
+    const axis = controller.railAxis ?? { x: 1, z: 0, length: 1 };
+    const rightDot = axis.x * Math.cos(cameraYaw) - axis.z * Math.sin(cameraYaw);
+    const forwardDot = -axis.x * Math.sin(cameraYaw) - axis.z * Math.cos(cameraYaw);
+    const metres = (movementX * rightDot - movementY * forwardDot) * RAIL_METRES_PER_PIXEL;
+    return { position: metres / axis.length, rotation: 0 };
+  }
   if (controller.rotationEnabled) return { position: 0, rotation: movementX * ROTATE_SENSITIVITY };
   return { position: 0, rotation: 0 };
 }
@@ -20,7 +28,7 @@ export function keyRotationStep(controller) {
 // "Confirm" enters/exits manipulation mode on the currently hovered object
 // (spec §4). While active, mouse movement drives the object's degree of
 // freedom instead of camera look.
-export function createManipulation({ input, look, interaction }) {
+export function createManipulation({ input, look, interaction, camera }) {
   let active = null;
 
   function toggle() {
@@ -49,9 +57,9 @@ export function createManipulation({ input, look, interaction }) {
     look.setEnabled(true);
   }
 
-  function handleMouseMove(movementX) {
+  function handleMouseMove(movementX, movementY) {
     if (!active) return;
-    const { position, rotation } = mouseDeltaToManipulation(active, movementX);
+    const { position, rotation } = mouseDeltaToManipulation(active, movementX, movementY, camera?.rotation.y ?? 0);
     if (position) active.applyPositionDelta(position);
     if (rotation) active.applyRotationDelta(rotation);
   }

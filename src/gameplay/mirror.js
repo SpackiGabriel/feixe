@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { railAxis } from './rail.js';
 import { createSteppedAngle } from './rotation.js';
 
 const PLATE_WIDTH = 1;
@@ -62,7 +63,7 @@ export function createMirror({
   }
 
   plate.userData.interactive = true;
-  plate.userData.controller = { positionEnabled, rotationEnabled, rotationStep: angle.step, applyPositionDelta, applyRotationDelta };
+  plate.userData.controller = { positionEnabled, rotationEnabled, rotationStep: angle.step, railAxis: railAxis(railStart, railEnd), applyPositionDelta, applyRotationDelta };
   plate.userData.prompt = promptFor(positionEnabled, rotationEnabled);
   plate.userData.setHovered = (isHovered) => plateMaterial.emissive.setHex(isHovered ? HOVER_EMISSIVE : BASE_EMISSIVE);
 

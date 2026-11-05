@@ -24,7 +24,7 @@ input.onMouseMove(look.handleMouseMove);
 const interactiveObjects = [];
 // Occluders come from the level runtime, created below (read lazily each frame).
 const interaction = createInteraction(camera, scene, interactiveObjects, () => levelRuntime.getOccluders());
-const manipulation = createManipulation({ input, look, interaction });
+const manipulation = createManipulation({ input, look, interaction, camera });
 
 const hud = createHud({
   onPlay: () => renderer.domElement.requestPointerLock(),

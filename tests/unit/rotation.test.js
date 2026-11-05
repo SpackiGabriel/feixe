@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createSteppedAngle } from '../../src/gameplay/rotation.js';
 import { mouseDeltaToManipulation, keyRotationStep } from '../../src/core/manipulation.js';
+import { railAxis } from '../../src/gameplay/rail.js';
 
 const DEG = Math.PI / 180;
 
@@ -39,5 +40,25 @@ describe('mouseDeltaToManipulation', () => {
   it('test_keyStep_usesObjectStep_whenSnapping', () => {
     expect(keyRotationStep({ rotationStep: 45 * DEG })).toBeCloseTo(45 * DEG);
     expect(keyRotationStep({ rotationStep: null })).toBeCloseTo(15 * DEG);
+  });
+});
+
+describe('screen-relative rail drag', () => {
+  const along = (x, z) => ({ positionEnabled: true, rotationEnabled: false, railAxis: railAxis({ x: 0, z: 0 }, { x, z }) });
+
+  it('test_drag_railAlongX_cameraFacingNorth_mouseRightMovesTowardEnd', () => {
+    expect(mouseDeltaToManipulation(along(4, 0), 10, 0, 0).position).toBeGreaterThan(0);
+  });
+
+  it('test_drag_railAlongX_cameraFacingSouth_mouseRightMovesTowardStart', () => {
+    expect(mouseDeltaToManipulation(along(4, 0), 10, 0, Math.PI).position).toBeLessThan(0);
+  });
+
+  it('test_drag_railPointingAway_mouseUpMovesAway', () => {
+    expect(mouseDeltaToManipulation(along(0, -4), 0, -10, 0).position).toBeGreaterThan(0);
+  });
+
+  it('test_drag_sameMouse_longerRail_smallerFraction', () => {
+    expect(mouseDeltaToManipulation(along(8, 0), 10).position).toBeCloseTo(mouseDeltaToManipulation(along(2, 0), 10).position / 4);
   });
 });

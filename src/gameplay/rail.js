@@ -19,3 +19,13 @@ export function createRailMesh(start, end) {
   mesh.rotation.y = Math.atan2(dx, dz);
   return mesh;
 }
+
+// Pure: a rail's unit XZ direction (start → end) and its length, for the
+// screen-relative drag above. Zero-length (fixed) rails get a dummy axis.
+export function railAxis(start, end) {
+  const dx = end.x - start.x;
+  const dz = end.z - start.z;
+  const length = Math.hypot(dx, dz);
+  if (length < 1e-6) return { x: 1, z: 0, length: 1 };
+  return { x: dx / length, z: dz / length, length };
+}
