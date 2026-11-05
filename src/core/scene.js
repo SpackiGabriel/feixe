@@ -19,6 +19,7 @@ export function getWallMaterial() {
 
 function createRoom() {
   const room = new THREE.Group();
+  const walls = [];
 
   const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, map: floorTexture(ROOM_SIZE), roughness: 0.9 });
   const wallMaterial = getWallMaterial();
@@ -33,23 +34,27 @@ function createRoom() {
   const backWall = new THREE.Mesh(wallGeometry, wallMaterial);
   backWall.position.set(0, WALL_HEIGHT / 2, -half);
   room.add(backWall);
+  walls.push(backWall);
 
   const frontWall = new THREE.Mesh(wallGeometry, wallMaterial);
   frontWall.position.set(0, WALL_HEIGHT / 2, half);
   frontWall.rotation.y = Math.PI;
   room.add(frontWall);
+  walls.push(frontWall);
 
   const leftWall = new THREE.Mesh(wallGeometry, wallMaterial);
   leftWall.position.set(-half, WALL_HEIGHT / 2, 0);
   leftWall.rotation.y = Math.PI / 2;
   room.add(leftWall);
+  walls.push(leftWall);
 
   const rightWall = new THREE.Mesh(wallGeometry, wallMaterial);
   rightWall.position.set(half, WALL_HEIGHT / 2, 0);
   rightWall.rotation.y = -Math.PI / 2;
   room.add(rightWall);
+  walls.push(rightWall);
 
-  return room;
+  return { room, walls };
 }
 
 function createLights() {
@@ -96,9 +101,10 @@ function createRoomWallSegments() {
 export function createScene() {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1a1a1a);
-  scene.add(createRoom());
+  const { room, walls } = createRoom();
+  scene.add(room);
   scene.add(createLights());
   const colliders = createRoomColliders();
   const wallSegments = createRoomWallSegments();
-  return { scene, colliders, wallSegments };
+  return { scene, colliders, wallSegments, occluders: walls };
 }

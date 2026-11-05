@@ -66,6 +66,19 @@ try {
   const z2 = await page.evaluate(() => window.__feixe.camera.position.z);
   check(Math.abs(z2 - z0) < 1e-6, 'R restarts the level and returns the player to spawn');
 
+  console.log('aim occlusion (level 8)');
+  const aim = (x, z, yaw) => page.evaluate(async ([px, pz, pyaw]) => {
+    const { camera, look } = window.__feixe;
+    camera.position.set(px, 1.6, pz);
+    look.setOrientation(pyaw);
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    return window.__feixe.interaction.getHovered()?.userData.debugInfo?.() ?? null;
+  }, [x, z, yaw]);
+  await page.evaluate(() => window.__feixe.levelRuntime.loadLevel(7));
+  await frames(2);
+  check((await aim(0, 4.5, 0))?.startsWith('espelho m1'), 'mirror is selectable in plain view');
+  check((await aim(0, -2, Math.PI)) === null, 'mirror behind the dividing wall is not selectable');
+
   const count = await page.evaluate(() => window.__feixe.levelRuntime.getLevelCount());
   for (let i = 0; i < count; i++) {
     console.log(`level ${i + 1}`);

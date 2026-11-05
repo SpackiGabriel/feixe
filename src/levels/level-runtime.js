@@ -15,7 +15,7 @@ const PORTAL_CLEARANCE = 0.8; // meters pushed out from the landing portal's fac
 // `onLevelLoaded({ index, count, data, level })` fires after every load/restart (HUD title,
 // player spawn); `onGameComplete()` fires when the last level's exit is
 // reached — the runtime then idles until startNewGame()/loadLevel().
-export function createLevelRuntime({ scene, wallSegments, interactiveObjects, onLevelLoaded = () => {}, onGameComplete = () => {} }) {
+export function createLevelRuntime({ scene, wallSegments, interactiveObjects, roomOccluders = [], onLevelLoaded = () => {}, onGameComplete = () => {} }) {
   const levels = getLevels();
   let currentIndex = loadSavedLevelIndex(levels.length);
   let currentLevel = null;
@@ -31,6 +31,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, on
   // never reallocated, per the render-loop no-allocation rule
   // (.claude/rules/code-conventions.md).
   let levelColliders = [];
+  let levelOccluders = []; // solid meshes that block aiming (interaction.js)
   let doorColliderStart = 0;
 
   function teardown() {
@@ -46,6 +47,12 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, on
     levelColliders = [...currentLevel.blockers, ...currentLevel.walls].map((o) => o.collider);
     doorColliderStart = levelColliders.length;
     for (const door of currentLevel.doors) levelColliders.push(door.getCollider());
+    levelOccluders = [
+      ...roomOccluders,
+      ...currentLevel.doors.map((d) => d.mesh),
+      ...currentLevel.blockers.map((b) => b.mesh),
+      ...currentLevel.walls.map((w) => w.mesh),
+    ];
     exitTriggered = false;
     portalCooldownId = null;
     complete = false;
@@ -140,5 +147,6 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, on
     getLevelCount: () => levels.length,
     isComplete: () => complete,
     getColliders: () => levelColliders,
+    getOccluders: () => levelOccluders,
   };
 }

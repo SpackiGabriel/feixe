@@ -27,7 +27,12 @@ function setHoverState(object, isHovered) {
 // interactive object moved this frame (e.g. a dragged mirror) would
 // otherwise still carry last frame's matrixWorld — force both up to date
 // before raycasting instead of relying on the renderer to do it.
-export function createInteraction(camera, scene, interactiveObjects) {
+//
+// `getOccluders()` returns solid meshes (room/interior walls, doors,
+// blockers): an interactive object behind one of them isn't selectable,
+// so a closed door or wall really does keep the player's hands off what's
+// behind it (it used to be possible to grab mirrors through walls).
+export function createInteraction(camera, scene, interactiveObjects, getOccluders = () => []) {
   let hovered = null;
 
   function update() {
@@ -38,7 +43,12 @@ export function createInteraction(camera, scene, interactiveObjects) {
     _raycaster.set(_origin, _direction);
 
     const hits = _raycaster.intersectObjects(interactiveObjects, false);
-    const next = hits.length > 0 ? hits[0].object : null;
+    let next = hits.length > 0 ? hits[0].object : null;
+    if (next) {
+      _raycaster.far = hits[0].distance;
+      if (_raycaster.intersectObjects(getOccluders(), false).length > 0) next = null;
+      _raycaster.far = Infinity;
+    }
 
     if (next !== hovered) {
       setHoverState(hovered, false);

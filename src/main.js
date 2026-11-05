@@ -14,7 +14,7 @@ const params = new URLSearchParams(location.search);
 const debugMode = params.has('debug');
 
 const renderer = createRenderer();
-const { scene, colliders, wallSegments } = createScene();
+const { scene, colliders, wallSegments, occluders } = createScene();
 const camera = createCamera();
 
 const input = createInput(renderer.domElement);
@@ -22,7 +22,8 @@ const look = createLookController(camera);
 input.onMouseMove(look.handleMouseMove);
 
 const interactiveObjects = [];
-const interaction = createInteraction(camera, scene, interactiveObjects);
+// Occluders come from the level runtime, created below (read lazily each frame).
+const interaction = createInteraction(camera, scene, interactiveObjects, () => levelRuntime.getOccluders());
 const manipulation = createManipulation({ input, look, interaction });
 
 const hud = createHud({
@@ -40,6 +41,7 @@ const levelRuntime = createLevelRuntime({
   scene,
   wallSegments,
   interactiveObjects,
+  roomOccluders: occluders,
   onLevelLoaded: ({ index, count, data, level }) => {
     manipulation.exit();
     camera.position.x = level.spawn.x;
