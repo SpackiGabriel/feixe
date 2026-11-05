@@ -59,6 +59,5 @@ Dependency order, foundation → feature (validated by prototype, see
 8. Feedback/accessibility UI — color-blind symbols, activation feedback
    (RF10, spec §3)
 
-**Current implementation state**: nothing in this list is implemented yet.
-See `STATUS.md` for what's actually done vs. planned — this file describes
-intent and order, not progress.
+**Current implementation state**: see `STATUS.md` (and the code) for what's
+actually done — this file describes intent and order, not progress.

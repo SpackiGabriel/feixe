@@ -9,6 +9,7 @@ import { instantiateLevel, disposeLevel } from '../../src/levels/level-loader.js
 import { createLaserSystem } from '../../src/gameplay/laser-system.js';
 import { createScene } from '../../src/core/scene.js';
 import { applySolution } from '../support/apply-solution.js';
+import { levelTemplate } from '../../src/levels/data/level-template.js';
 
 function load(levelData) {
   const { scene, wallSegments } = createScene();
@@ -24,7 +25,10 @@ function tick({ level, laserSystem }) {
   for (const door of level.doors) door.update(0.016);
 }
 
-describe.each(getLevels().map((data) => [data.id, data]))('%s', (_id, data) => {
+// The template is validated too, so the example designers copy always works.
+const LEVELS_UNDER_TEST = [...getLevels(), { ...levelTemplate, id: 'level-template' }];
+
+describe.each(LEVELS_UNDER_TEST.map((data) => [data.id, data]))('%s', (_id, data) => {
   it('test_level_hasExactlyOneExitDoor', () => {
     expect(data.doors.filter((d) => d.exit)).toHaveLength(1);
   });

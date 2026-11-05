@@ -6,34 +6,80 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 **Code is the source of truth for what's implemented.** If this file and
 `src/` disagree, `src/` is right — fix this file.
 
-## Current focus
+## Current focus (checkpoint 2026-11-05, deadline ≈ 2026-11-12)
 
-Levels 1-8 are built (1-7 manually verified; 8 trace-verified only). Next:
-manually play Level 8, then build Level 9 ("Circuito") — reuses every
-system already built, no new ones needed.
+The game is functionally complete. All ten levels are playable end to end
+with every spec mechanic (RF01–RF10), the HUD, persistence and the end
+screen. The remaining work is **creative and verification work**, not
+engine work:
 
-**Needs a manual in-browser check**: Level 8 — door 1 opens with the
-mirror at +45°; walking through the (solid) dividing wall requires the
-portal; reconfiguring to 90° re-closes door 1 but opens the exit via the
-portal-routed beam.
+1. **Manual playtest on a real GPU, with mouse feel** (both students). It
+   has never been done for levels 6–10 since this round of changes. Note
+   anything confusing in the tuning list below.
+2. **Creative pass on levels** (designer): the levels in
+   `src/levels/data/` are working reference levels that satisfy spec §11.
+   Refine layouts and difficulty following `docs/level-authoring.md`.
+3. Visual track: replace placeholder looks where desired (see "Visual
+   design system" below). Keep gameplay readability: symbols, door lamps,
+   receiver pulse.
 
-## Implementation progress
+## Verified (evidence from this checkpoint)
 
-| System | State |
+- `npm run lint` clean; `npm test`: 13 files, 219 tests pass. These include
+  headless validation of all 10 levels plus the template: exit starts
+  closed, `solution` opens it, `scenarios` hold, emitter-rotation shortcut
+  guard, dispose frees everything.
+- `npm run e2e` (headless Chromium, software WebGL, external network
+  blocked): 52 checks pass. It covers real `W` movement and `R` restart,
+  aim occlusion, level 8's two-door route walked with the real `W` key,
+  then every level 1→10 (closed exit → solution → open → walk into exit →
+  next level), the end screen, progress reset, zero page errors and zero
+  external requests.
+- Screenshots of every level reviewed (`node tests/e2e/playthrough.mjs --shots <dir>`).
+
+## Not verified (needs a human)
+
+- Mouse-driven manipulation feel (pointer lock can't be driven headless;
+  e2e applies solutions through the same object controls instead).
+- Frame rate on the presentation machine (spec NFR 60 fps); software
+  WebGL in e2e says nothing about it.
+- Audio (procedural tones; headless has no audio).
+- CI's new e2e step (added to `.github/workflows/ci.yml`, not yet run on GitHub).
+
+## Implementation map (spec → code)
+
+| Spec | Where |
 |---|---|
-| Rendering & scene foundation | Done — `src/core/{renderer,camera,scene}.js`, `index.html`, `src/main.js` |
-| Movement & raycast interaction | Done — `src/core/{input,look,movement,interaction,manipulation}.js` |
-| Mirror & emitter system | Done — `src/gameplay/{mirror,emitter}.js` |
-| Laser simulation & color composition | Done — `src/gameplay/{laser,laser-beam,laser-system}.js`, unit tested (`tests/unit/laser.test.js`) |
-| Receiver & door logic | Done — `src/gameplay/{receiver,door,door-logic}.js`, `src/core/audio.js`; unit tested (`tests/unit/door-logic.test.js`, plus `isReceiverSatisfied` in `laser.test.js`) |
-| Switch (laser-free one-shot toggle) | Done and manually playtested — `src/gameplay/switch.js`; reuses `door.js`/`door-logic.js` unchanged via the same `isActive()` shape as a receiver |
-| Filter & blocker | Done and manually playtested — `src/gameplay/{filter,blocker}.js`, wired into `level-loader.js`/`laser-system.js` |
-| Level system (declarative data + loader) | Done — `src/levels/{level-loader,level-manager,level-runtime}.js`; unit tested (`tests/unit/level-manager.test.js`), plus headless per-level validation (`tests/unit/levels.test.js`: starts closed, declared `solution` opens the exit, dispose frees everything). Only gameplay objects are level data — room geometry is still hardcoded (`docs/decisions/0005`) |
-| Level-to-level exit trigger | Done and manually playtested — `src/levels/exit-trigger.js` (proximity to an open `exit: true` door, `docs/decisions/0006`), wired into `level-runtime.js`; unit tested (`tests/unit/exit-trigger.test.js`) |
-| Portal system | Done — `src/gameplay/portal.js` + `src/levels/portal-crossing.js` (beam and player both supported); unit tested (`tests/unit/{laser,portal-crossing}.test.js`). Not yet manually playtested (see above) |
-| Door/blocker movement collision | Done — `src/gameplay/aabb.js`, `door.js`'s/`blocker.js`'s `getCollider()`, wired into `movement.js`/`level-runtime.js` (`docs/decisions/0007`); unit tested (`tests/unit/aabb.test.js`). Doesn't gate aim-based manipulation — see `docs/findings.md` |
-| Feedback / accessibility UI | Not started |
-| Levels 1-10 | **Levels 1-7 done and manually verified, Level 8 done** (`src/levels/data/level-{1..8}.js`). Level 8's geometry/color/collision logic is trace-verified but not yet manually played. Levels 9-10 not built |
+| RF01 movement, §4 camera (pitch clamp, FOV `+`/`−`) | `src/core/{movement,look,camera,input}.js` |
+| RF02/RF03 select, slide on rail, rotate (snap optional); emitters rotate only if the level allows | `src/core/{interaction,manipulation}.js`, `src/gameplay/{mirror,emitter,filter,rotation,rail}.js` |
+| RF04 per-frame trace, reflection limit | `src/gameplay/{laser,laser-system}.js` |
+| RF05 additive color; §7 filter (subtractive), trap blocker (NOT) | `laser.js`, `filter.js`, `blocker.js`, `door-logic.js` |
+| RF06 receiver feedback (pulse, light, tone) | `src/gameplay/receiver.js`, `src/core/audio.js` |
+| RF07 doors AND/OR, nested `{any}`, `forbidIds`, slide animation, lock lamps | `src/gameplay/door.js`, `level-loader.js` |
+| RF08 declarative levels incl. interior `walls` | `src/levels/data/*.js`, `level-loader.js` |
+| RF09 10 levels, restart (`R`), progression, end screen | `src/levels/{level-manager,level-runtime}.js` |
+| RF10 / NFR feedback, color symbols, HUD | `src/ui/hud.js`, `src/gameplay/{textures,colors}.js` |
+| §9 portals (beam + player) | `src/gameplay/portal.js`, `src/levels/portal-crossing.js` |
+| NFR persistence | `level-manager.js` (`localStorage`, reset on finish / Novo jogo) |
+| §13 III textures (procedural canvas) / IV animation | `textures.js`; door slide, receiver pulse, beam update |
+
+## Known limitations (deliberate)
+
+- **No emitter tilt** (RF03/§6 "em casos específicos"): the tracer is 2D at
+  one beam height. Decided with the team on 2026-11-05.
+- Outer room fixed at 10×10 m for every level; sub-areas use `walls`.
+- Mirrors reflect on both faces.
+- Portal beams leave the far portal from its center (not the mirrored
+  entry offset).
+- Spec §10/§13 "malhas-base reutilizadas": all meshes are procedural
+  primitives. No GLB is loaded (the asset pipeline in `assets/` is
+  separate, unfinished visual-track work).
+
+## Tuning list (fill in during playtest)
+
+- Rotation sensitivity (`manipulation.js` `ROTATE_SENSITIVITY`), rail drag
+  speed (`RAIL_METRES_PER_PIXEL`), Q/E step (15°).
+- Lighting levels (`scene.js`), beam thickness (`laser-beam.js`).
 
 ## Visual design system (discovery only — nothing implemented)
 
@@ -42,35 +88,14 @@ Visual identity and asset pipeline are being specified, not built:
 (established vs. open decisions), `docs/research/pipeline-assessment.md`,
 `assets/README.md`. A grey-box evaluation page lives in `gallery/` (reuses the
 real factories; `npm start` → `/gallery/`); first-pass screenshots in
-`design/visual/evidence/`. No GLB loading, no Blender scripts, no tokens exist
-yet; gameplay visuals in `src/` are still the placeholder primitives.
+`design/visual/evidence/`. The game now has procedural textures and a
+baseline symbol mapping (`src/gameplay/{textures,colors}.js`, swappable in
+one table) but loads no GLB.
 
 Asset toolchain is installed and smoke-tested (Blender 4.5 LTS headless,
 `@gltf-transform/cli`, `playwright-core`): `bash assets/src/smoke.sh`, details
 in `assets/README.md`. Not yet used for any real asset.
 
-## Known issues / blockers
-
-None yet.
-
-## Immediate next steps
-
-1. Manually playtest Level 8, then build Level 9 ("Circuito") — two
-   emitters, a filter, a blocker, an AND door and an OR door sharing four
-   mirrors.
-2. Before authoring it, read `docs/level-authoring.md` (placement and
-   portal gotchas).
-## Known simplifications (not blockers)
-
-- Room geometry (walls) is not level data — every level currently shares
-  the same fixed room from `src/core/scene.js` (`docs/decisions/0005`).
-- Level 8's non-exit door ("door 1") isn't flanked by walls, so it's a
-  soft gate — a player could walk around its 2m width in the open room
-  instead of through it, though nothing about the intended solution path
-  requires that detour. Only the level's dividing wall (a full room-width
-  blocker) is a genuinely unavoidable obstacle.
-
 ## How to run
 
-See `README.md` (`npm start`, `npm run lint`, `npm test`). Press `R`
-in-game to restart the current level.
+See `README.md` (`npm start`, `npm run lint`, `npm test`, `npm run e2e`).

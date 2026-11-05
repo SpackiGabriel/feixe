@@ -1,60 +1,114 @@
-# Level authoring & adding gameplay objects
+# Level authoring
 
-Practical checklists. For *why* each rule exists, follow the links to
-`docs/findings.md` / `docs/decisions/`.
+How to build, preview, test and ship a level. You don't need to touch
+engine code: a level is one plain data file.
 
-## Authoring a level (`src/levels/data/level-N.js`)
+## The loop
 
-1. Copy the closest existing level; import `BEAM_HEIGHT`, `ROOM_HALF` from
-   `./constants.js` (don't redeclare them).
-2. Register it in `src/levels/level-manager.js`'s `LEVELS` array.
-3. Exactly one door has `exit: true`; the level must start **unsolved**
-   (exit door closed), and must declare a test-only `solution` —
-   `{ mirrors: { id: { t?, rotationY? } }, filters: { id: { t } }, switches: [ids] }`
-   — that opens the exit door. `tests/unit/levels.test.js` enforces all of
-   this headlessly, applying the solution through the objects' own
-   controls (so a solution needing a disabled degree of freedom fails).
-4. **Receiver must be the nearest segment on its beam's path.** A beam
-   hits whatever is nearest; a receiver behind a mirror/wall never
-   activates. (findings 2026-09-15)
-5. **A `blocker` only gates a puzzle if the level has a mirror** to route
-   the beam around it; on a straight unmirrored line it's decoration.
-   (findings 2026-09-19, "blocker downstream of a filter")
-6. **Portals:** author each end's `rotationY` as "outward-facing, away
-   from the wall it's mounted on", and check the *player's landing spot*
-   as well as the beam trace. (findings 2026-09-19, "portal's rotationY")
-7. **Closed doors/blockers gate player movement only — not aiming.** A
-   mirror behind a closed door is still adjustable from across the room.
-   Don't design a puzzle around "can't reach the mirror yet".
-   (findings 2026-09-19, "aim-based interaction ignores occlusion";
-   `docs/decisions/0007`)
-8. Room geometry is shared by every level (`docs/decisions/0005`); only
-   gameplay objects are level data.
+1. **Copy** `src/levels/data/level-template.js` (every field, commented) or
+   the closest existing level to `src/levels/data/level-N.js`. Rename the
+   export (`levelN`), set `id: 'level-N'` and `name`.
+2. **Register** it in `src/levels/level-manager.js`: import it and put it in
+   `LEVELS` where it belongs in the sequence.
+3. **Preview**: `npm start`, open
+   `http://localhost:8000/?debug&level=N`. Reload after each edit. In debug
+   mode:
+   - the panel (top left, `F3` toggles it) shows your position/yaw, the
+     object under the crosshair (id, rail `t`, rotation in degrees), and
+     every receiver, trap and door state;
+   - you can walk without clicking into the game first;
+   - `R` restarts the level, `window.__feixe` exposes the runtime in the
+     browser console.
+4. **Solve it in the browser**, then copy the `t` / rotation values from the
+   debug panel into the level's `solution` (radians: `deg * Math.PI / 180`).
+   Optionally add `scenarios` for intermediate states you want guaranteed
+   (a gate that must open, a trap that must close a door, an alternative
+   route that must also work).
+5. **Test**: `npm test`. For every level, `tests/unit/levels.test.js`
+   checks that:
+   - there's exactly one exit door and ids are unique;
+   - the exit starts **closed**;
+   - `solution`, applied through the player's own controls, **opens** it
+     (so it fails if the solution needs a disabled degree of freedom);
+   - every `scenario` ends with the door states it declares;
+   - rotating the emitters alone can't open the exit (shortcut guard);
+   - unloading the level frees everything.
+6. **Play it for real** once (`http://localhost:8000/`, `Novo jogo` or the
+   debug jump). Then run `npm run e2e`: it plays every level in Chromium,
+   from closed exit to next level, ending on the end screen.
 
-## Adding a new gameplay object type
+## Vocabulary (what each field does)
 
-1. `src/gameplay/<thing>.js` — a `createX({...})` factory returning the
-   Three.js node(s) plus any `segment` (for laser tracing) / `collider`
-   (for player movement). Keep any branching logic in a Three-free module
-   when it's worth testing in isolation (`docs/decisions/0004`).
-2. `src/levels/level-loader.js` — build it in `instantiateLevel()`, add
-   its node(s) with `addToScene()` (**not** `scene.add`), and include the
-   new array in the returned object. Disposal is then automatic —
-   `disposeLevel()` frees everything in `roots`.
-3. If it affects beams: `src/gameplay/laser-system.js` takes it as a
-   parameter (it receives the whole loaded level via spread) and adds its
-   segments to `segments`; add a new `type` branch in `laser.js`'s
-   `traceBeam` with a unit test.
-4. If it blocks the player: add its collider in `src/levels/level-runtime.js`
-   (`levelColliders`).
+See `level-template.js` for exact shapes and defaults.
 
-`tests/unit/levels.test.js` (including its dispose/leak check) covers every
-level that uses it once a level does.
+| Field | What it is | Player can |
+|---|---|---|
+| `mirrors` | Plate on a base. Zero-length rail = fixed position | slide (`positionEnabled`), rotate (`rotationEnabled`), optional snap `rotationStepDegrees` |
+| `emitters` | Fixed beam source: `red`, `green`, `blue` or `white` | rotate only if `rotationEnabled` (default **off**) |
+| `receivers` | Panel lit by the right color. Composites need all components at once | — |
+| `filters` | Lets only its primary through; white → that primary | slide on its rail |
+| `blockers` | Absorbs beams, blocks the player. `trap: true` = NOT | — |
+| `walls` | Interior walls by endpoints `[x, z]` | — (blocks walking and aiming) |
+| `portals` | Pair; beam and player go in one, out the other | walk through |
+| `switches` | Button, no laser | click to toggle |
+| `doors` | `AND` / `OR` over `receiverIds` (`{ any: [...] }` = nested OR), `forbidIds` (traps), one has `exit: true` | walk through when open |
+| `spawn` | Start position + yaw (default `[0, 4.5]`, facing north) | — |
 
-If it's interactive: set `userData.controller` (drag/rotate —
-`docs/decisions/0002`) or `userData.activate` (one-shot, like `switch.js`)
-on the mesh and push the mesh to `interactiveObjects`.
+Color symbols (accessibility) are automatic: red = circle, green =
+triangle, blue = diamond, composites show their components. The mapping
+lives in `src/gameplay/colors.js`.
 
-## Verifying
+## Placement rules (the gotchas)
 
-`npm run lint && npm test` (the level tests catch most placement mistakes), then play the level in the browser (`npm start`).
+1. **A beam hits whatever is nearest.** A receiver behind a mirror, wall
+   or another receiver never lights. The tests catch this as "solution
+   doesn't open the exit".
+2. **Mirrors reflect on both faces.** A beam arriving from the back
+   bounces too (level 10 uses this on purpose).
+3. **45° reference**: a mirror at `rotationY = π/4` turns a north-going
+   beam east (and east-going → north); `-π/4` turns north-going → west.
+   At `π/2` it's edge-on to a north-south beam, which passes straight by.
+4. **Receiver width is 0.8 m, mirror 1 m.** Leave ≥ 0.2 m between a beam
+   line and the edge of anything it must miss. Gentle tolerances keep the
+   spec's "no pixel-perfect placement" rule.
+5. **One beam ends on one receiver.** N beams can satisfy at most N
+   receivers at once (a composite takes 2–3). If two doors need more than
+   that, the player must open them in sequence (levels 8, 9).
+6. **A trap only matters if some reachable configuration hits it.** On a
+   straight, mirror-less line nothing ever changes the beam's path.
+7. **Walls, closed doors and blockers block aiming.** The player can't
+   grab an object they can't see. Make sure every object the solution
+   needs is visible from somewhere the player can stand at that point,
+   e.g. through an open door (level 8).
+8. **Portals**: author each end's `rotationY` facing away from its wall.
+   The player is pushed 0.8 m out of the far portal. Keep 1 m clear
+   around a portal, or the player will step into it by accident
+   (findings 2026-09-19).
+9. **Doors** are 2 m wide, 3 m tall. A door is only a real gate when walls
+   meet both of its sides. On a room wall, put it 0.1 m inside
+   (`±(ROOM_HALF - 0.1)`) with `rotationY: Math.PI` on the north wall.
+10. **Spawn** must not sit on an emitter or inside a mirror/filter. Remember
+    mirrors and filters have no player collision.
+11. Keep walls axis-aligned: player collision is box-based, so a diagonal
+    wall blocks its whole bounding box.
+
+## Limits (by design)
+
+- Everything happens on one horizontal plane (`BEAM_HEIGHT`). No tilt, no
+  vertical routes: the tracer is 2D. Emitter tilt from RF03 is deliberately
+  not implemented.
+- The outer room is always 10×10 m. Use `walls` for sub-areas.
+- At most 8 reflections or portal hops per beam (`MAX_REFLECTIONS`).
+
+## Adding a new kind of object (engine work, not level work)
+
+1. `src/gameplay/<thing>.js`: a `createX({...})` factory returning the
+   Three.js node(s) plus any `segment` (laser) / `collider` (movement).
+   Keep branching logic Three-free when worth testing (`docs/decisions/0004`).
+2. `src/levels/level-loader.js`: build it in `instantiateLevel()` via
+   `addToScene()` (disposal is then automatic) and return it.
+3. Beams: add its segments in `laser-system.js` and a `type` branch in
+   `laser.js`'s `traceBeam`, with a unit test.
+4. Player: add its collider/occluder in `level-runtime.js`.
+5. Interactive: `userData.controller` (drag/rotate, `docs/decisions/0002`)
+   or `userData.activate` (one-shot), plus `userData.prompt` for the HUD.

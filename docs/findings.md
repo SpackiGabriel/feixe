@@ -174,6 +174,10 @@ so far — worth keeping this in mind when authoring their layouts, and
 worth a proper occlusion check if this ever becomes an actual exploit
 worth closing (it hasn't yet).
 
+**Resolved 2026-11-05**: `interaction.js` now also raycasts the level's
+occluders (room/interior walls, doors, blockers), so objects behind them
+can't be selected.
+
 ## 2026-10-01 — Asset toolchain: axis mapping and headless-render notes
 
 Source: toolchain smoke test (`assets/src/smoke.sh`).
@@ -186,3 +190,39 @@ horizontal slab. Checked by exporting and reading the glTF bounding box
 (0.8 × 0.8 × 0.08). Also: headless Blender under WSL2 prints harmless
 EGL/MESA warnings but renders fine, and the PyPI `bpy` module is not used
 because Blender's bundled Python is 3.11 and the system Python is 3.14.
+
+## 2026-11-05 — Emitters were always rotatable, so most levels could be skipped
+
+Source: completion audit (reading `emitter.js`, then tracing level 2–5 data).
+
+`createEmitter` hardcoded `rotationEnabled: true`, and every emitter was
+pushed to `interactiveObjects`. In nearly every level the player could
+simply aim the emitter at the receiver and ignore the mirrors. Nothing
+caught it: the level tests only checked "starts closed" and "solution
+opens". Emitters are now fixed unless the level says `rotationEnabled`, and
+`levels.test.js` sweeps each rotatable emitter through 360° to check that
+rotation alone never opens the exit. **Lesson**: a level test that only
+checks "the intended solution works" says nothing about unintended ones.
+Add a guard for each cheap shortcut.
+
+## 2026-11-05 — One beam satisfies one receiver; count beams before designing doors
+
+Source: designing levels 9 and 10.
+
+A beam ends at the first receiver it hits, so N emitters can keep at most N
+receivers lit at once, and a composite receiver takes 2–3 beams. Level 9's
+"AND door + OR door" (2 beams, magenta + one of two receivers = 3 beam-hits)
+therefore *cannot* have both doors open together. It became a sequencing
+puzzle: open the gate, walk through, then reconfigure. Count the
+beam-hits a door state needs before laying out a level. If it's more than
+the emitters, the level is sequential whether you meant it or not.
+
+## 2026-11-05 — A door closing on the player trapped them in its collider
+
+Source: building level 8's walled door 1 (found while writing its e2e route).
+
+`movement.js` rejected any step that overlapped a collider. A door that
+slides shut while the player stands in the doorway overlaps them, so every
+step, including stepping out, was rejected and the player was stuck for
+good. Colliders the player is already inside are now ignored for that move
+(`tests/unit/movement.test.js`). The player can step out to either side.
