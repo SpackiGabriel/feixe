@@ -6,8 +6,8 @@
 assets/
 ├── src/
 │   ├── build.sh          # bash assets/src/build.sh <asset>: Blender -> GLBs -> gltf-transform validate -> check-glb.mjs
-│   ├── check-glb.mjs     # nothing in front of the face plane, floor at -1.2 m, face recess <= 6 cm; prints size/tris
-│   ├── blender/          # build_<asset>.py (variants are a table at the top) + smoke_test.py
+│   ├── check-glb.mjs     # per family: receiver = nothing in front of the face plane; emitter = turret/base nodes, base under the pivot; floor at -1.2 m
+│   ├── blender/          # build_<asset>.py (variants are a table at the top), asset_lib.py (shared helpers), smoke_test.py
 │   └── specs/            # (not created yet) one Markdown spec per asset family
 ├── models/<asset>/       # generated GLBs + manifest.json (committed; regenerate, never hand-edit)
 └── viewer/               # neutral side-by-side GLB viewer (index.html + viewer.js)
@@ -43,3 +43,10 @@ In the viewer press **R** (or Recarregar) after each build. Add a variant by add
 - Blender is Z-up, glTF is Y-up: Blender **+Z → glTF +Y**, Blender **+Y → glTF −Z**. A panel's thickness must run along Blender **Y** to be glTF **Z** (the game's local depth axis).
 - Headless Blender prints harmless `EGL`/`MESA` warnings under WSL2; Workbench *and* EEVEE-Next both rendered a PNG. Blender previews won't match the game's lighting anyway — game-engine screenshots (above) are the planned review image.
 - `gltf-transform validate` reports `UNUSED_OBJECT` info for `TEXCOORD_0` on untextured Blender exports; harmless.
+
+## Asset families built so far
+
+- **receiver** (`build_receiver.py`): origin = centre of the active face at beam height, front = glTF −Z; nothing in front of the face plane, the visible face is recessed at most 6 cm.
+- **emitter** (`build_emitter.py`): the code yaws the emitter about the vertical axis through its origin and traces the beam from there, so **origin = rotation pivot** (not the muzzle). Two nodes: `turret` (rotates) and `base` (fixed, centred under the pivot). The rear cap is a flat disc ≥ 0.2 m for the symbol.
+
+Add a family: write `build_<asset>.py` (reuse `asset_lib.py`), add the name to `ASSETS` in `assets/viewer/viewer.js`, and a per-family block in `check-glb.mjs` if it has rules.

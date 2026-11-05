@@ -7,8 +7,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
+const ASSETS = ['receiver', 'emitter']; // asset families with a manifest in assets/models/<asset>/ (add new ones here)
 const params = new URLSearchParams(location.search);
-const ASSET = params.get('asset') ?? 'receiver';
+const ASSET = params.get('asset') ?? ASSETS[0];
 const FLOOR_Y = -1.2; // beam height below the origin (design-system SPACE-01)
 
 const canvas = document.getElementById('gl');
@@ -23,7 +24,9 @@ let cells = [];
 let center = new THREE.Vector3(0, -0.3, 0);
 let distance = 3.2;
 
-document.getElementById('assetName').textContent = `· ${ASSET}`;
+const assetSelect = document.getElementById('asset');
+assetSelect.innerHTML = ASSETS.map((a) => `<option${a === ASSET ? ' selected' : ''}>${a}</option>`).join('');
+assetSelect.addEventListener('change', () => { params.set('asset', assetSelect.value); location.search = params.toString(); });
 
 function makeScene() {
   const scene = new THREE.Scene();
@@ -36,12 +39,19 @@ function makeScene() {
   return scene;
 }
 
-function buildGuides(box) {
+// `spec` is the manifest's "guides": { faceOutline: <side in m> } draws the active face in the z = 0 plane;
+// { pivotAxis: true } draws the vertical rotation axis through the origin (emitters yaw about it).
+function buildGuides(box, spec = {}) {
   const g = new THREE.Group();
   g.add(new THREE.AxesHelper(0.35)); // origin: red +X, green +Y, blue +Z (so the front, -Z, points away from blue)
-  const f = 0.4; // active face 0.8 x 0.8 centred on the origin, in the z = 0 plane
-  const outline = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([[-f, -f], [f, -f], [f, f], [-f, f]].map(([x, y]) => new THREE.Vector3(x, y, 0))), new THREE.LineBasicMaterial({ color: 0x40e0ff }));
-  g.add(outline);
+  const cyan = new THREE.LineBasicMaterial({ color: 0x40e0ff });
+  if (spec.faceOutline) {
+    const f = spec.faceOutline / 2;
+    g.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([[-f, -f], [f, -f], [f, f], [-f, f]].map(([x, y]) => new THREE.Vector3(x, y, 0))), cyan));
+  }
+  if (spec.pivotAxis) {
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, FLOOR_Y, 0), new THREE.Vector3(0, box.max.y + 0.1, 0)]), cyan));
+  }
   g.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), new THREE.Vector3(), 0.5, 0xffd34d, 0.1, 0.06)); // front = -Z
   g.add(new THREE.Box3Helper(box, 0xffffff));
   return g;
@@ -91,7 +101,7 @@ async function load() {
       el.querySelector('.stats').textContent = `${tris} tris · ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)} m (x y z)`;
       const scene = makeScene();
       scene.add(model);
-      const guides = buildGuides(box);
+      const guides = buildGuides(box, manifest.guides);
       scene.add(guides);
       const floor = new THREE.GridHelper(2, 20, 0x8a8d90, 0x666a6d); floor.position.y = FLOOR_Y; scene.add(floor);
       const camera = new THREE.PerspectiveCamera(36, 4 / 5, 0.05, 50);

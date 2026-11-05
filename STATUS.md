@@ -127,6 +127,18 @@ one table) and the presentation rules in `docs/presentation.md` (which
 apply design-system COL-01/02: portals, switch, doors and traps are now
 neutral). It loads no GLB.
 
+2026-10-03: asset iteration loop built: `assets/src/build.sh receiver`
+(Blender → 3 placeholder GLB variants + manifest, validated) and a neutral
+clay side-by-side viewer at `/assets/viewer/`. The Receiver design is
+deliberately **not** decided (shape, symbols, materials all open); see
+`assets/README.md` for the loop. The game does not load any GLB yet.
+
+2026-10-02: `design/visual/design-system.md` (v1, frozen items only) and
+`design/visual/tokens.json` (values copied from `src/`) drafted. The
+open decisions are listed at the bottom of `design-system.md`; the
+Receiver can't be built until the team settles at least the shape
+language, symbol mapping and front-face convention.
+
 Asset toolchain is installed and smoke-tested (Blender 4.5 LTS headless,
 `@gltf-transform/cli`, `playwright-core`): `bash assets/src/smoke.sh`, details
 in `assets/README.md`. Not yet used for any real asset.

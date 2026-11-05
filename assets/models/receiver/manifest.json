@@ -1,5 +1,8 @@
 {
   "asset": "receiver",
+  "guides": {
+    "faceOutline": 0.8
+  },
   "variants": [
     {
       "id": "a-painel-instrumento",

@@ -1,0 +1,26 @@
+{
+  "asset": "emitter",
+  "guides": {
+    "pivotAxis": true
+  },
+  "variants": [
+    {
+      "id": "a-tubo-a-gas",
+      "label": "A · tubo a gás",
+      "note": "cilindro anelado em selas sobre trilho, prato escalonado",
+      "file": "emitter-a-tubo-a-gas.glb"
+    },
+    {
+      "id": "b-cabeca-em-caixa",
+      "label": "B · cabeça em caixa",
+      "note": "gabinete com aletas e focinho, base quadrada com nervuras",
+      "file": "emitter-b-cabeca-em-caixa.glb"
+    },
+    {
+      "id": "c-corneta",
+      "label": "C · corneta",
+      "note": "bocal cônico, lata traseira, forquilha com munhões, base em sino",
+      "file": "emitter-c-corneta.glb"
+    }
+  ]
+}

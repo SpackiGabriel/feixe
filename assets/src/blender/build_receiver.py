@@ -9,94 +9,20 @@ at beam height; front = glTF -Z = Blender +Y, so everything sits at Blender y <=
 Nothing may stick out in front of y = 0 (the plane the 2D beam stops on): the front is
 built as stepped rings that recede, and the visible face is recessed at most RECESS (6 cm).
 """
-import json
 import math
+import os
 import sys
-import bmesh
-import bpy
 
-out_dir = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "."
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from asset_lib import bolt, box, cone, cyl, export, frustum, out_dir, reset, ring, write_manifest  # noqa: E402,F401
 
 FACE = 0.8          # active face width/height (matches src/gameplay/receiver.js)
 RECESS = 0.06       # how far behind y = 0 the visible face sits
 BEAM_HEIGHT = 1.2   # stand reaches the floor at z = -BEAM_HEIGHT
 GREY = {"body": 0.5, "frame": 0.45, "face": 0.2, "stand": 0.35, "hardware": 0.62}
 
-GROUPS = {}
 
-
-# ---------------------------------------------------------------- helpers
-
-def _register(o, group):
-    GROUPS.setdefault(group, []).append(o)
-    return o
-
-
-def _apply(o, rotation=False):
-    bpy.context.view_layer.objects.active = o
-    o.select_set(True)
-    bpy.ops.object.transform_apply(location=False, rotation=rotation, scale=True)
-    o.select_set(False)
-
-
-def box(group, size, center, bevel=0.0, rot=None):
-    """Axis-aligned box (size = x,y,z); `rot` = optional euler (rx, ry, rz) applied about its centre."""
-    bpy.ops.mesh.primitive_cube_add(size=1, location=center)
-    o = bpy.context.object
-    o.scale = size
-    if rot:
-        o.rotation_euler = rot
-    _apply(o, rotation=bool(rot))
-    if bevel:
-        mod = o.modifiers.new("Bevel", "BEVEL")
-        mod.width, mod.segments, mod.limit_method = bevel, 1, "NONE"  # 1 segment = a flat, stamped-looking chamfer
-        bpy.context.view_layer.objects.active = o
-        bpy.ops.object.modifier_apply(modifier="Bevel")
-    return _register(o, group)
-
-
-def cyl(group, radius, length, center, axis="z", verts=24):
-    bpy.ops.mesh.primitive_cylinder_add(vertices=verts, radius=radius, depth=length, location=center)
-    o = bpy.context.object
-    if axis == "x":
-        o.rotation_euler = (0, math.pi / 2, 0)
-    elif axis == "y":
-        o.rotation_euler = (math.pi / 2, 0, 0)
-    _apply(o, rotation=axis != "z")
-    return _register(o, group)
-
-
-def bolt(center, axis="z"):
-    return cyl("hardware", 0.016, 0.014, center, axis, verts=6)  # hex head, sits on a surface (never in front of y = 0)
-
-
-def ring(group, outer, inner, y0, y1, centre_z=0.0):
-    """Square frame from four bars, spanning y0..y1 (y1 > y0), `outer`/`inner` are square side lengths."""
-    d, cy = y1 - y0, (y0 + y1) / 2
-    t = (outer - inner) / 2
-    off = (outer - t) / 2
-    box(group, (outer, d, t), (0, cy, centre_z + off))
-    box(group, (outer, d, t), (0, cy, centre_z - off))
-    box(group, (t, d, inner), (off, cy, centre_z))
-    box(group, (t, d, inner), (-off, cy, centre_z))
-
-
-def frustum(group, w1, h1, y1, w2, h2, y2):
-    """Four-sided taper from (w1 x h1 at y1) to (w2 x h2 at y2)."""
-    v = [(-w1 / 2, y1, -h1 / 2), (w1 / 2, y1, -h1 / 2), (w1 / 2, y1, h1 / 2), (-w1 / 2, y1, h1 / 2),
-         (-w2 / 2, y2, -h2 / 2), (w2 / 2, y2, -h2 / 2), (w2 / 2, y2, h2 / 2), (-w2 / 2, y2, h2 / 2)]
-    f = [(0, 1, 2, 3), (7, 6, 5, 4), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0)]
-    mesh = bpy.data.meshes.new("frustum")
-    mesh.from_pydata(v, [], f)
-    bm = bmesh.new()
-    bm.from_mesh(mesh)
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    bm.to_mesh(mesh)
-    bm.free()
-    o = bpy.data.objects.new("frustum", mesh)
-    bpy.context.scene.collection.objects.link(o)
-    return _register(o, group)
-
+# ---------------------------------------------------------------- shared parts
 
 def face():
     """The visible face: 0.8 x 0.8 plate whose front sits RECESS behind y = 0 (1 mm proud of what's behind it)."""
@@ -227,39 +153,12 @@ VARIANTS = {
 
 # ---------------------------------------------------------------- export
 
-def clear():
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.context.scene.unit_settings.system = "METRIC"
-    GROUPS.clear()
-
-
-def finish(vid):
-    root = bpy.data.objects.new("Receiver", None)
-    bpy.context.scene.collection.objects.link(root)
-    for group, objs in GROUPS.items():
-        bpy.ops.object.select_all(action="DESELECT")
-        for o in objs:
-            o.select_set(True)
-        bpy.context.view_layer.objects.active = objs[0]
-        if len(objs) > 1:
-            bpy.ops.object.join()
-        joined = bpy.context.view_layer.objects.active
-        joined.name = group
-        mat = bpy.data.materials.new(f"mat_{group}")
-        mat.diffuse_color = (GREY[group],) * 3 + (1,)
-        joined.data.materials.clear()
-        joined.data.materials.append(mat)
-        joined.parent = root
-    path = f"{out_dir}/receiver-{vid}.glb"
-    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", export_yup=True, export_apply=True)
-    return f"receiver-{vid}.glb"
-
-
+OUT = out_dir()
 entries = []
 for vid, (label, note, fn) in VARIANTS.items():
-    clear()
+    reset()
     fn()
-    entries.append({"id": vid, "label": label, "note": note, "file": finish(vid)})
-with open(f"{out_dir}/manifest.json", "w") as f:
-    json.dump({"asset": "receiver", "variants": entries}, f, indent=2, ensure_ascii=False)
+    export(f"{OUT}/receiver-{vid}.glb", GREY, "Receiver")
+    entries.append({"id": vid, "label": label, "note": note, "file": f"receiver-{vid}.glb"})
+write_manifest(OUT, "receiver", entries, {"faceOutline": FACE})
 print("BUILD_OK", len(entries))
