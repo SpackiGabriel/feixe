@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { railAxis } from './rail.js';
+import { railAxis, createRailMesh } from './rail.js';
+import { events } from '../core/events.js';
+import { createRailState, createManipulable } from '../presentation/affordances.js';
 import { COLOR_NAMES } from './colors.js';
 import { colorToHex } from './laser.js';
 import { symbolFaceTexture } from './textures.js';
@@ -7,6 +9,9 @@ import { symbolFaceTexture } from './textures.js';
 const PANEL_WIDTH = 0.8;
 const PANEL_HEIGHT = 0.8;
 const PANEL_THICKNESS = 0.05;
+
+const steelMaterial = new THREE.MeshStandardMaterial({ color: 0x3b4146, metalness: 0.7, roughness: 0.38 });
+steelMaterial.userData.shared = true;
 
 const _localA = new THREE.Vector3();
 const _localB = new THREE.Vector3();
@@ -34,6 +39,25 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
   const plate = new THREE.Mesh(new THREE.BoxGeometry(PANEL_WIDTH, PANEL_HEIGHT, PANEL_THICKNESS), plateMaterial);
   plate.rotation.y = rotationY;
   base.add(plate);
+  // Frame: top/bottom bars and a stand (SHAPE-01 "translucent plate in a
+  // frame"), so a filter never reads as a receiver or a mirror.
+  const barGeometry = new THREE.BoxGeometry(PANEL_WIDTH + 0.06, 0.05, PANEL_THICKNESS * 2.4);
+  for (const side of [-1, 1]) {
+    const bar = new THREE.Mesh(barGeometry, steelMaterial);
+    bar.position.y = side * (PANEL_HEIGHT / 2 + 0.025);
+    plate.add(bar);
+  }
+  const standHeight = railStart.y - PANEL_HEIGHT / 2;
+  const stand = new THREE.Mesh(new THREE.BoxGeometry(0.06, standHeight, 0.06), steelMaterial);
+  stand.position.y = -(PANEL_HEIGHT / 2 + standHeight / 2);
+  base.add(stand);
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.04, 0.2), steelMaterial);
+  foot.position.y = -railStart.y + 0.02;
+  foot.rotation.y = rotationY;
+  base.add(foot);
+
+  const railMesh = createRailMesh(railStart, railEnd);
+  const rail = railMesh ? createRailState(railMesh) : null;
 
   let t = THREE.MathUtils.clamp(initialT, 0, 1);
 
@@ -42,8 +66,12 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
   }
   applyPosition();
 
+  let manipulable = null;
   function applyPositionDelta(delta) {
-    t = THREE.MathUtils.clamp(t + delta, 0, 1);
+    const wasAtEnd = t === 0 || t === 1;
+    const wanted = t + delta;
+    t = THREE.MathUtils.clamp(wanted, 0, 1);
+    if (wanted !== t && !wasAtEnd) manipulable?.hitLimit();
     applyPosition();
   }
 
@@ -57,9 +85,14 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
   };
   plate.userData.prompt = 'Clique: mover filtro';
   // Own hover feedback: the generic tint would overwrite the color emissive.
-  plate.userData.setHovered = (isHovered) => { plateMaterial.emissiveIntensity = isHovered ? 1.2 : 0.6; };
+  manipulable = createManipulable({
+    target: plate,
+    rail,
+    events,
+    onHover: (isHovered) => { plateMaterial.emissiveIntensity = isHovered ? 1.2 : 0.6; },
+  });
 
-  return { base, plate, getT: () => t, primary, applyPositionDelta };
+  return { base, plate, extras: railMesh ? [railMesh] : [], getT: () => t, primary, applyPositionDelta, update: manipulable.update };
 }
 
 // World-space XZ segment of the filter's plate, for the laser tracer —

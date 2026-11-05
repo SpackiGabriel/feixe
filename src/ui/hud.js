@@ -1,153 +1,145 @@
-// DOM overlay for everything that isn't the 3D scene: start/pause menu,
-// level title card, aim prompt under the crosshair, end-of-game screen and
-// the ?debug readout. Text is Portuguese and only names controls — never
-// puzzle logic (spec §12: no symbols/formulas exposing the rules).
-// Only touches the DOM when a value changes, since it's driven per frame.
+import * as THREE from 'three';
 
-const CONTROLS = [
-  ['W A S D', 'mover'],
-  ['Mouse', 'olhar'],
-  ['Clique', 'pegar / soltar / ativar'],
-  ['Mouse ←→', 'deslizar ou girar o objeto'],
-  ['Roda ou Q / E', 'girar (objetos que também deslizam)'],
-  ['R', 'reiniciar o nível'],
-  ['+ / −', 'campo de visão'],
-  ['Esc', 'pausar'],
-];
+// In-game HUD: crosshair, brackets around the aimed object, key-glyph
+// prompts, level tag, toasts and the ?debug readout. Text names controls
+// only — never puzzle logic (spec §12). Touches the DOM only on change.
 
-function el(tag, className, text) {
+function el(tag, className, parent) {
   const node = document.createElement(tag);
   if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
+  parent?.appendChild(node);
   return node;
 }
 
-export function createHud({ onPlay, onNewGame }) {
-  const root = el('div', 'hud');
-  document.body.appendChild(root);
+const _box = new THREE.Box3();
+const _corner = new THREE.Vector3();
 
-  const prompt = el('div', 'hud-prompt');
-  const toast = el('div', 'hud-toast');
-  const title = el('div', 'hud-title');
-  const titleNumber = el('div', 'hud-title-number');
-  const titleName = el('div', 'hud-title-name');
-  title.append(titleNumber, titleName);
-  const levelTag = el('div', 'hud-level');
-  const fade = el('div', 'hud-fade');
-  const debug = el('pre', 'hud-debug');
-  debug.hidden = true;
-
-  const menu = el('div', 'hud-menu');
-  const menuCard = el('div', 'hud-menu-card');
-  const menuHeading = el('h1', null, 'Feixe');
-  const menuSub = el('p', 'hud-menu-sub');
-  const playButton = el('button', 'hud-button hud-button-primary');
-  const newGameButton = el('button', 'hud-button', 'Novo jogo');
-  const controls = el('dl', 'hud-controls');
-  for (const [key, action] of CONTROLS) controls.append(el('dt', null, key), el('dd', null, action));
-  menuCard.append(menuHeading, menuSub, playButton, newGameButton, controls);
-  menu.append(menuCard);
-
-  root.append(fade, prompt, toast, title, levelTag, debug, menu);
-
-  let mode = 'start'; // 'start' | 'paused' | 'playing' | 'complete'
-  let levelLabel = '';
-  let currentPrompt = null;
-  let titleTimer = 0;
-  let toastTimer = 0;
-
-  playButton.addEventListener('click', (event) => {
-    event.stopPropagation();
-    if (mode === 'complete') onNewGame();
-    else onPlay();
+// Pure: turns "Clique: girar · Q/E: passo" into [{ key, action }] pairs.
+export function parsePrompt(text) {
+  if (!text) return [];
+  return text.split('·').map((part) => {
+    const [key, ...rest] = part.split(':');
+    return { key: key.trim(), action: rest.join(':').trim() };
   });
-  newGameButton.addEventListener('click', (event) => {
-    event.stopPropagation();
-    onNewGame();
-  });
-
-  function render() {
-    menu.hidden = mode === 'playing';
-    newGameButton.hidden = mode === 'complete';
-    controls.hidden = mode === 'complete';
-    if (mode === 'start') {
-      menuSub.textContent = 'Um quebra-cabeça de luz, reflexo e cor.';
-      playButton.textContent = levelLabel ? `Jogar — ${levelLabel}` : 'Jogar';
-    } else if (mode === 'paused') {
-      menuSub.textContent = `Pausado — ${levelLabel}`;
-      playButton.textContent = 'Continuar';
-    } else if (mode === 'complete') {
-      menuHeading.textContent = 'Fim';
-      menuSub.textContent = 'Você abriu a última porta. Obrigado por jogar!';
-      playButton.textContent = 'Jogar de novo';
-    }
-    if (mode !== 'complete') menuHeading.textContent = 'Feixe';
-    root.classList.toggle('hud-playing', mode === 'playing');
-  }
-  render();
-
-  return {
-    // Pointer locked → playing; unlocked → paused (or still the start menu).
-    setPlaying(isPlaying) {
-      if (mode === 'complete') return;
-      if (isPlaying) mode = 'playing';
-      else if (mode === 'playing') mode = 'paused';
-      render();
-    },
-    showComplete() {
-      mode = 'complete';
-      render();
-    },
-    resetToStart() {
-      mode = 'start';
-      render();
-    },
-    showLevel(index, count, name) {
-      levelLabel = `Nível ${index + 1}`;
-      titleNumber.textContent = `Nível ${index + 1} de ${count}`;
-      titleName.textContent = name ?? '';
-      levelTag.textContent = `${index + 1} · ${name ?? ''}`;
-      title.classList.add('visible');
-      titleTimer = 2.5;
-      fade.classList.remove('fading');
-      void fade.offsetWidth; // restart the CSS transition
-      fade.classList.add('fading');
-      if (mode !== 'playing' && mode !== 'complete') render();
-    },
-    showToast(text) {
-      toast.textContent = text;
-      toast.classList.add('visible');
-      toastTimer = 1.5;
-    },
-    setPrompt(text) {
-      if (text === currentPrompt) return;
-      currentPrompt = text;
-      prompt.textContent = text ?? '';
-      prompt.classList.toggle('visible', Boolean(text));
-    },
-    setDebugText(text) {
-      debug.hidden = text == null;
-      if (text != null && debug.textContent !== text) debug.textContent = text;
-    },
-    update(deltaSeconds) {
-      if (titleTimer > 0) {
-        titleTimer -= deltaSeconds;
-        if (titleTimer <= 0) title.classList.remove('visible');
-      }
-      if (toastTimer > 0) {
-        toastTimer -= deltaSeconds;
-        if (toastTimer <= 0) toast.classList.remove('visible');
-      }
-    },
-    getMode: () => mode,
-  };
 }
 
-// Pure: the hint shown while aiming at / manipulating an object.
+// Pure: the hint shown while holding an object.
 export function manipulationHint(controller) {
   if (!controller) return null;
   if (controller.positionEnabled && controller.rotationEnabled) return 'Mouse: deslizar · Roda ou Q/E: girar · Clique: soltar';
   if (controller.positionEnabled) return 'Mouse: deslizar · Clique: soltar';
   if (controller.rotationEnabled) return 'Mouse: girar · Q/E: passo · Clique: soltar';
   return null;
+}
+
+export function createHud(root) {
+  const hud = el('div', 'hud', root);
+
+  const xh = el('div', 'xh', hud);
+  el('div', 'xh-dot', xh);
+  for (const dir of ['n', 's', 'e', 'w']) el('div', `xh-tick ${dir}`, xh);
+  el('div', 'xh-arc', xh);
+  el('div', 'xh-slide', xh);
+
+  const brackets = el('div', 'brackets', hud);
+  for (let i = 0; i < 4; i++) el('i', null, brackets);
+
+  const prompt = el('div', 'prompt', hud);
+  const tag = el('div', 'tag', hud);
+  const toast = el('div', 'toast', hud);
+  const debug = el('pre', 'debug', hud);
+  debug.hidden = true;
+
+  let currentPrompt = null;
+  let crosshairClass = '';
+  let toastTimer = 0;
+  let bracketsShown = false;
+
+  function setPrompt(text) {
+    if (text === currentPrompt) return;
+    currentPrompt = text;
+    prompt.replaceChildren();
+    for (const { key, action } of parsePrompt(text)) {
+      const pair = el('span', null, prompt);
+      el('kbd', null, pair).textContent = key;
+      pair.append(action);
+    }
+    prompt.classList.toggle('visible', Boolean(text));
+  }
+
+  function setCrosshair(hovered, active) {
+    let next = '';
+    if (active) next = `grab ${active.positionEnabled ? 'slide' : 'rotate'}`;
+    else if (hovered) next = 'hover';
+    if (next === crosshairClass) return;
+    crosshairClass = next;
+    xh.className = `xh ${next}`;
+  }
+
+  // Projects the aimed object's bounding box to the screen and frames it.
+  function placeBrackets(object, camera, grabbing) {
+    if (!object) {
+      if (bracketsShown) brackets.classList.remove('visible');
+      bracketsShown = false;
+      return;
+    }
+    _box.setFromObject(object);
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (let i = 0; i < 8; i++) {
+      _corner.set(i & 1 ? _box.max.x : _box.min.x, i & 2 ? _box.max.y : _box.min.y, i & 4 ? _box.max.z : _box.min.z).project(camera);
+      if (_corner.z > 1) continue; // behind the camera
+      minX = Math.min(minX, _corner.x);
+      maxX = Math.max(maxX, _corner.x);
+      minY = Math.min(minY, _corner.y);
+      maxY = Math.max(maxY, _corner.y);
+    }
+    if (minX === Infinity) return;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const pad = 10;
+    const left = ((minX + 1) / 2) * w - pad;
+    const top = ((1 - maxY) / 2) * h - pad;
+    const width = ((maxX - minX) / 2) * w + pad * 2;
+    const height = ((maxY - minY) / 2) * h + pad * 2;
+    brackets.style.transform = `translate(${left}px, ${top}px)`;
+    brackets.style.width = `${width}px`;
+    brackets.style.height = `${height}px`;
+    brackets.classList.toggle('grab', grabbing);
+    if (!bracketsShown) brackets.classList.add('visible');
+    bracketsShown = true;
+  }
+
+  return {
+    // Per frame: what's aimed at and what's held.
+    update(deltaSeconds, { hovered, active, activeObject, camera, prompt: promptText }) {
+      setCrosshair(hovered, active);
+      placeBrackets(activeObject ?? hovered, camera, Boolean(active));
+      setPrompt(promptText);
+      if (toastTimer > 0) {
+        toastTimer -= deltaSeconds;
+        if (toastTimer <= 0) toast.classList.remove('visible');
+      }
+    },
+    setLevel(index, count, name) {
+      tag.replaceChildren();
+      el('b', null, tag).textContent = `${String(index + 1).padStart(2, '0')} / ${String(count).padStart(2, '0')}`;
+      tag.append(name ?? '');
+      tag.classList.add('visible');
+    },
+    showToast(text) {
+      toast.textContent = text;
+      toast.classList.add('visible');
+      toastTimer = 1.6;
+    },
+    setVisible(value) {
+      hud.classList.toggle('hidden', !value);
+    },
+    setDebugText(text) {
+      debug.hidden = text == null;
+      if (text != null && debug.textContent !== text) debug.textContent = text;
+    },
+  };
 }

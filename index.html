@@ -5,56 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Feixe</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #07090a; }
   canvas { display: block; }
-  #crosshair {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 4px;
-    height: 4px;
-    margin: -2px 0 0 -2px;
-    border-radius: 50%;
-    background: #fff;
-    opacity: 0.5;
-    pointer-events: none;
-  }
-  .hud { position: fixed; inset: 0; pointer-events: none; font-family: system-ui, sans-serif; color: #e8ecef; }
-  .hud-prompt, .hud-toast {
-    position: absolute; left: 50%; transform: translateX(-50%);
-    padding: 4px 10px; border-radius: 4px; background: rgba(0,0,0,.55);
-    font-size: 14px; opacity: 0; transition: opacity .15s;
-  }
-  .hud-prompt { top: calc(50% + 18px); }
-  .hud-toast { bottom: 12%; }
-  .hud-prompt.visible, .hud-toast.visible { opacity: 1; }
-  .hud-title { position: absolute; top: 18%; width: 100%; text-align: center; opacity: 0; transition: opacity .6s; text-shadow: 0 2px 8px #000; }
-  .hud-title.visible { opacity: 1; }
-  .hud-title-number { font-size: 14px; letter-spacing: .3em; text-transform: uppercase; color: #9fb3bf; }
-  .hud-title-name { font-size: 42px; font-weight: 600; margin-top: 6px; }
-  .hud-level { position: absolute; top: 12px; left: 16px; font-size: 13px; color: #9fb3bf; opacity: .8; }
-  .hud-fade { position: absolute; inset: 0; background: #000; opacity: 0; }
-  .hud-fade.fading { animation: hud-fade .7s ease-out; }
-  @keyframes hud-fade { from { opacity: 1; } to { opacity: 0; } }
-  .hud-debug { position: absolute; top: 36px; left: 16px; margin: 0; padding: 8px 10px; background: rgba(0,0,0,.6); font: 12px/1.4 ui-monospace, monospace; color: #b9f6ca; white-space: pre; }
-  .hud-menu { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(5,8,10,.72); pointer-events: auto; }
-  .hud-menu[hidden] { display: none; }
-  .hud-menu-card { min-width: 320px; max-width: 90vw; padding: 28px 32px; background: #12181c; border: 1px solid #2a3940; border-radius: 10px; text-align: center; }
-  .hud-menu-card h1 { margin: 0; font-size: 48px; letter-spacing: .08em; }
-  .hud-menu-sub { color: #9fb3bf; margin: 8px 0 20px; }
-  .hud-button { display: block; width: 100%; margin: 8px 0; padding: 10px; font-size: 16px; color: #e8ecef; background: #1d272c; border: 1px solid #2f434b; border-radius: 6px; cursor: pointer; }
-  .hud-button:hover { background: #26343a; }
-  .hud-button-primary { background: #0f6b5c; border-color: #14907c; }
-  .hud-button-primary:hover { background: #128270; }
-  .hud-button[hidden], .hud-controls[hidden] { display: none; }
-  .hud-controls { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 20px 0 0; text-align: left; font-size: 13px; }
-  .hud-controls dt { color: #f0c674; font-weight: 600; }
-  .hud-controls dd { margin: 0; color: #c5d0d6; }
-  .hud-playing ~ #crosshair, body:has(.hud-playing) #crosshair { opacity: .8; }
 </style>
+<link rel="stylesheet" href="./src/ui/ui.css">
 </head>
 <body>
-<div id="crosshair"></div>
+<!-- Shown only while the modules load; removed by src/main.js. -->
+<div id="boot">FEIXE · INICIALIZANDO</div>
 <script type="importmap">
 {
   "imports": {

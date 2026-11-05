@@ -1,16 +1,19 @@
 import * as THREE from 'three';
-import { playConfirmTone } from '../core/audio.js';
+import { events } from '../core/events.js';
 
 const BASE_WIDTH = 0.6;
 const BASE_HEIGHT = 0.3;
 const BASE_DEPTH = 0.6;
 const BUTTON_RADIUS = 0.2;
 const BUTTON_HEIGHT = 0.1;
-const INACTIVE_EMISSIVE_INTENSITY = 0.15;
-const ACTIVE_EMISSIVE_INTENSITY = 1.2;
-const HOVER_INTENSITY_BOOST = 0.5;
-const INACTIVE_COLOR = 0x883300;
-const ACTIVE_COLOR = 0x33ff33;
+const INACTIVE_EMISSIVE_INTENSITY = 0.08;
+const ACTIVE_EMISSIVE_INTENSITY = 1.1;
+const HOVER_INTENSITY_BOOST = 0.35;
+// Neutral warm lamp (COL-02): state reads as dark vs lit and as the button
+// physically pressed in, not as a green/orange hue.
+const INACTIVE_COLOR = 0xffd9a8;
+const ACTIVE_COLOR = 0xffd9a8;
+const PRESS_DEPTH = 0.045;
 
 // Level 1's laser-free interactive object (spec §11, "Primeiros passos"):
 // a pedestal with a button that toggles on aim+confirm alone, no laser or
@@ -48,6 +51,7 @@ export function createSwitch({ position, rotationY = 0 }) {
     buttonMaterial.emissiveIntensity =
       (active ? ACTIVE_EMISSIVE_INTENSITY : INACTIVE_EMISSIVE_INTENSITY) +
       (hovered ? HOVER_INTENSITY_BOOST : 0);
+    button.position.y = BASE_HEIGHT + BUTTON_HEIGHT / 2 - (active ? PRESS_DEPTH : 0);
   }
 
   // One-shot toggle (spec §11's "mirar e ativar" gesture) — distinct from
@@ -56,7 +60,7 @@ export function createSwitch({ position, rotationY = 0 }) {
   function activate() {
     active = !active;
     refreshVisual();
-    playConfirmTone();
+    events.emit('switch:toggle', { active });
   }
 
   button.userData.interactive = true;

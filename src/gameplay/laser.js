@@ -71,8 +71,10 @@ export function traceBeam(segments, emitter, maxReflections = MAX_REFLECTIONS) {
   // between the two portals, the beam doesn't cross the wall).
   const pieces = [];
   let pieceStart = pos;
-  const addPiece = (end) => {
-    pieces.push({ a: pieceStart, b: end, color: { ...color } });
+  // `end` says what the piece ran into ('mirror', 'wall', 'escaped', ...)
+  // and `segment` which one, so the renderer can draw the right contact.
+  const addPiece = (end, type, segment = null) => {
+    pieces.push({ a: pieceStart, b: end, color: { ...color }, end: type, segment });
     pieceStart = end;
   };
   let reflections = 0;
@@ -88,13 +90,13 @@ export function traceBeam(segments, emitter, maxReflections = MAX_REFLECTIONS) {
     if (!closest) {
       const end = add(pos, scale(dir, ESCAPE_DISTANCE));
       path.push(end);
-      addPiece(end);
+      addPiece(end, 'escaped');
       return { path, pieces, status: 'escaped', color };
     }
 
     path.push(closest.hit.point);
-    addPiece(closest.hit.point);
     const seg = closest.seg;
+    addPiece(closest.hit.point, seg.type, seg);
 
     if (seg.type === 'wall') return { path, pieces, status: 'absorbed-wall', segment: seg, color };
     if (seg.type === 'blocker') return { path, pieces, status: 'blocked', segment: seg, color };

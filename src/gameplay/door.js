@@ -1,48 +1,42 @@
 import * as THREE from 'three';
 import { evaluateDoorRule } from './door-logic.js';
 import { rotatedRectAABB } from './aabb.js';
-import { playDoorTone } from '../core/audio.js';
-import { doorTexture } from './textures.js';
+import { createDoorMotion } from '../presentation/door-motion.js';
+import { createDoorView, DOOR_WIDTH } from '../presentation/door-view.js';
+import { events } from '../core/events.js';
 
-const DOOR_WIDTH = 2;
-const DOOR_HEIGHT = 3;
 const DOOR_THICKNESS = 0.15;
-const SLIDE_SPEED = 2; // meters/second — "animação de deslizamento" (spec §8), not an instant snap
-const LOCKED_COLOR = 0xff3030;
-const UNLOCKED_COLOR = 0x30ff60;
-const LAMP_WIDTH = 0.12;
-const LAMP_HEIGHT = 2.4;
 
-// A door watches a set of receivers and slides open/closed based on an
-// AND/OR rule over their active state (spec §8, RF07). `position` is the
-// door's closed (blocking) center; it slides straight up into the ceiling
-// void when open.
-export function createDoor({ position, rotationY = 0, rule, receivers, forbidden = [] }) {
-  const geometry = new THREE.BoxGeometry(DOOR_WIDTH, DOOR_HEIGHT, DOOR_THICKNESS);
-  const material = new THREE.MeshStandardMaterial({ color: 0xffffff, map: doorTexture(), roughness: 0.6, metalness: 0.4 });
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.copy(position);
-  mesh.rotation.y = rotationY;
-
-  // RF10 "porta destravada": two static light strips flanking the doorway
-  // (they don't slide with the panel), red while locked, green when open.
-  const lampMaterial = new THREE.MeshBasicMaterial({ color: LOCKED_COLOR, toneMapped: false });
-  const lampGeometry = new THREE.BoxGeometry(LAMP_WIDTH, LAMP_HEIGHT, DOOR_THICKNESS * 2);
-  const indicator = new THREE.Group();
-  indicator.position.set(position.x, LAMP_HEIGHT / 2, position.z);
-  indicator.rotation.y = rotationY;
-  for (const side of [-1, 1]) {
-    const lamp = new THREE.Mesh(lampGeometry, lampMaterial);
-    lamp.position.x = side * (DOOR_WIDTH / 2 + LAMP_WIDTH);
-    indicator.add(lamp);
-  }
+// A door watches a set of inputs (receivers, switches, or { any } groups)
+// and an optional set of trap blockers, and applies an AND/OR rule (spec
+// §8, RF07; door-logic.js). Two separate states:
+//   - unlocked (isOpen): the puzzle rule, immediate — what tests check;
+//   - passable: where the panel physically is (door-motion.js) — what
+//     blocks the player and what the exit trigger uses, so the player is
+//     never stopped by, or let through, something that doesn't match what
+//     they see.
+// The visuals (frame, pips, lamps, glow) live in door-view.js and only
+// read these states, so a modelled door can replace them later.
+export function createDoor({ position, rotationY = 0, rule, receivers, forbidden = [], exit = false }) {
+  const motion = createDoorMotion();
+  const view = createDoorView({ position, rotationY, inputCount: receivers.length, trapCount: forbidden.length, exit });
 
   const states = new Array(receivers.length); // reused every update() — see .claude/rules/code-conventions.md
   const forbiddenStates = new Array(forbidden.length);
-  const collider = rotatedRectAABB(position, rotationY, DOOR_WIDTH, DOOR_THICKNESS); // static — the closed footprint never changes
-  const closedY = position.y;
-  const openY = position.y + DOOR_HEIGHT;
+  const collider = rotatedRectAABB(position, rotationY, DOOR_WIDTH, DOOR_THICKNESS); // static closed footprint
   let open = false;
+  const door = {
+    mesh: view.root,
+    occluder: view.panel,
+    update,
+    isOpen: () => open,
+    isPassable: () => motion.isPassable(),
+    getOpenness: () => motion.getOpenness(),
+    // `position` is the door's fixed anchor (the panel itself animates) —
+    // used by the exit trigger and by sound/camera effects.
+    position: new THREE.Vector3(position.x, 0, position.z),
+    getCollider: () => (motion.isPassable() ? null : collider),
+  };
 
   function update(deltaSeconds) {
     for (let i = 0; i < receivers.length; i++) states[i] = receivers[i].isActive();
@@ -50,31 +44,17 @@ export function createDoor({ position, rotationY = 0, rule, receivers, forbidden
     const next = evaluateDoorRule(states, rule, forbiddenStates);
     if (next !== open) {
       open = next;
-      lampMaterial.color.setHex(open ? UNLOCKED_COLOR : LOCKED_COLOR);
-      if (open) playDoorTone();
+      if (!open) events.emit('door:lock', { door });
     }
 
-    const targetY = open ? openY : closedY;
-    const step = SLIDE_SPEED * deltaSeconds;
-    const remaining = targetY - mesh.position.y;
-    mesh.position.y += Math.abs(remaining) <= step ? remaining : Math.sign(remaining) * step;
+    const wasMoving = motion.isMoving();
+    const transition = motion.update(open, deltaSeconds);
+    if (transition === 'released') events.emit('door:unlock', { door });
+    if (!wasMoving && motion.isMoving()) events.emit('door:moving', { door, opening: open });
+    if (transition === 'opened' || transition === 'closed') events.emit('door:settled', { door, opening: transition === 'opened' });
+
+    view.update(deltaSeconds, states, forbiddenStates, motion);
   }
 
-  // `position` is the door's fixed closed-position anchor (unlike
-  // mesh.position, which animates while sliding) — used by the exit
-  // trigger (src/levels/exit-trigger.js) to check player proximity.
-  //
-  // getCollider() gates *movement*, not just the visual slide (spec §11
-  // level 8's "open door 1, then reconfigure" puzzle only matters if a
-  // closed door actually blocks the player) — it follows `open`'s live
-  // logical state immediately, the same signal isOpen()/the exit trigger
-  // already use, not the slide animation's progress.
-  return {
-    mesh,
-    indicator,
-    update,
-    isOpen: () => open,
-    position: position.clone(),
-    getCollider: () => (open ? null : collider),
-  };
+  return door;
 }

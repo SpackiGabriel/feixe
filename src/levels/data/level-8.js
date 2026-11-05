@@ -34,14 +34,16 @@ export const level8 = {
   ],
   switches: [],
   filters: [],
-  spawn: { position: [2, 4.3], yaw: 0 },
+  // Facing the mirror and door 1 from the corner, not the glass from 2 m.
+  spawn: { position: [3.6, 4.3], yaw: 1.1 },
   blockers: [],
   walls: [
     // The dividing wall: full room width — the portal is the only way across.
     { from: [-ROOM_HALF, 0], to: [ROOM_HALF, 0], thickness: 0.3 },
-    // Wall A, with door 1 filling the x ∈ [-1, 1] gap.
-    { from: [-ROOM_HALF, 2], to: [-1, 2] },
-    { from: [1, 2], to: [ROOM_HALF, 2] },
+    // Wall A, with door 1 filling the x ∈ [-1, 1] gap. Frosted glass, so the
+    // strip behind it doesn't feel sealed off (it still blocks everything).
+    { from: [-ROOM_HALF, 2], to: [-1, 2], style: 'glass' },
+    { from: [1, 2], to: [ROOM_HALF, 2], style: 'glass' },
   ],
   portals: [
     {

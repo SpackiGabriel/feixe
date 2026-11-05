@@ -585,7 +585,7 @@ function animate(timestamp) {
   // Neutral stand-ins for the switch's hardcoded hues (design decision: non-laser devices stay neutral).
   for (const sw of content?.parts.switches ?? []) sw.button.material.emissive?.setHex(sw.isActive() ? 0xd8d4c8 : 0x2a2a28);
   // Neutral stand-ins for the portal pair's hardcoded blue/orange.
-  for (const p of content?.portals ?? []) p.mesh.material.emissive?.setHex(0x8a8a84);
+  for (const p of content?.portals ?? []) p.mesh.material?.emissive?.setHex(0x8a8a84); // portals are a group now (neutral by default)
   syncBeams();
   updateDecals();
   renderer.render(scene, camera);

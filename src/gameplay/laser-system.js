@@ -36,7 +36,9 @@ export function createLaserSystem({ scene, wallSegments, mirrors, emitters, rece
 
   const traces = [];
 
-  function update() {
+  const portalBySegment = new Map(portals.map((portal) => [portal.segment, portal]));
+
+  function update(deltaSeconds = 0) {
     scene.updateMatrixWorld();
 
     for (let i = 0; i < mirrors.length; i++) {
@@ -56,7 +58,11 @@ export function createLaserSystem({ scene, wallSegments, mirrors, emitters, rece
       };
 
       const trace = traceBeam(segments, traceEmitter, MAX_REFLECTIONS);
-      beam.renderer.update(trace.pieces, beam.emitter.mesh.position.y);
+      beam.renderer.update(trace.pieces, beam.emitter.mesh.position.y, deltaSeconds);
+      // Light passing through a portal shows on both ends (portal.js).
+      for (const piece of trace.pieces) {
+        if (piece.end === 'portal') portalBySegment.get(piece.segment)?.markBeam(piece.color);
+      }
       traces.push(trace);
     }
 

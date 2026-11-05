@@ -18,9 +18,8 @@ export function createCamera() {
   return camera;
 }
 
-// Spec §13 II: "ajuste de campo de visão". Returns the new FOV in degrees.
-export function adjustFov(camera, deltaDegrees) {
-  camera.fov = Math.max(FOV_MIN, Math.min(FOV_MAX, camera.fov + deltaDegrees));
-  camera.updateProjectionMatrix();
-  return camera.fov;
+// Spec §13 II: "ajuste de campo de visão". Pure: the new base FOV in
+// degrees (presentation/camera-fx.js applies it, plus its own eased offsets).
+export function clampFov(fov) {
+  return Math.max(FOV_MIN, Math.min(FOV_MAX, fov));
 }

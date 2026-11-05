@@ -1,27 +1,41 @@
 import * as THREE from 'three';
 
-const RAIL_WIDTH = 0.12;
-const RAIL_HEIGHT = 0.02;
+const GAUGE = 0.1; // distance between the two bars
+const BAR = 0.025;
+const HEIGHT = 0.02;
 
-// Floor marking for a sliding object's track (spec §4/§5: "mover apenas em
-// trilhos"), so the player can see where a mirror/filter can go before
-// grabbing it. Returns null for a zero-length (fixed-position) rail.
+// Floor track for a sliding object (spec §4/§5: "mover apenas em
+// trilhos"): two thin bars with end stops, so the player sees where a
+// mirror/filter can go — and where it stops — before grabbing it. Neutral
+// warm white (no laser hue, COL-02); brightness follows hover/grab
+// (presentation/affordances.js). Returns null for a zero-length rail.
 export function createRailMesh(start, end) {
   const dx = end.x - start.x;
   const dz = end.z - start.z;
   const length = Math.hypot(dx, dz);
   if (length < 1e-6) return null;
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(RAIL_WIDTH, RAIL_HEIGHT, length + RAIL_WIDTH),
-    new THREE.MeshStandardMaterial({ color: 0x2a2f33, emissive: 0x3fa7c9, emissiveIntensity: 0.35, roughness: 0.5 })
-  );
-  mesh.position.set((start.x + end.x) / 2, RAIL_HEIGHT / 2, (start.z + end.z) / 2);
-  mesh.rotation.y = Math.atan2(dx, dz);
-  return mesh;
+  const material = new THREE.MeshStandardMaterial({ color: 0x2a2c2e, emissive: 0xd9d2c0, emissiveIntensity: 0.35, roughness: 0.5, transparent: true });
+  const group = new THREE.Group();
+  const barGeometry = new THREE.BoxGeometry(BAR, HEIGHT, length);
+  for (const side of [-1, 1]) {
+    const bar = new THREE.Mesh(barGeometry, material);
+    bar.position.set(side * (GAUGE / 2), HEIGHT / 2, 0);
+    group.add(bar);
+  }
+  const stopGeometry = new THREE.BoxGeometry(GAUGE + BAR * 3, HEIGHT * 3, BAR * 2);
+  for (const side of [-1, 1]) {
+    const stop = new THREE.Mesh(stopGeometry, material);
+    stop.position.set(0, (HEIGHT * 3) / 2, side * (length / 2 + BAR));
+    group.add(stop);
+  }
+  group.position.set((start.x + end.x) / 2, 0, (start.z + end.z) / 2);
+  group.rotation.y = Math.atan2(dx, dz);
+  group.userData.material = material;
+  return group;
 }
 
 // Pure: a rail's unit XZ direction (start → end) and its length, for the
-// screen-relative drag above. Zero-length (fixed) rails get a dummy axis.
+// screen-relative drag (core/manipulation.js). Zero-length rails get a dummy axis.
 export function railAxis(start, end) {
   const dx = end.x - start.x;
   const dz = end.z - start.z;

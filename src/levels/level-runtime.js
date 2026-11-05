@@ -1,7 +1,7 @@
 import { createLaserSystem } from '../gameplay/laser-system.js';
 import { instantiateLevel, disposeLevel } from './level-loader.js';
 import { getLevels, loadSavedLevelIndex, saveLevelIndex, resetProgress, nextAfterExit } from './level-manager.js';
-import { playLevelCompleteTone } from '../core/audio.js';
+import { events } from '../core/events.js';
 import { isPlayerAtExit } from './exit-trigger.js';
 import { isPlayerAtPortal, computePortalLanding } from './portal-crossing.js';
 
@@ -13,9 +13,12 @@ const PORTAL_CLEARANCE = 0.8; // meters pushed out from the landing portal's fac
 // handles what RF09 requires: a fixed level sequence, quick restart of
 // the current level, and resuming where the player left off.
 // `onLevelLoaded({ index, count, data, level })` fires after every load/restart (HUD title,
-// player spawn); `onGameComplete()` fires when the last level's exit is
+// player spawn); `onGameComplete(stats)` fires when the last level's exit is
 // reached — the runtime then idles until startNewGame()/loadLevel().
-export function createLevelRuntime({ scene, wallSegments, interactiveObjects, roomOccluders = [], onLevelLoaded = () => {}, onGameComplete = () => {} }) {
+// `onExit(next)`, if given, is called when the player walks into an open
+// exit and the runtime waits for advance() — so main.js can close the
+// transition shutter first. Without it the next level loads immediately.
+export function createLevelRuntime({ scene, wallSegments, interactiveObjects, roomOccluders = [], onLevelLoaded = () => {}, onGameComplete = () => {}, onExit = null }) {
   const levels = getLevels();
   let currentIndex = loadSavedLevelIndex(levels.length);
   let currentLevel = null;
@@ -23,6 +26,9 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
   let exitTriggered = false; // guards against re-firing every frame while the player lingers at an open exit
   let portalCooldownId = null; // id of the portal the player must move away from before any portal can retrigger
   let complete = false;
+  let pendingExit = null; // set while waiting for advance()
+  // For the ending screen: play time (paused while complete) and restarts.
+  const stats = { seconds: 0, restarts: 0 };
 
   // Movement colliders for this level (src/core/movement.js reads this via
   // getColliders() each frame). Blockers are static, so their slots are
@@ -32,6 +38,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
   // (.claude/rules/code-conventions.md).
   let levelColliders = [];
   let levelOccluders = []; // solid meshes that block aiming (interaction.js)
+  let devices = []; // everything with a per-frame presentation update
   let doorColliderStart = 0;
 
   function teardown() {
@@ -47,32 +54,57 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
     levelColliders = [...currentLevel.blockers, ...currentLevel.walls].map((o) => o.collider);
     doorColliderStart = levelColliders.length;
     for (const door of currentLevel.doors) levelColliders.push(door.getCollider());
+    devices = [...currentLevel.mirrors, ...currentLevel.filters, ...currentLevel.emitters];
     levelOccluders = [
       ...roomOccluders,
-      ...currentLevel.doors.map((d) => d.mesh),
+      ...currentLevel.doors.map((d) => d.occluder),
       ...currentLevel.blockers.map((b) => b.mesh),
       ...currentLevel.walls.map((w) => w.mesh),
     ];
     exitTriggered = false;
     portalCooldownId = null;
     complete = false;
+    pendingExit = null;
     saveLevelIndex(currentIndex);
     onLevelLoaded({ index: currentIndex, count: levels.length, data: levels[currentIndex], level: currentLevel });
+    events.emit('level:enter', { index: currentIndex, count: levels.length, data: levels[currentIndex] });
   }
 
   function startNewGame() {
     resetProgress();
+    stats.seconds = 0;
+    stats.restarts = 0;
     load(0);
   }
 
+  // Finish what an exit started: next level, or the end of the game.
+  function advance() {
+    const next = pendingExit ?? nextAfterExit(currentIndex, levels.length);
+    pendingExit = null;
+    if (next.complete) {
+      complete = true;
+      resetProgress();
+      events.emit('game:complete', { stats });
+      onGameComplete(stats);
+    } else {
+      load(next.index);
+    }
+  }
+
   function restart() {
+    stats.restarts++;
     load(currentIndex);
   }
 
   function update(deltaSeconds, camera) {
     if (complete) return;
-    laserSystem.update(); // must run before doors, since it updates receivers' active state
+    stats.seconds += deltaSeconds;
+    laserSystem.update(deltaSeconds); // must run before doors, since it updates receivers' active state
     for (const receiver of currentLevel.receivers) receiver.update(deltaSeconds);
+    for (const portal of currentLevel.portals) portal.update(deltaSeconds); // after the laser marked beams
+    for (const device of devices) device.update(deltaSeconds);
+    for (const blocker of currentLevel.blockers) blocker.update(deltaSeconds);
+    for (const { conduit, isActive } of currentLevel.conduits) conduit.update(deltaSeconds, isActive());
     for (let i = 0; i < currentLevel.doors.length; i++) {
       const door = currentLevel.doors[i];
       door.update(deltaSeconds);
@@ -84,7 +116,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
       !exitTriggered &&
       exitDoor &&
       isPlayerAtExit({
-        doorOpen: exitDoor.isOpen(),
+        doorOpen: exitDoor.isPassable(), // the visible panel, not just the unlock
         doorX: exitDoor.position.x,
         doorZ: exitDoor.position.z,
         playerX: camera.position.x,
@@ -93,15 +125,10 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
       })
     ) {
       exitTriggered = true;
-      playLevelCompleteTone();
-      const next = nextAfterExit(currentIndex, levels.length);
-      if (next.complete) {
-        complete = true;
-        resetProgress();
-        onGameComplete();
-      } else {
-        load(next.index);
-      }
+      events.emit('level:exit', { index: currentIndex });
+      pendingExit = nextAfterExit(currentIndex, levels.length);
+      if (onExit) onExit(pendingExit);
+      else advance();
       return;
     }
 
@@ -130,6 +157,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
         camera.position.z = landing.z;
         camera.rotation.y = landing.yaw;
         portalCooldownId = portal.linked.id; // suppress re-trigger at the landing portal until the player leaves
+        events.emit('portal:player', { portal });
         break; // at most one teleport per frame
       }
     }
@@ -141,6 +169,9 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
     update,
     restart,
     startNewGame,
+    advance,
+    getStats: () => stats,
+    isExiting: () => pendingExit !== null,
     loadLevel: load,
     getCurrentIndex: () => currentIndex,
     getCurrentLevel: () => currentLevel,

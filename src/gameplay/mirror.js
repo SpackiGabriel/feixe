@@ -1,13 +1,19 @@
 import * as THREE from 'three';
-import { railAxis } from './rail.js';
+import { railAxis, createRailMesh } from './rail.js';
 import { createSteppedAngle } from './rotation.js';
+import { events } from '../core/events.js';
+import { getEnvMap } from '../presentation/env-map.js';
+import { createDial, createRailState, createManipulable } from '../presentation/affordances.js';
 
 const PLATE_WIDTH = 1;
 const PLATE_HEIGHT = 1;
 const PLATE_THICKNESS = 0.05;
 const PEDESTAL_RADIUS = 0.06;
-const BASE_EMISSIVE = 0x16222a; // faint, so the mirror reads in a dark room without an env map
-const HOVER_EMISSIVE = 0x3a4c57;
+const BASE_EMISSIVE = 0x10161a; // faint, so the mirror still reads without an env map (low quality)
+const HOVER_EMISSIVE = 0x34424a;
+
+const steelMaterial = new THREE.MeshStandardMaterial({ color: 0x3b4146, metalness: 0.7, roughness: 0.38 });
+steelMaterial.userData.shared = true;
 
 const _localA = new THREE.Vector3();
 const _localB = new THREE.Vector3();
@@ -33,15 +39,44 @@ export function createMirror({
   const pivotHeight = railStart.y;
   const pedestal = new THREE.Mesh(
     new THREE.CylinderGeometry(PEDESTAL_RADIUS, PEDESTAL_RADIUS * 1.6, pivotHeight - PLATE_HEIGHT / 2, 10),
-    new THREE.MeshStandardMaterial({ color: 0x3b4146, metalness: 0.6, roughness: 0.4 })
+    steelMaterial
   );
   pedestal.position.y = -(pivotHeight + PLATE_HEIGHT / 2) / 2;
   base.add(pedestal);
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.05, 20), steelMaterial);
+  foot.position.y = -pivotHeight + 0.025;
+  base.add(foot);
 
-  const plateMaterial = new THREE.MeshStandardMaterial({ color: 0xcfe3ec, metalness: 0.5, roughness: 0.12, emissive: BASE_EMISSIVE });
+  const envMap = getEnvMap();
+  const plateMaterial = new THREE.MeshStandardMaterial({
+    // Darker than white on purpose: a mirror must not outshine the beams
+    // it carries (design-system.md PIPE-05: beam > device > room).
+    color: envMap ? 0x8e989c : 0xcfe3ec,
+    metalness: envMap ? 1 : 0.5,
+    roughness: envMap ? 0.07 : 0.12,
+    envMap,
+    envMapIntensity: 0.7,
+    emissive: BASE_EMISSIVE,
+  });
   const plate = new THREE.Mesh(new THREE.BoxGeometry(PLATE_WIDTH, PLATE_HEIGHT, PLATE_THICKNESS), plateMaterial);
   plate.rotation.y = initialRotationY;
   base.add(plate);
+  // Top and bottom clamps only — no side bars, so nothing visual sits
+  // where the tracer says a beam passes the plate's edge.
+  const clampGeometry = new THREE.BoxGeometry(PLATE_WIDTH + 0.04, 0.06, PLATE_THICKNESS * 2.2);
+  for (const side of [-1, 1]) {
+    const clamp = new THREE.Mesh(clampGeometry, steelMaterial);
+    clamp.position.y = side * (PLATE_HEIGHT / 2 + 0.03);
+    plate.add(clamp);
+  }
+
+  const dial = rotationEnabled ? createDial() : null;
+  if (dial) {
+    dial.object.position.y = -pivotHeight + 0.06;
+    base.add(dial.object);
+  }
+  const railMesh = positionEnabled ? createRailMesh(railStart, railEnd) : null;
+  const rail = railMesh ? createRailState(railMesh) : null;
   const angle = createSteppedAngle(initialRotationY, rotationStepDegrees);
 
   let t = THREE.MathUtils.clamp(initialT, 0, 1);
@@ -51,23 +86,36 @@ export function createMirror({
   }
   applyPosition();
 
+  let manipulable = null;
+
   function applyPositionDelta(delta) {
     if (!positionEnabled) return;
-    t = THREE.MathUtils.clamp(t + delta, 0, 1);
+    const wasAtEnd = t === 0 || t === 1;
+    const wanted = t + delta;
+    t = THREE.MathUtils.clamp(wanted, 0, 1);
+    if (wanted !== t && !wasAtEnd) manipulable?.hitLimit(); // once, on arriving at an end
     applyPosition();
   }
 
   function applyRotationDelta(delta) {
     if (!rotationEnabled) return;
     plate.rotation.y = angle.add(delta);
+    manipulable?.rotated(plate.rotation.y);
   }
 
   plate.userData.interactive = true;
   plate.userData.controller = { positionEnabled, rotationEnabled, rotationStep: angle.step, railAxis: railAxis(railStart, railEnd), applyPositionDelta, applyRotationDelta };
   plate.userData.prompt = promptFor(positionEnabled, rotationEnabled);
-  plate.userData.setHovered = (isHovered) => plateMaterial.emissive.setHex(isHovered ? HOVER_EMISSIVE : BASE_EMISSIVE);
+  manipulable = createManipulable({
+    target: plate,
+    dial,
+    rail,
+    events,
+    onHover: (isHovered) => plateMaterial.emissive.setHex(isHovered ? HOVER_EMISSIVE : BASE_EMISSIVE),
+  });
+  manipulable.rotated(plate.rotation.y);
 
-  return { base, plate, getT: () => t, applyPositionDelta, applyRotationDelta };
+  return { base, plate, extras: railMesh ? [railMesh] : [], getT: () => t, applyPositionDelta, applyRotationDelta, update: manipulable.update };
 }
 
 // Short Portuguese hint shown under the crosshair while aiming (src/ui/hud.js).

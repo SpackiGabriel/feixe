@@ -1,3 +1,5 @@
+import { events } from './events.js';
+
 const ROTATE_SENSITIVITY = 0.01; // radians per pixel of mouse movement
 const RAIL_METRES_PER_PIXEL = 0.008;
 const KEY_ROTATE_STEP = Math.PI / 12; // 15° per Q/E press or wheel notch, unless the object snaps to its own step
@@ -30,6 +32,7 @@ export function keyRotationStep(controller) {
 // freedom instead of camera look.
 export function createManipulation({ input, look, interaction, camera }) {
   let active = null;
+  let activeObject = null; // the mesh being held (HUD brackets)
 
   function toggle() {
     if (active) {
@@ -40,20 +43,30 @@ export function createManipulation({ input, look, interaction, camera }) {
     // A one-shot object (e.g. a switch) fires immediately and never enters
     // manipulation mode — it has no degree of freedom to drag.
     if (typeof hovered?.userData.activate === 'function') {
+      events.emit('press', {});
       hovered.userData.activate();
       return;
     }
     const controller = hovered?.userData.controller;
-    if (controller) enter(controller);
+    if (controller) {
+      activeObject = hovered;
+      enter(controller);
+    }
   }
 
   function enter(controller) {
     active = controller;
     look.setEnabled(false);
+    controller.setGrabbed?.(true);
+    events.emit('grab', { controller });
   }
 
   function exit() {
+    if (!active) return;
+    active.setGrabbed?.(false);
+    events.emit('release', { controller: active });
     active = null;
+    activeObject = null;
     look.setEnabled(true);
   }
 
@@ -82,6 +95,7 @@ export function createManipulation({ input, look, interaction, camera }) {
   return {
     isActive: () => active !== null,
     getActive: () => active,
+    getActiveObject: () => activeObject,
     exit,
   };
 }

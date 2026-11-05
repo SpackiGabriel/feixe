@@ -1,77 +1,127 @@
 import * as THREE from 'three';
 import { COLOR_NAMES } from './colors.js';
 import { composeReceiverColor, isReceiverSatisfied, colorToHex } from './laser.js';
-import { playConfirmTone } from '../core/audio.js';
 import { segmentFromCenter } from './aabb.js';
 import { symbolFaceTexture } from './textures.js';
+import { events } from '../core/events.js';
+import { CHAIN } from '../presentation/conduits.js';
+import { clamp01, damp, easeOutCubic } from '../presentation/motion.js';
 
 const PANEL_WIDTH = 0.8;
 const PANEL_HEIGHT = 0.8;
 const PANEL_THICKNESS = 0.05;
-const INACTIVE_EMISSIVE_INTENSITY = 0.35;
-const ACTIVE_EMISSIVE_INTENSITY = 1.2;
-const PULSE_DECAY = 2.5; // per second — the activation pulse fades in ~0.4 s
-const PULSE_EMISSIVE_BOOST = 2.5;
-const PULSE_SCALE_BOOST = 0.18;
-const LIGHT_INTENSITY = 0.8;
-const LIGHT_DISTANCE = 2.5;
+const IDLE_INTENSITY = 0.3;
+const ACTIVE_INTENSITY = 1.3;
+const LOCK_FLASH = 2.2; // extra emissive right at lock, decays
+const LOCK_DECAY = 3; // per second
+const LOCK_SCALE = 0.12;
+const REJECT_HZ = 2; // ACC-02: ≤ 2 Hz
+
+const housingMaterial = new THREE.MeshStandardMaterial({ color: 0x2e3236, roughness: 0.6, metalness: 0.5 });
+housingMaterial.userData.shared = true;
 
 let nextReceiverId = 0;
 
 // A receiver activates only while the correct color continuously hits it
-// (spec §8) — no memory between activations. `onActivate`/`onDeactivate`
-// let a door (or anything else) react to the edge, not just the state.
+// (spec §8) — no memory between activations. The *logic* (isActive) is
+// immediate; the presentation tells it as a short sequence:
+//   charge — a ring around the face fills in the target color (CHAIN.charge)
+//   lock   — the face flares and the panel kicks
+//   hold   — steady glow; the conduit carries the signal to the door
+// A beam of the wrong color makes the face flicker: "something arrived,
+// but not this". Losing the beam drops everything at once.
 export function createReceiver({ position, rotationY = 0, colorName }) {
   const targetColor = COLOR_NAMES[colorName];
   const hex = colorToHex(targetColor);
 
-  const geometry = new THREE.BoxGeometry(PANEL_WIDTH, PANEL_HEIGHT, PANEL_THICKNESS);
   const material = new THREE.MeshStandardMaterial({
-    color: 0x222222,
+    color: 0x1c1c1c,
     emissive: hex,
-    emissiveIntensity: INACTIVE_EMISSIVE_INTENSITY,
+    emissiveIntensity: IDLE_INTENSITY,
     emissiveMap: symbolFaceTexture(colorName), // color-blind symbol(s) of the target color
   });
-  const mesh = new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(PANEL_WIDTH, PANEL_HEIGHT, PANEL_THICKNESS), material);
   mesh.position.copy(position);
   mesh.rotation.y = rotationY;
 
-  // "acende e emite um pulso de luz" (spec §8): a small light in front of
-  // the panel, on while active, flaring with the pulse on activation.
-  const light = new THREE.PointLight(hex, 0, LIGHT_DISTANCE);
-  light.position.set(0, 0, 0.3);
-  mesh.add(light);
+  // Housing: a deeper frame around the face, so the receiver reads as an
+  // instrument mounted in the wall rather than a floating tile.
+  const housing = new THREE.Mesh(new THREE.BoxGeometry(PANEL_WIDTH + 0.16, PANEL_HEIGHT + 0.16, PANEL_THICKNESS * 0.6), housingMaterial);
+  housing.position.z = 0;
+  mesh.add(housing);
+
+  // Charge ring on both faces (a receiver can be hit from either side).
+  const ringMaterial = new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0, toneMapped: false, side: THREE.DoubleSide });
+  const rings = [0.03, -0.03].map((z) => {
+    const r = new THREE.Mesh(new THREE.RingGeometry(0.47, 0.52, 48, 1, Math.PI / 2, 0.0001), ringMaterial);
+    r.position.z = z;
+    mesh.add(r);
+    return r;
+  });
 
   const id = `receiver-${nextReceiverId++}`;
-  // Static — a receiver doesn't move, so its segment is computed once, not
-  // every frame from a live matrixWorld like a mirror's.
+  // Static — a receiver doesn't move, so its segment is computed once.
   const segment = { id, type: 'receiver', ...segmentFromCenter(position, rotationY, PANEL_WIDTH) };
 
   let active = false;
-  let pulse = 0; // 1 right after activation, decays to 0 (spec §13 IV: "pulso de ativação")
+  let rejected = false; // hit, but by the wrong color
+  let charge = 0; // 0..1 ring fill
+  let flash = 0; // lock flare, decays
+  let lastRingArc = -1;
+  let time = 0;
+  // No point light of its own: the beam's light already sits on whatever
+  // it hits (laser-beam.js), so a lit receiver is lit by its beam.
+  const receiver = { mesh, segment, evaluate, update, isActive: () => active, colorName };
 
   function evaluate(traces) {
     const { composed, hitCount } = composeReceiverColor(traces, id);
     const satisfied = isReceiverSatisfied(composed, targetColor, hitCount);
-
+    rejected = hitCount > 0 && !satisfied;
     if (satisfied !== active) {
       active = satisfied;
       if (active) {
-        pulse = 1;
-        playConfirmTone();
+        charge = 0;
+        flash = 0;
+        events.emit('receiver:on', { receiver });
+      } else {
+        events.emit('receiver:off', { receiver });
       }
     }
     return active;
   }
 
-  // Frame-rate independent animation of the pulse (level-runtime.js).
-  function update(deltaSeconds) {
-    pulse = Math.max(0, pulse - PULSE_DECAY * deltaSeconds);
-    const base = active ? ACTIVE_EMISSIVE_INTENSITY : INACTIVE_EMISSIVE_INTENSITY;
-    material.emissiveIntensity = base + pulse * PULSE_EMISSIVE_BOOST;
-    mesh.scale.setScalar(1 + pulse * PULSE_SCALE_BOOST);
-    light.intensity = active ? LIGHT_INTENSITY * (1 + pulse * 2) : 0;
+  function setRingArc(fraction) {
+    const arc = Math.round(fraction * 48);
+    if (arc === lastRingArc) return;
+    lastRingArc = arc;
+    const geometry = new THREE.RingGeometry(0.47, 0.52, 48, 1, Math.PI / 2, Math.max(0.0001, fraction * Math.PI * 2));
+    for (const r of rings) {
+      r.geometry.dispose();
+      r.geometry = geometry;
+    }
   }
 
-  return { mesh, segment, evaluate, update, isActive: () => active, colorName };
+  function update(deltaSeconds) {
+    time += deltaSeconds;
+    let intensity = IDLE_INTENSITY;
+    if (active) {
+      const before = charge;
+      charge = clamp01(charge + deltaSeconds / CHAIN.charge);
+      if (before < 1 && charge >= 1) flash = 1; // lock
+      flash = Math.max(0, flash - LOCK_DECAY * deltaSeconds);
+      intensity = IDLE_INTENSITY + (ACTIVE_INTENSITY - IDLE_INTENSITY) * easeOutCubic(charge) + flash * LOCK_FLASH;
+      setRingArc(easeOutCubic(charge));
+      ringMaterial.opacity = charge >= 1 ? 0.55 + flash * 0.45 : 0.9;
+    } else {
+      charge = damp(charge, 0, 18, deltaSeconds);
+      flash = 0;
+      setRingArc(charge);
+      ringMaterial.opacity = charge * 0.9;
+      if (rejected) intensity = IDLE_INTENSITY * (Math.sin(time * Math.PI * 2 * REJECT_HZ) > 0 ? 2.2 : 0.4);
+    }
+    material.emissiveIntensity = intensity;
+    mesh.scale.setScalar(1 + flash * LOCK_SCALE);
+  }
+
+  return receiver;
 }

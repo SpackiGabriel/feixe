@@ -1,0 +1,124 @@
+import * as THREE from 'three';
+import { doorTexture } from '../gameplay/textures.js';
+import { damp } from './motion.js';
+import { CHAIN_DELAY } from './conduits.js';
+
+export const DOOR_WIDTH = 2;
+const PANEL_HEIGHT = 2.8;
+const PANEL_THICKNESS = 0.15;
+const FRAME = 0.16; // jamb width
+const LINTEL_HEIGHT = 0.2;
+const DEPTH = 0.3; // frame depth, through both faces
+
+const PIP_OFF = 0x24221e;
+const PIP_ON = new THREE.Color(0xffd9a8); // warm incandescent: brightness, not hue, carries state (COL-02)
+const PIP_DIM = new THREE.Color(PIP_OFF);
+const LAMP_OFF = new THREE.Color(0x1d1c1a);
+const LAMP_ON = new THREE.Color(0xffe2b8);
+const TRAP_FLASH_HZ = 2; // ACC-02: never faster than ~2 Hz
+
+const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x2c3033, roughness: 0.55, metalness: 0.6 });
+frameMaterial.userData.shared = true;
+
+// Visual for one door: frame (jambs + lintel, so even a free-standing door
+// reads as a doorway), the sliding panel, one indicator pip per input on
+// the lintel (filled = that input is satisfied, a hollow diamond per trap
+// that must stay dark), lamp strips that light when the way is open, and —
+// for exit doors — a warm glow behind the panel and a light spill.
+// It only *reads* state; door.js and door-motion.js own the logic.
+export function createDoorView({ position, rotationY, inputCount, trapCount, exit }) {
+  const root = new THREE.Group();
+  root.position.set(position.x, 0, position.z);
+  root.rotation.y = rotationY;
+
+  const panelMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, map: doorTexture(), roughness: 0.6, metalness: 0.45 });
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(DOOR_WIDTH, PANEL_HEIGHT, PANEL_THICKNESS), panelMaterial);
+  panel.position.y = PANEL_HEIGHT / 2;
+  root.add(panel);
+
+  const jambGeometry = new THREE.BoxGeometry(FRAME, PANEL_HEIGHT + LINTEL_HEIGHT, DEPTH);
+  for (const side of [-1, 1]) {
+    const jamb = new THREE.Mesh(jambGeometry, frameMaterial);
+    jamb.position.set(side * (DOOR_WIDTH / 2 + FRAME / 2), (PANEL_HEIGHT + LINTEL_HEIGHT) / 2, 0);
+    root.add(jamb);
+  }
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(DOOR_WIDTH + FRAME * 2, LINTEL_HEIGHT, DEPTH), frameMaterial);
+  lintel.position.y = PANEL_HEIGHT + LINTEL_HEIGHT / 2;
+  root.add(lintel);
+
+  // Lamp strips on the inner faces of both jambs.
+  const lampMaterial = new THREE.MeshBasicMaterial({ color: LAMP_OFF.clone(), toneMapped: false });
+  const lampGeometry = new THREE.BoxGeometry(0.03, PANEL_HEIGHT * 0.85, DEPTH + 0.02);
+  for (const side of [-1, 1]) {
+    const lamp = new THREE.Mesh(lampGeometry, lampMaterial);
+    lamp.position.set(side * (DOOR_WIDTH / 2 + 0.02), PANEL_HEIGHT * 0.5, 0);
+    root.add(lamp);
+  }
+
+  // Pips: cylinders through the lintel so they read from both sides.
+  const pips = [];
+  const total = inputCount + trapCount;
+  const spacing = 0.22;
+  for (let i = 0; i < total; i++) {
+    const isTrap = i >= inputCount;
+    const material = new THREE.MeshBasicMaterial({ color: PIP_OFF, toneMapped: false });
+    const geometry = isTrap
+      ? new THREE.BoxGeometry(0.075, 0.075, DEPTH + 0.04).rotateZ(Math.PI / 4)
+      : new THREE.CylinderGeometry(0.05, 0.05, DEPTH + 0.04, 16).rotateX(Math.PI / 2);
+    const pip = new THREE.Mesh(geometry, material);
+    pip.position.set((i - (total - 1) / 2) * spacing, PANEL_HEIGHT + LINTEL_HEIGHT / 2, 0);
+    root.add(pip);
+    pips.push({ material, isTrap, level: 0, since: null });
+  }
+
+  // Exit: warm glow plane on the wall side, revealed as the panel lifts.
+  let glowMaterial = null;
+  let spill = null;
+  if (exit) {
+    const localZ = { x: Math.sin(rotationY), z: Math.cos(rotationY) };
+    const away = localZ.x * position.x + localZ.z * position.z > 0 ? 1 : -1; // side facing away from the room centre
+    glowMaterial = new THREE.MeshBasicMaterial({ color: 0xd9c7a6, transparent: true, opacity: 0, toneMapped: false, fog: false });
+    const glow = new THREE.Mesh(new THREE.PlaneGeometry(DOOR_WIDTH, PANEL_HEIGHT), glowMaterial);
+    glow.position.set(0, PANEL_HEIGHT / 2, away * (PANEL_THICKNESS / 2 + 0.015)); // between panel and wall
+    if (away < 0) glow.rotation.y = 0;
+    else glow.rotation.y = Math.PI; // face the room
+    root.add(glow);
+    spill = new THREE.PointLight(0xffdcb0, 0, 4.5, 1.6);
+    spill.position.set(0, 1.4, -away * 0.7);
+    root.add(spill);
+  }
+
+  let time = 0;
+  let lampLevel = 0;
+
+  // inputStates/trapStates: current booleans; motion: door-motion.js.
+  function update(deltaSeconds, inputStates, trapStates, motion) {
+    time += deltaSeconds;
+    panel.position.y = PANEL_HEIGHT / 2 + motion.getOpenness() * PANEL_HEIGHT + motion.visualOffset();
+
+    for (let i = 0; i < pips.length; i++) {
+      const pip = pips[i];
+      const on = pip.isTrap ? trapStates[i - inputCount] : inputStates[i];
+      if (on && pip.since === null) pip.since = time;
+      if (!on) pip.since = null;
+      // An input pip fills once the conduit pulse has had time to arrive;
+      // a trap pip flashes (≤ 2 Hz) while its trap is lit.
+      const target = pip.isTrap
+        ? (on ? (Math.sin(time * Math.PI * 2 * TRAP_FLASH_HZ) > 0 ? 1 : 0.35) : 0)
+        : (on && time - pip.since >= CHAIN_DELAY ? 1 : 0);
+      pip.level = on ? damp(pip.level, target, 25, deltaSeconds) : damp(pip.level, 0, 12, deltaSeconds);
+      pip.material.color.copy(PIP_DIM).lerp(PIP_ON, pip.level);
+    }
+
+    const open = motion.getPhase() === 'rising' || motion.getPhase() === 'open';
+    lampLevel = damp(lampLevel, open ? 1 : 0, open ? 6 : 14, deltaSeconds);
+    lampMaterial.color.copy(LAMP_OFF).lerp(LAMP_ON, lampLevel);
+
+    if (glowMaterial) {
+      glowMaterial.opacity = Math.min(0.9, motion.getOpenness() * 1.2);
+      spill.intensity = motion.getOpenness() * 1.4;
+    }
+  }
+
+  return { root, panel, update };
+}
