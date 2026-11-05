@@ -48,11 +48,18 @@ See `level-template.js` for exact shapes and defaults.
 | `receivers` | Panel lit by the right color. Composites need all components at once | — |
 | `filters` | Lets only its primary through; white → that primary | slide on its rail |
 | `blockers` | Absorbs beams, blocks the player. `trap: true` = NOT | — |
-| `walls` | Interior walls by endpoints `[x, z]` | — (blocks walking and aiming) |
+| `walls` | Interior walls by endpoints `[x, z]`; `style: 'glass'` for frosted glass (looks see-through, blocks the same) | — (blocks walking and aiming) |
 | `portals` | Pair; beam and player go in one, out the other | walk through |
 | `switches` | Button, no laser | click to toggle |
 | `doors` | `AND` / `OR` over `receiverIds` (`{ any: [...] }` = nested OR), `forbidIds` (traps), one has `exit: true` | walk through when open |
-| `spawn` | Start position + yaw (default `[0, 4.5]`, facing north) | — |
+| `spawn` | Start position + yaw (default `[0, 4.5]`, facing north). Aim it so the first view shows the mechanism | — |
+
+Automatic presentation (no level data needed): floor conduits from every
+door input (and trap) to its door, one pip per input on the door's lintel
+(traps as diamonds), dials under rotatable objects, rails under sliding
+ones. Conduits run in an L (along x, then z) on the floor and may pass under
+walls. That's fine, but keep inputs from stacking on the same line.
+See `docs/presentation.md` for the rules behind them.
 
 Color symbols (accessibility) are automatic: red = circle, green =
 triangle, blue = diamond, composites show their components. The mapping
@@ -87,8 +94,9 @@ lives in `src/gameplay/colors.js`.
 9. **Doors** are 2 m wide, 3 m tall. A door is only a real gate when walls
    meet both of its sides. On a room wall, put it 0.1 m inside
    (`±(ROOM_HALF - 0.1)`) with `rotationY: Math.PI` on the north wall.
-10. **Spawn** must not sit on an emitter or inside a mirror/filter. Remember
-    mirrors and filters have no player collision.
+10. **Spawn** must not sit on an emitter or inside a mirror/filter (mirrors
+    and filters have no player collision). Keep ≥ 1 m from an emitter:
+    standing right behind one fills the screen with its housing.
 11. Keep walls axis-aligned: player collision is box-based, so a diagonal
     wall blocks its whole bounding box.
 

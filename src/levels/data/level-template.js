@@ -67,8 +67,9 @@ export const levelTemplate = {
 
   // Interior walls, by endpoints [x, z]. Absorb beams, block the player and
   // block aiming. Keep them axis-aligned (player collision is box-based).
+  // style: 'glass' looks like frosted glass but blocks exactly the same.
   walls: [
-    // { from: [-ROOM_HALF, 0], to: [-1, 0], height: 3, thickness: 0.2 },
+    // { from: [-ROOM_HALF, 0], to: [-1, 0], height: 3, thickness: 0.2, style: 'solid' },
   ],
 
   // Portal pairs: a beam or the player entering one comes out of the

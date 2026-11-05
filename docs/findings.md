@@ -226,3 +226,33 @@ slides shut while the player stands in the doorway overlaps them, so every
 step, including stepping out, was rejected and the player was stuck for
 good. Colliders the player is already inside are now ignored for that move
 (`tests/unit/movement.test.js`). The player can step out to either side.
+
+## 2026-11-05 — Software WebGL exaggerates fill cost ~10×; measure on the real GPU
+
+Source: juice pass performance check.
+
+The e2e runs on SwiftShader (CPU). There the polish pass looked 2× slower
+(e.g. level 8: 150 → 270 ms/frame), mostly because the new ceiling fills
+pixels that used to be a cheap clear color. On this laptop's Radeon 610M,
+via Chromium with `--ignore-gpu-blocklist --enable-gpu`, the same build
+ran at 4–13 ms/frame at 1920×1080, the same as before the pass. The real risk
+was **pixel count**: at 1.5× device pixel ratio, frames went to 28–31 ms.
+Fixed by capping the pixel ratio by a pixel budget (`presentation/quality.js`).
+**Rule**: judge performance on hardware, and treat DPR as the main knob.
+
+## 2026-11-05 — Hand-built floor strips were culled (winding depends on direction)
+
+Source: conduits (`presentation/conduits.js`) didn't render at all.
+
+The conduit strips are built leg by leg. Whether a quad's triangles face
+up or down depends on the leg's direction, so legs heading one way were
+back-face culled. Invisible, no error. `side: DoubleSide` on generated
+flat geometry avoids having to reason about winding per leg.
+
+## 2026-11-05 — Event listeners must exist before the runtime's first load
+
+Source: the level title never appeared for the first level.
+
+`createLevelRuntime()` loads (and emits `level:enter` for) the first level
+inside its own constructor. Any listener registered after that line in
+`main.js` misses it. Register `events.on(...)` before creating the runtime.

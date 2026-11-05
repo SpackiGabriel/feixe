@@ -13,7 +13,10 @@
 │   ├── main.js                  # Wiring + animation loop
 │   ├── core/                    # renderer, scene (room), camera, input, look, movement,
 │   │                            #   interaction (aim raycast), manipulation (drag/rotate), audio
-│   ├── ui/hud.js                # DOM overlay: menu, title card, prompts, end screen, debug panel
+│   ├── presentation/            # game feel (docs/presentation.md): motion/timing, door motion+view,
+│   │                            #   conduits, affordances, camera fx, sfx, quality, env map
+│   ├── ui/                      # hud.js (crosshair, brackets, prompts), menu.js (menu + ending),
+│   │                            #   transitions.js (shutter, intro), ui.css
 │   ├── gameplay/                # one factory per object (mirror, emitter, receiver, door,
 │   │                            #   switch, filter, blocker, wall, portal, rail) + pure logic
 │   │                            #   (laser.js, door-logic.js, aabb.js, colors.js, rotation.js)

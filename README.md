@@ -17,10 +17,11 @@ Node ≥ 22. CI (`.github/workflows/ci.yml`) runs lint, unit tests and the e2e p
 
 ## Playing
 
-Open `http://localhost:8000/`, click **Jogar** (progress is saved per browser; **Novo jogo** starts over).
+Open `http://localhost:8000/` and choose **Iniciar / Continuar** (mouse or ↑↓ + Enter). Progress is
+saved per browser; **Novo jogo** starts over. The menu also has **Qualidade** (Alta/Baixa) and **Som**.
 WASD move · mouse look · click grabs/releases/presses the object under the crosshair ·
 while holding: mouse slides or rotates; objects that do both rotate with the wheel or Q/E ·
-`R` restart level · `+`/`−` field of view · `Esc` pause.
+`R` restart level · `+`/`−` field of view · `M` sound · `Esc` pause.
 
 Debug / level authoring: `http://localhost:8000/?debug&level=N` jumps to level N, shows a live
 panel (F3) with positions, the aimed object's rail `t`/rotation, and receiver/door states.
@@ -38,4 +39,5 @@ serve the folder with any static server (`npm start`, or `python3 -m http.server
 - `STATUS.md` — what's built and what's next.
 - `design/game-concept.md` — the game; `feixe-especificacao.pdf` — the closed spec.
 - `docs/level-authoring.md` — building a level (designer workflow) or a new gameplay object.
+- `docs/presentation.md` — game-feel rules (timing, feedback, affordances) and how to swap in final assets.
 - `docs/decisions/`, `docs/findings.md` — why things are the way they are, and gotchas.

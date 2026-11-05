@@ -1,5 +1,12 @@
 # 0003 — One dynamic point light per beam, not one per segment
 
+> **Amended (2026-11-05):** still one light per beam, but it now sits at the
+> beam's **end** (just in front of whatever it hits), so the receiver, wall
+> or trap the beam lands on visibly lights up. Receivers no longer carry
+> their own light, and the room's wall lamps are faked with an additive
+> texture. Reason: point lights dominate frame cost (`docs/presentation.md`,
+> "Performance budget"). Bounces read through contact flares instead.
+
 ## Context
 
 Spec §6 says a laser beam "também funciona como fonte de luz pontual/spot
