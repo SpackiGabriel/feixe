@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Reflector } from '../../vendor/three/addons/Reflector.js';
 
-// Real planar mirror reflections (high quality only). Each face of a
+// Real planar mirror reflections (menu "Reflexos", on by default). Each face of a
 // mirror plate gets a Three.js Reflector: before the main render, the
 // scene is rendered again from the player camera *reflected across the
 // plate's plane* (Householder reflection of position, view and up), into a
@@ -28,14 +28,42 @@ const INSET = 0.94; // the plate's own edge stays visible as a thin frame
 const TINT = new THREE.Color(0x9aa3a8);
 const TINT_HOVER = new THREE.Color(0xc4ccd0);
 
+// Whether mirrors get reflector surfaces at all: main.js turns this on;
+// headless tests leave it off. Showing/hiding them is separate (below).
 let enabled = false;
 export function setMirrorReflections(value) {
   enabled = value;
 }
-export const mirrorReflectionsEnabled = () => enabled;
 
-// Returns null when disabled (low quality, headless tests): the mirror
-// then keeps its env-mapped metal only.
+// The player's on/off choice, applied instantly by toggling
+// REFLECTOR_LAYER on the player camera: off, the surfaces are neither
+// drawn nor re-render the scene (onBeforeRender only runs for drawn
+// objects), and the plate's env-mapped metal shows instead.
+const SETTING_KEY = 'feixe.reflections';
+
+export function loadReflectionsOn(storage = globalThis.localStorage) {
+  try {
+    return storage?.getItem(SETTING_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+export function saveReflectionsOn(on, storage = globalThis.localStorage) {
+  try {
+    storage?.setItem(SETTING_KEY, on ? 'on' : 'off');
+  } catch {
+    // private mode: applies for this session only
+  }
+}
+
+export function showReflections(camera, on) {
+  if (on) camera.layers.enable(REFLECTOR_LAYER);
+  else camera.layers.disable(REFLECTOR_LAYER);
+}
+
+// Returns null when disabled (headless tests): the mirror then keeps its
+// env-mapped metal only.
 export function createMirrorReflection(width, height, thickness) {
   if (!enabled) return null;
   const group = new THREE.Group();

@@ -14,7 +14,7 @@ import { loadSavedLevelIndex, getLevels } from './levels/level-manager.js';
 import { connectSfx, sfx, isMuted, setMuted } from './presentation/sfx.js';
 import { createCameraFx } from './presentation/camera-fx.js';
 import { setEnvMap } from './presentation/env-map.js';
-import { setMirrorReflections, REFLECTOR_LAYER } from './presentation/mirror-reflection.js';
+import { setMirrorReflections, loadReflectionsOn, saveReflectionsOn, showReflections } from './presentation/mirror-reflection.js';
 import { loadQuality, saveQuality, pixelRatioFor } from './presentation/quality.js';
 import { createHud, manipulationHint } from './ui/hud.js';
 import { createMenu } from './ui/menu.js';
@@ -37,10 +37,11 @@ if (quality === 'high') {
   setEnvMap(pmrem.fromScene(new RoomEnvironment(), 0.04).texture);
   pmrem.dispose();
 }
-// Real mirror reflections: high quality only; like the env map, a quality
-// change applies from the next chamber on.
-setMirrorReflections(quality === 'high');
-camera.layers.enable(REFLECTOR_LAYER);
+// Real mirror reflections: every mirror gets them; the menu's "Reflexos"
+// shows or hides them instantly.
+setMirrorReflections(true);
+let reflectionsOn = loadReflectionsOn();
+showReflections(camera, reflectionsOn);
 
 const input = createInput(renderer.domElement);
 const look = createLookController(camera);
@@ -80,6 +81,7 @@ const menu = createMenu(uiRoot, {
     quality,
     muted: isMuted(),
     sensitivity,
+    reflectionsOn,
   }),
   onResume: requestLock,
   onNewGame: () => {
@@ -93,11 +95,15 @@ const menu = createMenu(uiRoot, {
   onToggleQuality: () => {
     quality = quality === 'high' ? 'low' : 'high';
     saveQuality(quality);
-    setMirrorReflections(quality === 'high');
     renderer.setPixelRatio(currentPixelRatio());
-    hud.showToast(quality === 'high' ? 'Qualidade alta · reflexos na próxima câmara' : 'Qualidade baixa');
+    hud.showToast(quality === 'high' ? 'Qualidade alta · brilho metálico na próxima câmara' : 'Qualidade baixa');
   },
   onToggleSound: () => setMuted(!isMuted()),
+  onToggleReflections: () => {
+    reflectionsOn = !reflectionsOn;
+    showReflections(camera, reflectionsOn);
+    saveReflectionsOn(reflectionsOn);
+  },
   // Enter/click steps up and wraps to the lowest; ← → step either way.
   onAdjustSensitivity: (direction) => {
     const next = stepSensitivity(sensitivity, direction);

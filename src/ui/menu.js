@@ -81,6 +81,7 @@ export function createMenu(root, handlers) {
       adjust: handlers.onAdjustSensitivity,
       stay: true,
     });
+    defs.push({ label: 'Reflexos', meta: s.reflectionsOn ? 'ligados' : 'desligados', run: handlers.onToggleReflections, stay: true });
     defs.push({ label: 'Som', meta: s.muted ? 'desligado' : 'ligado', run: handlers.onToggleSound, stay: true });
 
     list.replaceChildren();
