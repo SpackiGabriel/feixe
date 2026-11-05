@@ -68,7 +68,8 @@ export const level8 = {
     },
   ],
   doors: [
-    { id: 'd1', position: [0, 1.5, 2], rotationY: 0, rule: 'AND', receiverIds: ['r1'] },
+    // Glass door, matching the partition it sits in.
+    { id: 'd1', position: [0, 1.5, 2], rotationY: 0, rule: 'AND', receiverIds: ['r1'], style: 'glass' },
     { id: 'd2', position: [3, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['r2'], exit: true },
   ],
   scenarios: [

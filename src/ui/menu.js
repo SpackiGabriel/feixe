@@ -74,6 +74,13 @@ export function createMenu(root, handlers) {
       defs.push({ label: 'Novo jogo', meta: 'do nível 01', run: handlers.onNewGame, confirm: true });
     }
     defs.push({ label: 'Qualidade', meta: s.quality === 'high' ? 'alta' : 'baixa', run: handlers.onToggleQuality, stay: true });
+    defs.push({
+      label: 'Sensibilidade',
+      meta: `◂ ${s.sensitivity.toFixed(2).replace(/0$/, '')}× ▸`,
+      run: () => handlers.onAdjustSensitivity(1),
+      adjust: handlers.onAdjustSensitivity,
+      stay: true,
+    });
     defs.push({ label: 'Som', meta: s.muted ? 'desligado' : 'ligado', run: handlers.onToggleSound, stay: true });
 
     list.replaceChildren();
@@ -128,6 +135,10 @@ export function createMenu(root, handlers) {
     if (event.code === 'ArrowDown' || event.code === 'KeyS') select(selected + 1);
     else if (event.code === 'ArrowUp' || event.code === 'KeyW') select(selected - 1);
     else if (event.code === 'Enter' || event.code === 'Space') activate(selected);
+    else if ((event.code === 'ArrowLeft' || event.code === 'KeyA' || event.code === 'ArrowRight' || event.code === 'KeyD') && items[selected]?.def.adjust) {
+      items[selected].def.adjust(event.code === 'ArrowLeft' || event.code === 'KeyA' ? -1 : 1);
+      render();
+    }
     else if (event.code === 'Escape' && confirming) cancelConfirm();
     else return;
     event.preventDefault();

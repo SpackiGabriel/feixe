@@ -3,8 +3,8 @@ import { RoomEnvironment } from '../vendor/three/addons/RoomEnvironment.js';
 import { createRenderer } from './core/renderer.js';
 import { createScene } from './core/scene.js';
 import { createCamera, clampFov } from './core/camera.js';
-import { createInput } from './core/input.js';
-import { createLookController } from './core/look.js';
+import { createInput, lockPointer } from './core/input.js';
+import { createLookController, loadSensitivity, saveSensitivity, stepSensitivity } from './core/look.js';
 import { createMovementController } from './core/movement.js';
 import { createInteraction } from './core/interaction.js';
 import { createManipulation } from './core/manipulation.js';
@@ -39,6 +39,8 @@ if (quality === 'high') {
 
 const input = createInput(renderer.domElement);
 const look = createLookController(camera);
+let sensitivity = loadSensitivity();
+look.setSensitivity(sensitivity);
 input.onMouseMove(look.handleMouseMove);
 
 const interactiveObjects = [];
@@ -55,7 +57,7 @@ const transitions = createTransitions(uiRoot);
 connectSfx(events);
 
 function requestLock() {
-  const result = renderer.domElement.requestPointerLock();
+  const result = lockPointer(renderer.domElement);
   // Browsers refuse a re-lock right after Esc; say so instead of failing silently.
   result?.catch?.(() => menu.setHint('CLIQUE NA TELA PARA CONTINUAR'));
 }
@@ -72,6 +74,7 @@ const menu = createMenu(uiRoot, {
     levelLabel: levelLabel(),
     quality,
     muted: isMuted(),
+    sensitivity,
   }),
   onResume: requestLock,
   onNewGame: () => {
@@ -89,6 +92,13 @@ const menu = createMenu(uiRoot, {
     hud.showToast(quality === 'high' ? 'Qualidade alta · reflexos na próxima câmara' : 'Qualidade baixa');
   },
   onToggleSound: () => setMuted(!isMuted()),
+  // Enter/click steps up and wraps to the lowest; ← → step either way.
+  onAdjustSensitivity: (direction) => {
+    const next = stepSensitivity(sensitivity, direction);
+    sensitivity = direction > 0 && next === sensitivity ? stepSensitivity(sensitivity, -Infinity) : next;
+    look.setSensitivity(sensitivity);
+    saveSensitivity(sensitivity);
+  },
 });
 
 // The level title waits until the player is actually playing (not behind
