@@ -17,9 +17,9 @@ const DOOR_THICKNESS = 0.15;
 //     they see.
 // The visuals (frame, pips, lamps, glow) live in door-view.js and only
 // read these states, so a modelled door can replace them later.
-export function createDoor({ position, rotationY = 0, rule, receivers, forbidden = [], exit = false }) {
+export function createDoor({ position, rotationY = 0, rule, receivers, forbidden = [], exit = false, style }) {
   const motion = createDoorMotion();
-  const view = createDoorView({ position, rotationY, inputCount: receivers.length, trapCount: forbidden.length, exit });
+  const view = createDoorView({ position, rotationY, inputCount: receivers.length, trapCount: forbidden.length, exit, style });
 
   const states = new Array(receivers.length); // reused every update() — see .claude/rules/code-conventions.md
   const forbiddenStates = new Array(forbidden.length);

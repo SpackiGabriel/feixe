@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { doorTexture } from '../gameplay/textures.js';
+import { doorTexture, glassTexture } from '../gameplay/textures.js';
 import { damp } from './motion.js';
 import { CHAIN_DELAY } from './conduits.js';
 
@@ -26,13 +26,52 @@ frameMaterial.userData.shared = true;
 // that must stay dark), lamp strips that light when the way is open, and —
 // for exit doors — a warm glow behind the panel and a light spill.
 // It only *reads* state; door.js and door-motion.js own the logic.
-export function createDoorView({ position, rotationY, inputCount, trapCount, exit }) {
+// `style: 'glass'`: a framed glass pane instead of the metal slab (level 8's
+// door in the glass partition), so it reads as part of that wall. Visual
+// only: it still blocks walking, beams and aiming while closed.
+function glassPanel() {
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xd4e2e6,
+    map: glassTexture(),
+    roughness: 0.15,
+    metalness: 0,
+    emissive: 0x18242a,
+    transparent: true,
+    opacity: 0.38,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const pane = new THREE.Mesh(new THREE.BoxGeometry(DOOR_WIDTH, PANEL_HEIGHT, 0.05), material);
+  pane.renderOrder = 1; // after the opaque rim, so the rim isn't washed out
+  const rim = 0.07;
+  const rimGeometryV = new THREE.BoxGeometry(rim, PANEL_HEIGHT, PANEL_THICKNESS);
+  const rimGeometryH = new THREE.BoxGeometry(DOOR_WIDTH, rim, PANEL_THICKNESS);
+  for (const side of [-1, 1]) {
+    const v = new THREE.Mesh(rimGeometryV, frameMaterial);
+    v.position.x = side * (DOOR_WIDTH / 2 - rim / 2);
+    pane.add(v);
+    const h = new THREE.Mesh(rimGeometryH, frameMaterial);
+    h.position.y = side * (PANEL_HEIGHT / 2 - rim / 2);
+    pane.add(h);
+  }
+  // Mid rail at hand height: makes the pane read as a door, not a window.
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(DOOR_WIDTH, 0.05, PANEL_THICKNESS * 0.8), frameMaterial);
+  rail.position.y = 1.0 - PANEL_HEIGHT / 2;
+  pane.add(rail);
+  return pane;
+}
+
+export function createDoorView({ position, rotationY, inputCount, trapCount, exit, style }) {
   const root = new THREE.Group();
   root.position.set(position.x, 0, position.z);
   root.rotation.y = rotationY;
 
-  const panelMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, map: doorTexture(), roughness: 0.6, metalness: 0.45 });
-  const panel = new THREE.Mesh(new THREE.BoxGeometry(DOOR_WIDTH, PANEL_HEIGHT, PANEL_THICKNESS), panelMaterial);
+  const panel = style === 'glass'
+    ? glassPanel()
+    : new THREE.Mesh(
+      new THREE.BoxGeometry(DOOR_WIDTH, PANEL_HEIGHT, PANEL_THICKNESS),
+      new THREE.MeshStandardMaterial({ color: 0xffffff, map: doorTexture(), roughness: 0.6, metalness: 0.45 }),
+    );
   panel.position.y = PANEL_HEIGHT / 2;
   root.add(panel);
 
