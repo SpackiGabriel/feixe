@@ -33,7 +33,20 @@ engine code: a level is one plain data file.
    - every `scenario` ends with the door states it declares;
    - rotating the emitters alone can't open the exit (shortcut guard);
    - unloading the level frees everything.
-6. **Play it for real** once (`http://localhost:8000/`, `Novo jogo` or the
+6. **Analyze**: `npm run analyze N` (a few seconds). It checks itself
+   against your `solution`/`scenarios`, then reports every *route family*
+   that opens the exit (which beam touched which objects), found by a
+   coarse grid and by random sampling, and the slack around your solution
+   (how far each rotation/rail can drift and still work). Look for:
+   - a family you didn't intend (a shortcut). Change the geometry, then
+     add a `scenario` that pins the fix;
+   - a rotation window under ~5° on a free mirror: give it
+     `rotationStepDegrees` (45° keeps routes right-angled, 15° when the
+     angle itself is the lesson; `docs/decisions/0009`);
+   - a rail window under ~0.2 m.
+   It proves solvability and finds shortcuts. It can't tell whether
+   anyone will understand the level (`design/campaign.md`).
+7. **Play it for real** once (`http://localhost:8000/`, `Novo jogo` or the
    debug jump). Then run `npm run e2e`: it plays every level in Chromium,
    from closed exit to next level, ending on the end screen.
 
@@ -66,6 +79,9 @@ triangle, blue = diamond, composites show their components. The mapping
 lives in `src/gameplay/colors.js`.
 
 ## Placement rules (the gotchas)
+
+0. **Doors don't block light**, only the player and aiming. A beam
+   crosses a doorway whatever the door's state.
 
 1. **A beam hits whatever is nearest.** A receiver behind a mirror, wall
    or another receiver never lights. The tests catch this as "solution

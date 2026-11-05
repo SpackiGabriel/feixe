@@ -29,5 +29,5 @@ one reasonable option.
 What this makes easier, harder, or forecloses.
 ```
 
-Existing ADRs are numbered `0001`–`0007` in this directory; list it to see
+Existing ADRs are numbered `0001`–`0009` in this directory; list it to see
 the latest number.

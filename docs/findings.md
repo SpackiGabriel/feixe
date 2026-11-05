@@ -314,3 +314,42 @@ ceiling to three simultaneous receivers, which is exactly what its spec'd
 receptores secundários)" needs — a composite receiver (two converging
 beams) plus one more for the OR, = three lit at once, = three emitters.
 Budget the beams before authoring, not after.
+
+## 2026-11-05 — Free mirror rotation is pixel-precise at room scale
+
+Source: the puzzle analyzer (`npm run analyze`) on the pre-redesign levels.
+
+A receiver is 0.8 m wide. For a target d metres from the mirror, the
+mirror's angle may drift by about ±atan(0.4/d)/2: ±2° at 5 m, ±1° for an
+edge-on pass at 8 m. The old campaign needed windows of 0.3–4.7°, and
+mouse rotation moves ~0.57° per pixel. Q/E steps (15°) land exactly, which
+hides the problem from keyboard players. Fix: `rotationStepDegrees`
+(`docs/decisions/0009`). Check `npm run analyze` for any free mirror.
+
+## 2026-11-05 — Doors don't block beams
+
+Source: `src/gameplay/laser-system.js` (its segment list has no doors).
+
+A closed door blocks the player and aiming, not light. A beam crosses a
+doorway whether the door is open or not (L8's edge-on beam relies on it,
+L9's red beam too). Don't design a puzzle where opening a door "lets light
+through"; it already does.
+
+## 2026-11-05 — 15° snapping puts beams on a 30° grid: diagonal shortcuts
+
+Source: designing level 6 with the analyzer.
+
+A mirror turned in 15° steps turns a beam in 30° steps, so beams can run
+diagonally, and a single mirror on a rail can often aim straight at a
+receiver the level meant to be reached in several bounces. With 45° steps
+every route is right-angled and the floor rails read as a plan. The old
+level 6 had exactly this shortcut (random search: one mirror opened it).
+
+## 2026-11-05 — A composite receiver hit by one component looks "wrong"
+
+Source: `src/gameplay/receiver.js` (`rejected` state), designing level 5.
+
+Magenta hit only by blue flickers exactly like a wrong color. Players may
+read "half there" as "blue doesn't belong here". The face shows both
+symbols, which is the only hint. Watch for it in playtests (L5, L10's
+yellow); a fix would be presentation only (light the matched symbols).

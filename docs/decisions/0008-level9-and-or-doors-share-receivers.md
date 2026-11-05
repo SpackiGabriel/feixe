@@ -1,5 +1,10 @@
 # 0008 — Level 9's AND and OR doors watch the same two receivers
 
+> **Back in use (2026-11-05, ADR 0009):** the campaign redesign returned
+> Level 9 to a receiver shared by both doors, with a decoy receiver on the
+> OR door so its choice matters. The note below describes the design that
+> was in between.
+>
 > **Superseded (2026-11-05):** the team kept the other Level 9 design
 > (`src/levels/data/level-9.js`): a gate (OR) in a dividing wall, then the
 > exit (AND, magenta), plus a trap. Because two beams can't hold three

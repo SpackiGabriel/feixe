@@ -8,19 +8,37 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 
 ## Current focus (checkpoint 2026-11-05, deadline ≈ 2026-11-12)
 
-Functionally complete, and the **juice pass** (game feel and presentation)
-is done: every state change now reads as a short cause→effect chain,
-non-laser devices are neutral, and the UI is an operator panel instead of
-web dialogs. Rules and code map: `docs/presentation.md`. What's left is
-**human** work:
+**Campaign redesign** (branch `campaign-redesign`, baseline tag
+`pre-redesign`): all ten levels re-authored, one idea each, inside spec
+§11's names and concepts. Design record: `design/campaign.md` (audit,
+what each level teaches, cards, playtest protocol); sources:
+`docs/research/level-design-research.md`; rules: `docs/decisions/0009`
+(snapped rotation, soft object counts, portal-center and two-sided
+mirrors as rules). New tool: `npm run analyze [N]`.
 
-1. **Playtest on the presentation machine, with a mouse** (both students):
-   feel, comfort, clarity, sound mix. Use the tuning list below.
-2. **Creative level pass** (designer): `docs/level-authoring.md`.
+Next is **human** work:
+
+1. **Owner playtest of the new campaign**, with a mouse, following
+   `design/campaign.md` §7. Open questions: L5 flicker read as "half"?
+   L6 rail reach noticed? L9 "one mirror, two beams" found? L10 merge
+   understood? Snapped rotation comfortable?
+2. Fix what the playtest shows (friction only, keep productive
+   difficulty), then merge `campaign-redesign` into `main`.
 3. Visual track: final assets can replace device meshes without touching
    logic (`docs/presentation.md`, "Swapping in final assets").
 
 ## Verified (evidence from this checkpoint)
+
+- Redesign: `npm test` 258 tests pass (new scenarios pin each level's
+  intended wrong turns); `npm run analyze`: every level self-checks, and
+  only the intended route families open each exit (two in L10, one
+  elsewhere); every rail has ≥ 0.3 m slack; every rotation is snapped.
+  `npm run e2e`: 71 checks pass on the new levels. Spawn screenshots of
+  all ten unsolved levels reviewed (L6 and L9 spawns adjusted).
+- **Not re-verified after the redesign:** frame time on real hardware
+  (the new levels have fewer or equal objects; software-WebGL frame times
+  in e2e are unchanged). Nothing about comprehension or fun: no player
+  has played the new campaign.
 
 - `npm run lint` clean; `npm test`: 17 files, 248 tests pass. New: pure door
   motion (reversal without jumps, passable threshold, rapid toggling),
@@ -66,10 +84,8 @@ chamber numerals, spawns that frame the mechanism.
   the mirror and door 1 from the corner; door 1 has a frame and lamps;
   the portal pair shares a numeral and glows while the beam passes.
 - **L10 clutter**: idle dials/rails at 12%, conduits invisible until live,
-  mirrors toned below the beams. **Proposal, not applied** (changes the
-  puzzle's look/space; designer's call): move the six mirrors' bases onto
-  two visibly separate floor zones (south-west = red/green into the portal,
-  south-east = blue), and lift the trap off the walking gap's edge.
+  mirrors toned below the beams. The redesign applied the zone proposal:
+  4 mirrors, red/green side west, blue side east.
 
 ## Implementation map (spec → code)
 
@@ -94,9 +110,9 @@ chamber numerals, spawns that frame the mechanism.
 - **No emitter tilt** (RF03/§6 "em casos específicos"): the tracer is 2D at
   one beam height. Decided with the team on 2026-11-05.
 - Outer room fixed at 10×10 m for every level; sub-areas use `walls`.
-- Mirrors reflect on both faces.
-- Portal beams leave the far portal from its center (not the mirrored
-  entry offset).
+- Mirrors reflect on both faces, and a portal re-emits beams from the far
+  portal's center: both are now game rules levels 9–10 rely on
+  (`docs/decisions/0009`).
 - All meshes are procedural primitives; no GLB is loaded yet.
 - No web fonts (offline): the UI uses system font stacks.
 - The ceiling (design-system D-20, still open) is a presentation choice
