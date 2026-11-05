@@ -6,7 +6,7 @@ import { damp } from './motion.js';
 // (docs/presentation.md): a floor dial under anything that rotates, a rail
 // under anything that slides, nothing under fixed things. All of them are
 // faint while idle (so busy rooms stay calm) and brighten on hover/grab.
-const LEVELS = { idle: 0.22, hover: 0.7, grab: 1 };
+const LEVELS = { idle: 0.12, hover: 0.7, grab: 1 };
 
 function createStateful(material, baseOpacity = 1) {
   let state = 'idle';

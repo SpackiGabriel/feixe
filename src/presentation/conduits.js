@@ -48,15 +48,19 @@ const fragmentShader = /* glsl */ `
   uniform float uTime;
   uniform vec3 uIdle;
   uniform vec3 uOn;
+  uniform vec3 uWarnColor;
   varying float vDistance;
   varying vec2 vUv;
   void main() {
     float edge = smoothstep(0.0, 0.25, vUv.y) * smoothstep(1.0, 0.75, vUv.y);
     float filled = step(vDistance, uHead) * uLit;
     float front = exp(-abs(vDistance - uHead) * 6.0) * step(vDistance, uHead + 0.4) * uLit;
-    float warn = uWarn * (0.55 + 0.45 * step(0.0, sin(uTime * 12.566)));
-    float glow = max(filled * 0.75 + front * 0.9, warn);
-    vec3 color = mix(uIdle, uOn, clamp(glow, 0.0, 1.0)) * (0.6 + 0.4 * edge);
+    // A trap's warning has its own language: cold, dashed, running toward
+    // the door it holds shut — never the warm fill that means progress.
+    float dashes = step(0.5, fract(vDistance * 2.2 - uTime * 2.5));
+    float warn = uWarn * dashes * (0.6 + 0.4 * step(0.0, sin(uTime * 12.566)));
+    vec3 color = mix(uIdle, uOn, clamp(filled * 0.75 + front * 0.9, 0.0, 1.0));
+    color = mix(color, uWarnColor, warn) * (0.6 + 0.4 * edge);
     gl_FragColor = vec4(color, 1.0);
   }
 `;
@@ -109,6 +113,7 @@ export function createConduit(route, { trap = false } = {}) {
       uTime: { value: 0 },
       uIdle: { value: new THREE.Color(0x15171a) },
       uOn: { value: new THREE.Color(0xffd9a8) },
+      uWarnColor: { value: new THREE.Color(0xc8d6e0) },
     },
     polygonOffset: true,
     polygonOffsetFactor: -2,

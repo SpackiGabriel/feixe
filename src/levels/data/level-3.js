@@ -8,6 +8,7 @@ import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
 
 export const level3 = {
   id: 'level-3',
+  spawn: { position: [1.3, 4.6], yaw: 0.12 }, // beside the emitter, not on top of it
   name: 'Ângulo',
   mirrors: [
     {

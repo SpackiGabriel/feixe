@@ -104,6 +104,20 @@ try {
   check(firstSel !== secondSel, `arrow keys move the menu cursor (${firstSel} → ${secondSel})`);
   await page.keyboard.press('ArrowUp');
   if (shotsDir) await page.screenshot({ path: join(shotsDir, '00-menu.png') });
+
+  console.log('start, pause, resume (pointer lock)');
+  await page.click('.mi.sel');
+  const locked = await g.until(() => document.pointerLockElement !== null, null, 3000);
+  check(locked, 'choosing the first menu item locks the pointer');
+  check(await g.eval(() => !document.querySelector('.menu').classList.contains('visible')), 'and hides the menu');
+  check(await g.until(() => document.querySelector('.intro').classList.contains('visible')), 'the level title appears once play starts');
+  await g.eval(() => document.exitPointerLock());
+  check(await g.until(() => document.querySelector('.menu').classList.contains('visible')), 'losing the pointer lock pauses (menu shown)');
+  check((await g.eval(() => document.querySelector('.mi.sel .mi-label').textContent)).toLowerCase() === 'continuar', 'pause menu offers Continuar first');
+  await page.waitForTimeout(1300); // browsers refuse a re-lock within ~1 s of leaving it
+  await page.keyboard.press('Enter');
+  check(await g.until(() => document.pointerLockElement !== null, null, 3000), 'Enter on Continuar resumes (pointer locked again)');
+  await g.eval(() => document.exitPointerLock());
   await g.hideOverlays();
 
   console.log('input');

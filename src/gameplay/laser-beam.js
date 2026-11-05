@@ -27,9 +27,11 @@ const haloVertex = /* glsl */ `
   varying float vAlong;
   varying vec3 vNormal;
   varying vec3 vView;
+  varying float vDepth;
   void main() {
     vAlong = (position.z + 0.5) * uLength;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    vDepth = -mv.z;
     vNormal = normalize(normalMatrix * normal);
     vView = normalize(-mv.xyz);
     gl_Position = projectionMatrix * mv;
@@ -45,11 +47,15 @@ const haloFragment = /* glsl */ `
   varying float vAlong;
   varying vec3 vNormal;
   varying vec3 vView;
+  varying float vDepth;
   void main() {
     float facing = abs(dot(normalize(vNormal), normalize(vView)));
     float soft = pow(facing, 1.6);
     float flow = 0.78 + 0.22 * sin(vAlong * 7.0 - uTime * 9.0);
-    gl_FragColor = vec4(uColor * flow, soft * 0.42);
+    // Fade out right in front of the camera: looking along a beam from
+    // close up shouldn't fill the screen with glare.
+    float near = smoothstep(0.35, 1.8, vDepth);
+    gl_FragColor = vec4(uColor * flow, soft * 0.42 * near);
   }
 `;
 

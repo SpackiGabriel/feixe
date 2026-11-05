@@ -12,6 +12,7 @@ import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
 
 export const level6 = {
   id: 'level-6',
+  spawn: { position: [1.3, 4.6], yaw: 0.12 }, // beside the emitter, not on top of it
   name: 'Bifurcação',
   mirrors: [
     {
