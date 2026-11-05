@@ -66,6 +66,15 @@ export function traceBeam(segments, emitter, maxReflections = MAX_REFLECTIONS) {
   let dir = normalize(emitter.dir);
   let color = { ...emitter.color };
   const path = [pos];
+  // What to draw: straight pieces with their own color. Differs from `path`
+  // where the beam changes color (filter) or jumps (portal: no piece
+  // between the two portals, the beam doesn't cross the wall).
+  const pieces = [];
+  let pieceStart = pos;
+  const addPiece = (end) => {
+    pieces.push({ a: pieceStart, b: end, color: { ...color } });
+    pieceStart = end;
+  };
   let reflections = 0;
 
   const stepLimit = maxReflections + segments.length + 1;
@@ -77,16 +86,19 @@ export function traceBeam(segments, emitter, maxReflections = MAX_REFLECTIONS) {
     }
 
     if (!closest) {
-      path.push(add(pos, scale(dir, ESCAPE_DISTANCE)));
-      return { path, status: 'escaped', color };
+      const end = add(pos, scale(dir, ESCAPE_DISTANCE));
+      path.push(end);
+      addPiece(end);
+      return { path, pieces, status: 'escaped', color };
     }
 
     path.push(closest.hit.point);
+    addPiece(closest.hit.point);
     const seg = closest.seg;
 
-    if (seg.type === 'wall') return { path, status: 'absorbed-wall', segment: seg, color };
-    if (seg.type === 'blocker') return { path, status: 'blocked', segment: seg, color };
-    if (seg.type === 'receiver') return { path, status: 'hit-receiver', segment: seg, color };
+    if (seg.type === 'wall') return { path, pieces, status: 'absorbed-wall', segment: seg, color };
+    if (seg.type === 'blocker') return { path, pieces, status: 'blocked', segment: seg, color };
+    if (seg.type === 'receiver') return { path, pieces, status: 'hit-receiver', segment: seg, color };
 
     if (seg.type === 'filter') {
       const filtered = {
@@ -95,7 +107,7 @@ export function traceBeam(segments, emitter, maxReflections = MAX_REFLECTIONS) {
         b: color.b && seg.primary.b ? 1 : 0,
       };
       if (!filtered.r && !filtered.g && !filtered.b) {
-        return { path, status: 'absorbed-filter', segment: seg, color };
+        return { path, pieces, status: 'absorbed-filter', segment: seg, color };
       }
       color = filtered;
       pos = add(closest.hit.point, scale(dir, EPS));
@@ -104,7 +116,7 @@ export function traceBeam(segments, emitter, maxReflections = MAX_REFLECTIONS) {
 
     if (seg.type === 'mirror') {
       if (reflections >= maxReflections) {
-        return { path, status: 'max-reflections', segment: seg, color };
+        return { path, pieces, status: 'max-reflections', segment: seg, color };
       }
       const normal = perpendicular(sub(seg.b, seg.a));
       dir = reflect(dir, normal);
@@ -118,15 +130,16 @@ export function traceBeam(segments, emitter, maxReflections = MAX_REFLECTIONS) {
       // ping-ponging between a badly-paired portal (or a portal/mirror
       // loop) to the same NFR "Desempenho" cost cap.
       if (reflections >= maxReflections) {
-        return { path, status: 'max-reflections', segment: seg, color };
+        return { path, pieces, status: 'max-reflections', segment: seg, color };
       }
       dir = normalize(rotateXZ(dir, seg.exitRotationDelta));
       pos = add(seg.exitPosition, scale(dir, EPS));
+      pieceStart = { x: seg.exitPosition.x, z: seg.exitPosition.z };
       reflections++;
       continue;
     }
   }
-  return { path, status: 'max-reflections', color };
+  return { path, pieces, status: 'max-reflections', color };
 }
 
 // Additive composition (spec §7): OR together every beam that currently

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ROOM_SIZE } from '../levels/data/constants.js';
+import { floorTexture, wallTexture, tileUvs } from '../gameplay/textures.js';
 
 const WALL_HEIGHT = 3;
 const WALL_THICKNESS = 0.2;
@@ -10,7 +11,7 @@ let wallMaterial = null;
 // walls (level-loader.js). Tagged `shared` so disposeLevel() leaves it alone.
 export function getWallMaterial() {
   if (!wallMaterial) {
-    wallMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+    wallMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, map: wallTexture(), roughness: 0.75, metalness: 0.2 });
     wallMaterial.userData.shared = true;
   }
   return wallMaterial;
@@ -19,14 +20,14 @@ export function getWallMaterial() {
 function createRoom() {
   const room = new THREE.Group();
 
-  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x555555 });
+  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, map: floorTexture(ROOM_SIZE), roughness: 0.9 });
   const wallMaterial = getWallMaterial();
 
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE), floorMaterial);
   floor.rotation.x = -Math.PI / 2;
   room.add(floor);
 
-  const wallGeometry = new THREE.PlaneGeometry(ROOM_SIZE, WALL_HEIGHT);
+  const wallGeometry = tileUvs(new THREE.PlaneGeometry(ROOM_SIZE, WALL_HEIGHT), ROOM_SIZE, WALL_HEIGHT);
   const half = ROOM_SIZE / 2;
 
   const backWall = new THREE.Mesh(wallGeometry, wallMaterial);
@@ -54,10 +55,12 @@ function createRoom() {
 function createLights() {
   const lights = new THREE.Group();
 
-  const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+  // Deliberately dim (spec §13 III, design-premise.md): low ambient fill so
+  // the room stays navigable, while the beams and receivers carry the scene.
+  const ambient = new THREE.AmbientLight(0xbfd4e0, 0.35);
   lights.add(ambient);
 
-  const directional = new THREE.DirectionalLight(0xffffff, 0.8);
+  const directional = new THREE.DirectionalLight(0xffffff, 0.45);
   directional.position.set(3, WALL_HEIGHT + 1, 2);
   lights.add(directional);
 

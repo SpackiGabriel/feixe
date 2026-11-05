@@ -317,3 +317,27 @@ describe('colorToHex', () => {
     expect(colorToHex({ r: 0, g: 0, b: 1 })).toBe(0x0000ff);
   });
 });
+
+describe('traceBeam pieces (what gets drawn)', () => {
+  it('test_traceBeam_throughFilter_piecesChangeColorAtTheFilter', () => {
+    const segments = [
+      { type: 'filter', a: { x: -1, z: -2 }, b: { x: 1, z: -2 }, primary: { r: 1, g: 0, b: 0 } },
+      { type: 'wall', a: { x: -5, z: -5 }, b: { x: 5, z: -5 } },
+    ];
+    const trace = traceBeam(segments, { pos: { x: 0, z: 0 }, dir: { x: 0, z: -1 }, color: { r: 1, g: 1, b: 1 } });
+    expect(trace.pieces).toHaveLength(2);
+    expect(trace.pieces[0].color).toEqual({ r: 1, g: 1, b: 1 });
+    expect(trace.pieces[1].color).toEqual({ r: 1, g: 0, b: 0 });
+  });
+
+  it('test_traceBeam_throughPortal_noPieceSpansTheGap', () => {
+    const segments = [
+      { type: 'portal', a: { x: -0.6, z: -1 }, b: { x: 0.6, z: -1 }, exitPosition: { x: 3, z: 3 }, exitRotationDelta: 0 },
+      { type: 'wall', a: { x: -10, z: -8 }, b: { x: 10, z: -8 } },
+    ];
+    const trace = traceBeam(segments, { pos: { x: 0, z: 0 }, dir: { x: 0, z: -1 }, color: { r: 1, g: 0, b: 0 } });
+    expect(trace.pieces).toHaveLength(2);
+    expect(trace.pieces[0].b.z).toBeCloseTo(-1);
+    expect(trace.pieces[1].a).toEqual({ x: 3, z: 3 });
+  });
+});

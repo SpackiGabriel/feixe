@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { rotatedRectAABB } from './aabb.js';
+import { tileUvs } from './textures.js';
 
 const DEFAULT_HEIGHT = 3;
 const DEFAULT_THICKNESS = 0.2;
@@ -27,7 +28,7 @@ export function createWall({ from, to, height = DEFAULT_HEIGHT, thickness = DEFA
   const b = { x: to[0], z: to[1] };
   const { center, length, rotationY } = wallPlacement(a, b);
 
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(length, height, thickness), material);
+  const mesh = new THREE.Mesh(tileUvs(new THREE.BoxGeometry(length, height, thickness), length, height), material);
   mesh.position.set(center.x, height / 2, center.z);
   mesh.rotation.y = rotationY;
 

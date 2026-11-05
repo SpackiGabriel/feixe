@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { evaluateDoorRule } from './door-logic.js';
 import { rotatedRectAABB } from './aabb.js';
 import { playDoorTone } from '../core/audio.js';
+import { doorTexture } from './textures.js';
 
 const DOOR_WIDTH = 2;
 const DOOR_HEIGHT = 3;
@@ -18,7 +19,7 @@ const LAMP_HEIGHT = 2.4;
 // void when open.
 export function createDoor({ position, rotationY = 0, rule, receivers, forbidden = [] }) {
   const geometry = new THREE.BoxGeometry(DOOR_WIDTH, DOOR_HEIGHT, DOOR_THICKNESS);
-  const material = new THREE.MeshStandardMaterial({ color: 0x666666 });
+  const material = new THREE.MeshStandardMaterial({ color: 0xffffff, map: doorTexture(), roughness: 0.6, metalness: 0.4 });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.copy(position);
   mesh.rotation.y = rotationY;

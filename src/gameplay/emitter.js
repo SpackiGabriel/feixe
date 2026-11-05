@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { COLOR_NAMES } from './colors.js';
 import { colorToHex } from './laser.js';
 import { createSteppedAngle } from './rotation.js';
+import { symbolFaceTexture } from './textures.js';
 
 const BODY_RADIUS = 0.15;
 const BODY_LENGTH = 0.5;
@@ -41,6 +42,15 @@ export function createEmitter({ position, colorName, initialRotationY = 0, rotat
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.copy(position);
   mesh.rotation.y = initialRotationY;
+
+  // Color-blind symbol badge (accessibility NFR): a small cube riding on top
+  // of the barrel, symbol on every face so it reads from any side.
+  const badge = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 0.22, 0.22),
+    new THREE.MeshStandardMaterial({ color: 0x111111, emissive: color.hex, emissiveIntensity: 1, emissiveMap: symbolFaceTexture(colorName) })
+  );
+  badge.position.y = BODY_RADIUS + 0.16;
+  mesh.add(badge);
 
   const angle = createSteppedAngle(initialRotationY, rotationStepDegrees);
   function applyRotationDelta(delta) {

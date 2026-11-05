@@ -1,4 +1,4 @@
-import { traceBeam, MAX_REFLECTIONS, colorToHex } from './laser.js';
+import { traceBeam, MAX_REFLECTIONS } from './laser.js';
 import { getReflectiveSegment } from './mirror.js';
 import { getFilterSegment } from './filter.js';
 import { createBeamRenderer } from './laser-beam.js';
@@ -56,7 +56,7 @@ export function createLaserSystem({ scene, wallSegments, mirrors, emitters, rece
       };
 
       const trace = traceBeam(segments, traceEmitter, MAX_REFLECTIONS);
-      beam.renderer.update(trace.path, beam.emitter.mesh.position.y, colorToHex(trace.color));
+      beam.renderer.update(trace.pieces, beam.emitter.mesh.position.y);
       traces.push(trace);
     }
 

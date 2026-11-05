@@ -3,11 +3,12 @@ import { COLOR_NAMES } from './colors.js';
 import { composeReceiverColor, isReceiverSatisfied, colorToHex } from './laser.js';
 import { playConfirmTone } from '../core/audio.js';
 import { segmentFromCenter } from './aabb.js';
+import { symbolFaceTexture } from './textures.js';
 
 const PANEL_WIDTH = 0.8;
 const PANEL_HEIGHT = 0.8;
 const PANEL_THICKNESS = 0.05;
-const INACTIVE_EMISSIVE_INTENSITY = 0.15;
+const INACTIVE_EMISSIVE_INTENSITY = 0.35;
 const ACTIVE_EMISSIVE_INTENSITY = 1.2;
 const PULSE_DECAY = 2.5; // per second — the activation pulse fades in ~0.4 s
 const PULSE_EMISSIVE_BOOST = 2.5;
@@ -29,6 +30,7 @@ export function createReceiver({ position, rotationY = 0, colorName }) {
     color: 0x222222,
     emissive: hex,
     emissiveIntensity: INACTIVE_EMISSIVE_INTENSITY,
+    emissiveMap: symbolFaceTexture(colorName), // color-blind symbol(s) of the target color
   });
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.copy(position);

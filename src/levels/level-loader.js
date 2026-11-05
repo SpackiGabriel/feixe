@@ -9,6 +9,7 @@ import { createPortalPair } from '../gameplay/portal.js';
 import { createDoor } from '../gameplay/door.js';
 import { createWall } from '../gameplay/wall.js';
 import { getWallMaterial } from '../core/scene.js';
+import { createRailMesh } from '../gameplay/rail.js';
 
 // The "construtor de cena comum" from spec §10: interprets a level's
 // declarative data into the scene graph, reusing the same small set of
@@ -24,6 +25,11 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     roots.push(object);
   }
 
+  function addRail(rail) {
+    const mesh = createRailMesh({ x: rail.start[0], z: rail.start[2] }, { x: rail.end[0], z: rail.end[2] });
+    if (mesh) addToScene(mesh);
+  }
+
   const mirrors = data.mirrors.map((m) => {
     const mirror = createMirror({
       railStart: new THREE.Vector3(...m.rail.start),
@@ -35,6 +41,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       rotationStepDegrees: m.rotationStepDegrees ?? null,
     });
     addToScene(mirror.base);
+    if (m.positionEnabled) addRail(m.rail);
     interactiveObjects.push(mirror.plate);
     mirror.plate.userData.debugInfo = () => `espelho ${m.id}  t=${mirror.getT().toFixed(3)}  rot=${degrees(mirror.plate.rotation.y)}°`;
     return mirror;
@@ -87,6 +94,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       primaryName: f.primaryName,
     });
     addToScene(filter.base);
+    addRail(f.rail);
     interactiveObjects.push(filter.plate);
     filter.plate.userData.debugInfo = () => `filtro ${f.id}  t=${filter.getT().toFixed(3)}`;
     return filter;

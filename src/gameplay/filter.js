@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { COLOR_NAMES } from './colors.js';
 import { colorToHex } from './laser.js';
+import { symbolFaceTexture } from './textures.js';
 
 const PANEL_WIDTH = 0.8;
 const PANEL_HEIGHT = 0.8;
@@ -21,16 +22,15 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
 
   const base = new THREE.Group();
 
-  const plate = new THREE.Mesh(
-    new THREE.BoxGeometry(PANEL_WIDTH, PANEL_HEIGHT, PANEL_THICKNESS),
-    new THREE.MeshStandardMaterial({
+  const plateMaterial = new THREE.MeshStandardMaterial({
       color: hex,
       transparent: true,
       opacity: 0.5,
       emissive: hex,
-      emissiveIntensity: 0.3,
-    })
-  );
+      emissiveIntensity: 0.6,
+      emissiveMap: symbolFaceTexture(primaryName),
+  });
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(PANEL_WIDTH, PANEL_HEIGHT, PANEL_THICKNESS), plateMaterial);
   plate.rotation.y = rotationY;
   base.add(plate);
 
@@ -54,6 +54,8 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
     applyRotationDelta: () => {},
   };
   plate.userData.prompt = 'Clique: mover filtro';
+  // Own hover feedback: the generic tint would overwrite the color emissive.
+  plate.userData.setHovered = (isHovered) => { plateMaterial.emissiveIntensity = isHovered ? 1.2 : 0.6; };
 
   return { base, plate, getT: () => t, primary, applyPositionDelta };
 }
