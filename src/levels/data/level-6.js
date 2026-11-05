@@ -12,6 +12,7 @@ import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
 
 export const level6 = {
   id: 'level-6',
+  name: 'Bifurcação',
   mirrors: [
     {
       // Sits on the emitter's straight line and picks the branch: -45°

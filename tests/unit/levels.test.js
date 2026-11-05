@@ -8,6 +8,7 @@ import { getLevels } from '../../src/levels/level-manager.js';
 import { instantiateLevel, disposeLevel } from '../../src/levels/level-loader.js';
 import { createLaserSystem } from '../../src/gameplay/laser-system.js';
 import { createScene } from '../../src/core/scene.js';
+import { applySolution } from '../support/apply-solution.js';
 
 function load(levelData) {
   const { scene, wallSegments } = createScene();
@@ -21,30 +22,6 @@ function load(levelData) {
 function tick({ level, laserSystem }) {
   laserSystem.update();
   for (const door of level.doors) door.update(0.016);
-}
-
-function applySolution(levelData, level, solution) {
-  for (const [id, target] of Object.entries(solution.mirrors ?? {})) {
-    const index = levelData.mirrors.findIndex((m) => m.id === id);
-    expect(index, `mirror "${id}" exists`).toBeGreaterThanOrEqual(0);
-    const mirror = level.mirrors[index];
-    if (target.t !== undefined) mirror.applyPositionDelta(target.t - levelData.mirrors[index].initialT);
-    if (target.rotationY !== undefined) {
-      mirror.applyRotationDelta(target.rotationY - mirror.plate.rotation.y);
-      // Goes through the player's own controls, so it fails if that degree of freedom is disabled.
-      expect(mirror.plate.rotation.y, `mirror "${id}" reaches rotationY`).toBeCloseTo(target.rotationY, 5);
-    }
-  }
-  for (const [id, target] of Object.entries(solution.filters ?? {})) {
-    const index = levelData.filters.findIndex((f) => f.id === id);
-    expect(index, `filter "${id}" exists`).toBeGreaterThanOrEqual(0);
-    level.filters[index].applyPositionDelta(target.t - levelData.filters[index].initialT);
-  }
-  for (const id of solution.switches ?? []) {
-    const index = levelData.switches.findIndex((s) => s.id === id);
-    expect(index, `switch "${id}" exists`).toBeGreaterThanOrEqual(0);
-    level.switches[index].activate();
-  }
 }
 
 describe.each(getLevels().map((data) => [data.id, data]))('%s', (_id, data) => {
@@ -98,21 +75,21 @@ describe.each(getLevels().map((data) => [data.id, data]))('%s', (_id, data) => {
   it('test_level_dispose_leavesSceneAndInteractiveListClean_andFreesGpuResources', () => {
     const { scene, interactiveObjects, level, laserSystem } = load(data);
     const childrenBefore = createScene().scene.children.length; // room + lights only
-    const resources = [];
+    const resources = new Set(); // meshes may share a geometry/material
     for (const root of level.roots) {
       root.traverse((o) => {
-        if (o.geometry) resources.push(o.geometry);
-        if (o.material && !o.material.userData.shared) resources.push(o.material);
+        if (o.geometry) resources.add(o.geometry);
+        if (o.material && !o.material.userData.shared) resources.add(o.material);
       });
     }
-    let disposed = 0;
-    for (const resource of resources) resource.addEventListener('dispose', () => disposed++);
+    const pending = new Set(resources);
+    for (const resource of resources) resource.addEventListener('dispose', () => pending.delete(resource));
 
     laserSystem.dispose();
     disposeLevel(level, scene, interactiveObjects);
 
     expect(interactiveObjects).toHaveLength(0);
     expect(scene.children).toHaveLength(childrenBefore);
-    expect(disposed).toBe(resources.length);
+    expect(pending.size).toBe(0);
   });
 });

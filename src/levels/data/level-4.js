@@ -11,6 +11,7 @@ const LANE_X = 2.5; // half-distance between the two lanes, keeps them well clea
 
 export const level4 = {
   id: 'level-4',
+  name: 'Duas cores',
   mirrors: [
     {
       id: 'm-red',

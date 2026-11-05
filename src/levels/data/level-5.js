@@ -11,6 +11,7 @@ const LANE_X = 2.5; // matches level 4's lane spacing
 
 export const level5 = {
   id: 'level-5',
+  name: 'Convergência',
   mirrors: [
     {
       id: 'm-red',

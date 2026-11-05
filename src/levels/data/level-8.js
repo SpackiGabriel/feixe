@@ -17,6 +17,7 @@ import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
 
 export const level8 = {
   id: 'level-8',
+  name: 'Sequência',
   mirrors: [
     {
       // Shared by both doors: +45° satisfies door 1 (r1, east wall),

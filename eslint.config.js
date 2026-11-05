@@ -9,7 +9,7 @@ export default [
     languageOptions: { globals: globals.browser },
   },
   {
-    files: ['gallery/shot.mjs', 'assets/src/*.mjs'], // Node script that also runs code inside the page (window/document)
+    files: ['gallery/shot.mjs', 'assets/src/*.mjs', 'tests/e2e/*.mjs'], // Node script that also runs code inside the page (window/document)
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {

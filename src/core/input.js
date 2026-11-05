@@ -17,6 +17,7 @@ export function createInput(domElement) {
     }
   });
   window.addEventListener('keyup', (event) => keys.delete(event.code));
+  window.addEventListener('blur', () => keys.clear()); // no stuck keys after alt-tab
 
   domElement.addEventListener('click', () => {
     if (document.pointerLockElement !== domElement) {

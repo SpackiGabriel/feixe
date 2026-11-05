@@ -36,6 +36,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     });
     addToScene(mirror.base);
     interactiveObjects.push(mirror.plate);
+    mirror.plate.userData.debugInfo = () => `espelho ${m.id}  t=${mirror.getT().toFixed(3)}  rot=${degrees(mirror.plate.rotation.y)}°`;
     return mirror;
   });
 
@@ -49,6 +50,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     });
     addToScene(emitter.mesh);
     if (emitter.rotationEnabled) interactiveObjects.push(emitter.mesh);
+    emitter.mesh.userData.debugInfo = () => `emissor ${e.id}  rot=${degrees(emitter.mesh.rotation.y)}°`;
     return emitter;
   });
 
@@ -59,6 +61,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       colorName: r.colorName,
     });
     addToScene(receiver.mesh);
+    receiver.levelId = r.id;
     return receiver;
   });
   const receiversById = new Map(data.receivers.map((r, i) => [r.id, receivers[i]]));
@@ -70,6 +73,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     });
     addToScene(sw.mesh);
     interactiveObjects.push(sw.button);
+    sw.button.userData.debugInfo = () => `interruptor ${s.id}  ${sw.isActive() ? 'ligado' : 'desligado'}`;
     return sw;
   });
   const switchesById = new Map((data.switches ?? []).map((s, i) => [s.id, switches[i]]));
@@ -84,6 +88,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     });
     addToScene(filter.base);
     interactiveObjects.push(filter.plate);
+    filter.plate.userData.debugInfo = () => `filtro ${f.id}  t=${filter.getT().toFixed(3)}`;
     return filter;
   });
 
@@ -143,11 +148,21 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       forbidden,
     });
     addToScene(door.mesh);
+    addToScene(door.indicator);
+    door.levelId = d.id;
     if (d.exit) exitDoor = door;
     return door;
   });
 
-  return { mirrors, emitters, receivers, switches, filters, blockers, walls, portals, doors, exitDoor, roots };
+  // Where the player stands on load/restart: XZ position + yaw (radians,
+  // 0 = facing -Z, the same rotationY convention as every object).
+  const spawn = { x: data.spawn?.position?.[0] ?? 0, z: data.spawn?.position?.[1] ?? 4, yaw: data.spawn?.yaw ?? 0 };
+
+  return { spawn, mirrors, emitters, receivers, switches, filters, blockers, walls, portals, doors, exitDoor, roots };
+}
+
+function degrees(radians) {
+  return ((radians * 180) / Math.PI).toFixed(1);
 }
 
 // Materials/textures cached across levels (src/core/scene.js, textures.js)

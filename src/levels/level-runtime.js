@@ -1,6 +1,7 @@
 import { createLaserSystem } from '../gameplay/laser-system.js';
 import { instantiateLevel, disposeLevel } from './level-loader.js';
-import { getLevels, loadSavedLevelIndex, saveLevelIndex } from './level-manager.js';
+import { getLevels, loadSavedLevelIndex, saveLevelIndex, resetProgress, nextAfterExit } from './level-manager.js';
+import { playLevelCompleteTone } from '../core/audio.js';
 import { isPlayerAtExit } from './exit-trigger.js';
 import { isPlayerAtPortal, computePortalLanding } from './portal-crossing.js';
 
@@ -11,13 +12,17 @@ const PORTAL_CLEARANCE = 0.8; // meters pushed out from the landing portal's fac
 // Owns the currently-loaded level's objects and its laser system, and
 // handles what RF09 requires: a fixed level sequence, quick restart of
 // the current level, and resuming where the player left off.
-export function createLevelRuntime({ scene, wallSegments, interactiveObjects }) {
+// `onLevelLoaded({ index, count, data, level })` fires after every load/restart (HUD title,
+// player spawn); `onGameComplete()` fires when the last level's exit is
+// reached — the runtime then idles until startNewGame()/loadLevel().
+export function createLevelRuntime({ scene, wallSegments, interactiveObjects, onLevelLoaded = () => {}, onGameComplete = () => {} }) {
   const levels = getLevels();
   let currentIndex = loadSavedLevelIndex(levels.length);
   let currentLevel = null;
   let laserSystem = null;
   let exitTriggered = false; // guards against re-firing every frame while the player lingers at an open exit
   let portalCooldownId = null; // id of the portal the player must move away from before any portal can retrigger
+  let complete = false;
 
   // Movement colliders for this level (src/core/movement.js reads this via
   // getColliders() each frame). Blockers are static, so their slots are
@@ -43,7 +48,14 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects }) 
     for (const door of currentLevel.doors) levelColliders.push(door.getCollider());
     exitTriggered = false;
     portalCooldownId = null;
+    complete = false;
     saveLevelIndex(currentIndex);
+    onLevelLoaded({ index: currentIndex, count: levels.length, data: levels[currentIndex], level: currentLevel });
+  }
+
+  function startNewGame() {
+    resetProgress();
+    load(0);
   }
 
   function restart() {
@@ -51,7 +63,9 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects }) 
   }
 
   function update(deltaSeconds, camera) {
+    if (complete) return;
     laserSystem.update(); // must run before doors, since it updates receivers' active state
+    for (const receiver of currentLevel.receivers) receiver.update(deltaSeconds);
     for (let i = 0; i < currentLevel.doors.length; i++) {
       const door = currentLevel.doors[i];
       door.update(deltaSeconds);
@@ -72,7 +86,15 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects }) 
       })
     ) {
       exitTriggered = true;
-      load(currentIndex + 1);
+      playLevelCompleteTone();
+      const next = nextAfterExit(currentIndex, levels.length);
+      if (next.complete) {
+        complete = true;
+        resetProgress();
+        onGameComplete();
+      } else {
+        load(next.index);
+      }
       return;
     }
 
@@ -111,8 +133,12 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects }) 
   return {
     update,
     restart,
+    startNewGame,
     loadLevel: load,
     getCurrentIndex: () => currentIndex,
+    getCurrentLevel: () => currentLevel,
+    getLevelCount: () => levels.length,
+    isComplete: () => complete,
     getColliders: () => levelColliders,
   };
 }

@@ -17,8 +17,15 @@ export function createLookController(camera) {
     camera.rotation.set(pitch, yaw, 0, 'YXZ');
   }
 
+  // Level spawn: face `yaw`, level pitch.
+  function setOrientation(yaw) {
+    pitch = 0;
+    camera.rotation.set(0, yaw, 0, 'YXZ');
+  }
+
   return {
     handleMouseMove,
+    setOrientation,
     setEnabled: (value) => { enabled = value; },
   };
 }

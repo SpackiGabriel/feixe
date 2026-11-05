@@ -55,7 +55,7 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
   };
   plate.userData.prompt = 'Clique: mover filtro';
 
-  return { base, plate, primary, applyPositionDelta };
+  return { base, plate, getT: () => t, primary, applyPositionDelta };
 }
 
 // World-space XZ segment of the filter's plate, for the laser tracer —

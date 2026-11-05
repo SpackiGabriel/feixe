@@ -1,11 +1,16 @@
 import * as THREE from 'three';
 import { evaluateDoorRule } from './door-logic.js';
 import { rotatedRectAABB } from './aabb.js';
+import { playDoorTone } from '../core/audio.js';
 
 const DOOR_WIDTH = 2;
 const DOOR_HEIGHT = 3;
 const DOOR_THICKNESS = 0.15;
 const SLIDE_SPEED = 2; // meters/second — "animação de deslizamento" (spec §8), not an instant snap
+const LOCKED_COLOR = 0xff3030;
+const UNLOCKED_COLOR = 0x30ff60;
+const LAMP_WIDTH = 0.12;
+const LAMP_HEIGHT = 2.4;
 
 // A door watches a set of receivers and slides open/closed based on an
 // AND/OR rule over their active state (spec §8, RF07). `position` is the
@@ -18,6 +23,19 @@ export function createDoor({ position, rotationY = 0, rule, receivers, forbidden
   mesh.position.copy(position);
   mesh.rotation.y = rotationY;
 
+  // RF10 "porta destravada": two static light strips flanking the doorway
+  // (they don't slide with the panel), red while locked, green when open.
+  const lampMaterial = new THREE.MeshBasicMaterial({ color: LOCKED_COLOR, toneMapped: false });
+  const lampGeometry = new THREE.BoxGeometry(LAMP_WIDTH, LAMP_HEIGHT, DOOR_THICKNESS * 2);
+  const indicator = new THREE.Group();
+  indicator.position.set(position.x, LAMP_HEIGHT / 2, position.z);
+  indicator.rotation.y = rotationY;
+  for (const side of [-1, 1]) {
+    const lamp = new THREE.Mesh(lampGeometry, lampMaterial);
+    lamp.position.x = side * (DOOR_WIDTH / 2 + LAMP_WIDTH);
+    indicator.add(lamp);
+  }
+
   const states = new Array(receivers.length); // reused every update() — see .claude/rules/code-conventions.md
   const forbiddenStates = new Array(forbidden.length);
   const collider = rotatedRectAABB(position, rotationY, DOOR_WIDTH, DOOR_THICKNESS); // static — the closed footprint never changes
@@ -28,7 +46,12 @@ export function createDoor({ position, rotationY = 0, rule, receivers, forbidden
   function update(deltaSeconds) {
     for (let i = 0; i < receivers.length; i++) states[i] = receivers[i].isActive();
     for (let i = 0; i < forbidden.length; i++) forbiddenStates[i] = forbidden[i].isHit();
-    open = evaluateDoorRule(states, rule, forbiddenStates);
+    const next = evaluateDoorRule(states, rule, forbiddenStates);
+    if (next !== open) {
+      open = next;
+      lampMaterial.color.setHex(open ? UNLOCKED_COLOR : LOCKED_COLOR);
+      if (open) playDoorTone();
+    }
 
     const targetY = open ? openY : closedY;
     const step = SLIDE_SPEED * deltaSeconds;
@@ -47,6 +70,7 @@ export function createDoor({ position, rotationY = 0, rule, receivers, forbidden
   // already use, not the slide animation's progress.
   return {
     mesh,
+    indicator,
     update,
     isOpen: () => open,
     position: position.clone(),

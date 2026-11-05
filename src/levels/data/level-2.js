@@ -9,6 +9,7 @@ const BEAM_X = -2; // the emitter's fixed downrange line — the mirror must sli
 
 export const level2 = {
   id: 'level-2',
+  name: 'Reflexo',
   mirrors: [
     {
       id: 'm1',

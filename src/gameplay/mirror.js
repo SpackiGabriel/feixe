@@ -54,7 +54,7 @@ export function createMirror({
   plate.userData.controller = { positionEnabled, rotationEnabled, rotationStep: angle.step, applyPositionDelta, applyRotationDelta };
   plate.userData.prompt = promptFor(positionEnabled, rotationEnabled);
 
-  return { base, plate, applyPositionDelta, applyRotationDelta };
+  return { base, plate, getT: () => t, applyPositionDelta, applyRotationDelta };
 }
 
 // Short Portuguese hint shown under the crosshair while aiming (src/ui/hud.js).

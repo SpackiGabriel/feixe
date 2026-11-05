@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { clampLevelIndex, loadSavedLevelIndex, saveLevelIndex } from '../../src/levels/level-manager.js';
+import { clampLevelIndex, loadSavedLevelIndex, saveLevelIndex, resetProgress, nextAfterExit, getLevels } from '../../src/levels/level-manager.js';
 
 function createFakeStorage(initial = {}) {
   const data = { ...initial };
   return {
     getItem: (key) => (key in data ? data[key] : null),
     setItem: (key, value) => { data[key] = value; },
+    removeItem: (key) => { delete data[key]; },
     _data: data,
   };
 }
@@ -64,5 +65,33 @@ describe('saveLevelIndex', () => {
 
   it('test_saveLevelIndex_noStorageAvailable_doesNotThrow', () => {
     expect(() => saveLevelIndex(2, undefined)).not.toThrow();
+  });
+});
+
+describe('resetProgress', () => {
+  it('test_resetProgress_afterSave_nextLoadStartsAtLevelOne', () => {
+    const storage = createFakeStorage();
+    saveLevelIndex(6, storage);
+    resetProgress(storage);
+    expect(loadSavedLevelIndex(10, storage)).toBe(0);
+  });
+});
+
+describe('nextAfterExit', () => {
+  it('test_nextAfterExit_middleLevel_loadsNext', () => {
+    expect(nextAfterExit(3, 10)).toEqual({ complete: false, index: 4 });
+  });
+
+  it('test_nextAfterExit_lastLevel_completesGame', () => {
+    expect(nextAfterExit(9, 10)).toEqual({ complete: true, index: 0 });
+  });
+});
+
+describe('getLevels', () => {
+  it('test_getLevels_everyLevelHasIdAndName', () => {
+    for (const level of getLevels()) {
+      expect(level.id).toMatch(/^level-\d+$/);
+      expect(typeof level.name).toBe('string');
+    }
   });
 });

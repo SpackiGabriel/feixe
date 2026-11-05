@@ -36,3 +36,16 @@ export function loadSavedLevelIndex(levelCount, storage = globalThis.localStorag
 export function saveLevelIndex(index, storage = globalThis.localStorage) {
   storage?.setItem(STORAGE_KEY, String(index));
 }
+
+// "Novo jogo" and finishing the last level both start the next session at level 1.
+export function resetProgress(storage = globalThis.localStorage) {
+  storage?.removeItem(STORAGE_KEY);
+}
+
+// Pure: what walking through level `index`'s exit leads to (RF09). After the
+// last level the game is complete (spec §8: "a conclusão do jogo corresponde
+// à abertura da porta final do décimo nível") and the next session restarts.
+export function nextAfterExit(index, levelCount) {
+  if (index + 1 >= levelCount) return { complete: true, index: 0 };
+  return { complete: false, index: index + 1 };
+}

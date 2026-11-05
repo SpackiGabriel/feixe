@@ -32,7 +32,7 @@ export function createLaserSystem({ scene, wallSegments, mirrors, emitters, rece
   const segments = [...wallSegments, ...mirrorSegments, ...filterSegments, ...receiverSegments, ...blockerSegments, ...interiorWallSegments, ...portalSegments];
 
   const beams = emitters.map((emitter) => ({ emitter, renderer: createBeamRenderer() }));
-  for (const beam of beams) scene.add(beam.renderer.line);
+  for (const beam of beams) scene.add(beam.renderer.object);
 
   const traces = [];
 
@@ -68,7 +68,7 @@ export function createLaserSystem({ scene, wallSegments, mirrors, emitters, rece
   // this system's own scene objects, so nothing else will clean them up.
   function dispose() {
     for (const beam of beams) {
-      scene.remove(beam.renderer.line);
+      scene.remove(beam.renderer.object);
       beam.renderer.dispose();
     }
   }

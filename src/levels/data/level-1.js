@@ -6,6 +6,7 @@ import { ROOM_HALF } from './constants.js';
 
 export const level1 = {
   id: 'level-1',
+  name: 'Primeiros passos',
   mirrors: [],
   emitters: [],
   receivers: [],
