@@ -3,10 +3,21 @@
 // so it's unit-testable without a WebGL context (test-standards.md) —
 // same pattern as exit-trigger.js.
 
-export function isPlayerAtPortal({ playerX, playerZ, portalX, portalZ, radius }) {
+// A "doorway" test rather than a plain radius: the player crosses a portal
+// by walking through its face, so the trigger is an oriented box aligned to
+// the portal — within `halfWidth` across the face (the panel's width, so a
+// slightly-off-centre approach still catches instead of hitting the wall
+// beside it) and within `depth` along the facing normal. Uses the same
+// rotationY convention as every other object here: the face spans the
+// tangent (cos, -sin) and faces the normal (-sin, -cos) (see mirror.js).
+export function isPlayerAtPortal({ playerX, playerZ, portalX, portalZ, portalRotationY, halfWidth, depth }) {
   const dx = playerX - portalX;
   const dz = playerZ - portalZ;
-  return dx * dx + dz * dz <= radius * radius;
+  const cos = Math.cos(portalRotationY);
+  const sin = Math.sin(portalRotationY);
+  const along = dx * cos - dz * sin; // offset across the doorway's width
+  const through = -dx * sin - dz * cos; // offset along the facing normal
+  return Math.abs(along) <= halfWidth && Math.abs(through) <= depth;
 }
 
 // Exit position is the linked portal's own spot, pushed out along its

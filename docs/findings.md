@@ -177,6 +177,38 @@ worth closing (it hasn't yet).
 **Resolved 2026-11-05**: `interaction.js` now also raycasts the level's
 occluders (room/interior walls, doors, blockers), so objects behind them
 can't be selected.
+## 2026-09-22 — Player portal-crossing needs a doorway, not a point trigger
+
+Source: playtesting level 8's portal ("não funciona").
+
+The player-crossing trigger (`isPlayerAtPortal`, `portal-crossing.js`) was
+a 0.8 m radius circle at the portal centre. The teleport math is correct —
+walk in dead-centre and you cross fine — but the dividing wall spans the
+whole room, so any off-centre approach (tested: 1 m off missed) walks into
+the wall beside the small circle and reads as "the portal is broken". Fixed
+by making the trigger an oriented box aligned to the portal's face
+(`portalRotationY`), `halfWidth` = the 1.2 m panel's half plus a margin,
+`depth` along the facing normal — so walking toward the visible panel
+crosses, and only the wall *beside* the panel stops you (which is correct).
+Note this is the *player* trigger only; the beam crosses via the portal's
+tracer segment (`laser.js`), which is the portal's primary job (spec §9)
+and was untouched. `PORTAL_CLEARANCE` (0.8) is kept above `depth` (0.7) so
+the landing spot is clear of the doorway zone.
+
+## 2026-09-22 — Plain reload does NOT pick up edited ES modules (dev gotcha)
+
+Source: trying to verify the portal fix live in the browser.
+
+With no build step and `python -m http.server` (which sends no
+`Cache-Control`), the browser memory-caches ES modules for the session. A
+normal reload re-runs `index.html` but re-serves *cached* `./src/*.js`, so
+edits don't take effect — a live test can silently run stale code (this bit
+the portal verification: the game ran the old circle trigger while the
+freshly-imported function returned the new result). Only a **hard reload**
+(Ctrl+Shift+R) busts the module cache. Adding `?v=N` to the `main.js`
+`<script src>` only reloads `main.js`, not the modules it imports. When
+playtesting after any code change, hard-reload — or we add a no-cache dev
+server / cache-busting later if it keeps causing confusion.
 
 ## 2026-10-01 — Asset toolchain: axis mapping and headless-render notes
 
@@ -256,3 +288,29 @@ Source: the level title never appeared for the first level.
 `createLevelRuntime()` loads (and emits `level:enter` for) the first level
 inside its own constructor. Any listener registered after that line in
 `main.js` misses it. Register `events.on(...)` before creating the runtime.
+## 2026-09-22 — N emitters can light at most N receivers at once (beam budget)
+
+Source: designing `src/levels/data/level-9.js` ("Circuito", spec §11).
+
+In `traceBeam()` (`src/gameplay/laser.js`) a beam terminates at exactly
+one segment: `receiver`, `wall`, and `blocker` end the trace; `mirror` and
+`portal` redirect it; `filter` only recolors it and passes through. So a
+single beam can satisfy at most one receiver, and a level with N emitters
+can have at most **N receivers lit simultaneously** — there is no beam
+splitting, and a receiver is opaque (a beam can't pass through one to reach
+a second).
+
+This is a real design constraint, not just a rendering detail. It made
+level 9's first instinct — an AND door and an *independent* OR door both
+open at once — arithmetically impossible with two emitters: a genuine AND
+(two receivers) already uses both beams, so an independent OR door's third
+receiver can never also be lit. The fix was to have both doors watch the
+same two receivers (`docs/decisions/0008`); the operator contrast then
+shows up *during* the solve, not as two independently-satisfiable gates.
+
+**Implication for level 10** ("Prisma"): its three emitters raise the
+ceiling to three simultaneous receivers, which is exactly what its spec'd
+"condição E (cor composta) e uma condição OU (qualquer um de dois
+receptores secundários)" needs — a composite receiver (two converging
+beams) plus one more for the OR, = three lit at once, = three emitters.
+Budget the beams before authoring, not after.

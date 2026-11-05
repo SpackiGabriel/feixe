@@ -127,9 +127,11 @@ try {
   check(await g.until((z) => Math.abs(window.__feixe.camera.position.z - z) < 1e-6, z0), 'R restarts the chamber and returns the player to spawn');
 
   console.log('aim occlusion (level 8)');
+  // Wait for a few rendered frames (interaction updates once per frame;
+  // a software-WebGL frame can take ~200 ms), then read what's aimed at.
   const aimAt = async (x, z, yaw) => {
     await g.place(x, z, yaw);
-    await page.waitForTimeout(80);
+    await g.eval(() => new Promise((resolve) => { let n = 3; const step = () => (--n <= 0 ? resolve() : requestAnimationFrame(step)); requestAnimationFrame(step); }));
     return g.eval(() => window.__feixe.interaction.getHovered()?.userData.debugInfo?.() ?? null);
   };
   await g.load(7);
