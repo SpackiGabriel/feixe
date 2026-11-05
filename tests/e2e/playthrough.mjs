@@ -86,6 +86,28 @@ try {
   check((await aim(0, 4.5, 0))?.startsWith('espelho m1'), 'mirror is selectable in plain view');
   check((await aim(0, -2, Math.PI)) === null, 'mirror behind the dividing wall is not selectable');
 
+  console.log('level 8 route on foot (real W key)');
+  const walk = async (ms) => { await page.keyboard.down('KeyW'); await page.waitForTimeout(ms); await page.keyboard.up('KeyW'); await frames(2); };
+  const pos = () => page.evaluate(() => ({ x: window.__feixe.camera.position.x, z: window.__feixe.camera.position.z }));
+  const rotateM1 = (angle) => page.evaluate((a) => {
+    const m = window.__feixe.levelRuntime.getCurrentLevel().mirrors[0];
+    m.applyRotationDelta(a - m.plate.rotation.y);
+  }, angle);
+  await page.evaluate(() => window.__feixe.levelRuntime.loadLevel(7));
+  await aim(0.3, 2.9, 0);
+  await walk(700);
+  check((await pos()).z > 2, 'closed door 1 blocks the way');
+  await rotateM1(Math.PI / 4);
+  await frames(30);
+  await walk(500);
+  const inStrip = await pos();
+  check(inStrip.z < 2 && inStrip.z > 0, `walked through open door 1 into the strip (z=${inStrip.z.toFixed(2)})`);
+  await rotateM1(Math.PI / 2);
+  await frames(30);
+  check(await page.evaluate(() => window.__feixe.levelRuntime.getCurrentLevel().exitDoor.isOpen()), 'turning the mirror edge-on opens the exit');
+  await walk(800);
+  check((await pos()).z < 0, 'walking into the portal lands north of the dividing wall');
+
   const count = await page.evaluate(() => window.__feixe.levelRuntime.getLevelCount());
   for (let i = 0; i < count; i++) {
     console.log(`level ${i + 1}`);

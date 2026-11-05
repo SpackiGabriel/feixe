@@ -1,18 +1,14 @@
-// Level 8 — "Sequência" (spec §11): one shared rotate-only mirror gates
-// two doors that can't both be satisfied at once (rotating it to open
-// door 1 necessarily un-satisfies door 2's receiver, and vice versa) —
-// the player must open door 1, walk through, then come back and
-// reconfigure for door 2. A full-width blocker (the "parede divisória")
-// splits the room in two; the only way across is the first portal pair,
-// used here purely to route the beam (and the player) around the wall
-// instead of adding more mirrors.
-//
-// Door 1's receiver and the portal both sit on the room's south half —
-// physically reachable at all times, since interaction is aim-based with
-// no proximity requirement (see .claude/rules — mirrors/emitters can be
-// manipulated from anywhere in range) and a closed door has never
-// blocked beams (only receivers/blockers/portals/mirrors/walls do — see
-// laser-system.js's segment list), only player *movement* past it.
+// Level 8 — "Sequência" (spec §11): two doors in series. Wall A (z=2,
+// with door 1 in its middle) and the dividing wall (z=0, no opening)
+// split the room into a start area, a strip between the walls, and the
+// north half with the exit. One shared rotate-only mirror feeds both:
+// at +45° the beam lights r1 (east wall, start area) and opens door 1; at
+// 90° (edge-on) it passes straight through door 1's opening into the
+// portal in the strip and comes out north onto r2, opening the exit — but
+// that also takes it off r1, closing door 1. So the player must open door
+// 1, walk into the strip, then turn the mirror (aimed through the open
+// doorway) and take the portal north. Introduces the first portal pair,
+// used to get past the dividing wall without more mirrors.
 import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
 
 export const level8 = {
@@ -38,11 +34,14 @@ export const level8 = {
   ],
   switches: [],
   filters: [],
+  spawn: { position: [2, 4.3], yaw: 0 },
   blockers: [],
   walls: [
-    // The dividing wall: spans the full room width, so the only way
-    // across is the portal below — no gap to walk (or beam) around.
+    // The dividing wall: full room width — the portal is the only way across.
     { from: [-ROOM_HALF, 0], to: [ROOM_HALF, 0], thickness: 0.3 },
+    // Wall A, with door 1 filling the x ∈ [-1, 1] gap.
+    { from: [-ROOM_HALF, 2], to: [-1, 2] },
+    { from: [1, 2], to: [ROOM_HALF, 2] },
   ],
   portals: [
     {
@@ -50,13 +49,19 @@ export const level8 = {
       // its own half of the room (matters for the player's landing push
       // in portal-crossing.js, not just the beam's exit direction).
       id: 'p1',
-      a: { position: [0, BEAM_HEIGHT, 1], rotationY: Math.PI },
-      b: { position: [0, BEAM_HEIGHT, -1], rotationY: 0 },
+      // Flat on the dividing wall's two faces, so there's room to stand in
+      // the strip (aiming back through door 1) without stepping into it.
+      a: { position: [0, BEAM_HEIGHT, 0.25], rotationY: Math.PI },
+      b: { position: [0, BEAM_HEIGHT, -0.25], rotationY: 0 },
     },
   ],
   doors: [
-    { id: 'd1', position: [2, 1.5, 2], rotationY: Math.PI, rule: 'AND', receiverIds: ['r1'] },
-    { id: 'd2', position: [0, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['r2'], exit: true },
+    { id: 'd1', position: [0, 1.5, 2], rotationY: 0, rule: 'AND', receiverIds: ['r1'] },
+    { id: 'd2', position: [3, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['r2'], exit: true },
+  ],
+  scenarios: [
+    { name: 'mirror at +45° opens door 1 only', config: { mirrors: { m1: { rotationY: Math.PI / 4 } } }, doors: { d1: true, d2: false } },
+    { name: 'mirror edge-on opens the exit and closes door 1', config: { mirrors: { m1: { rotationY: Math.PI / 2 } } }, doors: { d1: false, d2: true } },
   ],
   solution: { mirrors: { m1: { rotationY: Math.PI / 2 } } }, // edge-on: beam passes straight through to the portal
 };

@@ -171,7 +171,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
 
   // Where the player stands on load/restart: XZ position + yaw (radians,
   // 0 = facing -Z, the same rotationY convention as every object).
-  const spawn = { x: data.spawn?.position?.[0] ?? 0, z: data.spawn?.position?.[1] ?? 4, yaw: data.spawn?.yaw ?? 0 };
+  const spawn = { x: data.spawn?.position?.[0] ?? 0, z: data.spawn?.position?.[1] ?? 4.5, yaw: data.spawn?.yaw ?? 0 };
 
   return { spawn, mirrors, emitters, receivers, switches, filters, blockers, walls, portals, doors, exitDoor, roots };
 }

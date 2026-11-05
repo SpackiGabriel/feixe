@@ -1,17 +1,17 @@
 const MOVE_SPEED = 3; // meters/second
 const PLAYER_RADIUS = 0.35;
 
-function collidesAt(x, z, colliders) {
+function overlaps(x, z, c) {
+  return x + PLAYER_RADIUS > c.minX && x - PLAYER_RADIUS < c.maxX && z + PLAYER_RADIUS > c.minZ && z - PLAYER_RADIUS < c.maxZ;
+}
+
+// A collider the player is *already* inside (a door that slid shut on them
+// while they stood in the doorway) doesn't block — otherwise every move
+// would be rejected and the player would be stuck for good.
+function collidesAt(x, z, colliders, fromX, fromZ) {
   for (const c of colliders) {
     if (!c) continue; // a `null` slot is an open door — no longer blocking
-    if (
-      x + PLAYER_RADIUS > c.minX &&
-      x - PLAYER_RADIUS < c.maxX &&
-      z + PLAYER_RADIUS > c.minZ &&
-      z - PLAYER_RADIUS < c.maxZ
-    ) {
-      return true;
-    }
+    if (overlaps(x, z, c) && !overlaps(fromX, fromZ, c)) return true;
   }
   return false;
 }
@@ -25,7 +25,9 @@ function collidesAt(x, z, colliders) {
 // since which doors are open changes at runtime.
 export function createMovementController(camera, keys, roomColliders, getLevelColliders = () => []) {
   function blockedAt(x, z) {
-    return collidesAt(x, z, roomColliders) || collidesAt(x, z, getLevelColliders());
+    const fromX = camera.position.x;
+    const fromZ = camera.position.z;
+    return collidesAt(x, z, roomColliders, fromX, fromZ) || collidesAt(x, z, getLevelColliders(), fromX, fromZ);
   }
 
   function update(deltaSeconds) {
