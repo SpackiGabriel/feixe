@@ -11,7 +11,7 @@ const SLIDE_SPEED = 2; // meters/second — "animação de deslizamento" (spec �
 // AND/OR rule over their active state (spec §8, RF07). `position` is the
 // door's closed (blocking) center; it slides straight up into the ceiling
 // void when open.
-export function createDoor({ position, rotationY = 0, rule, receivers }) {
+export function createDoor({ position, rotationY = 0, rule, receivers, forbidden = [] }) {
   const geometry = new THREE.BoxGeometry(DOOR_WIDTH, DOOR_HEIGHT, DOOR_THICKNESS);
   const material = new THREE.MeshStandardMaterial({ color: 0x666666 });
   const mesh = new THREE.Mesh(geometry, material);
@@ -19,6 +19,7 @@ export function createDoor({ position, rotationY = 0, rule, receivers }) {
   mesh.rotation.y = rotationY;
 
   const states = new Array(receivers.length); // reused every update() — see .claude/rules/code-conventions.md
+  const forbiddenStates = new Array(forbidden.length);
   const collider = rotatedRectAABB(position, rotationY, DOOR_WIDTH, DOOR_THICKNESS); // static — the closed footprint never changes
   const closedY = position.y;
   const openY = position.y + DOOR_HEIGHT;
@@ -26,7 +27,8 @@ export function createDoor({ position, rotationY = 0, rule, receivers }) {
 
   function update(deltaSeconds) {
     for (let i = 0; i < receivers.length; i++) states[i] = receivers[i].isActive();
-    open = evaluateDoorRule(states, rule);
+    for (let i = 0; i < forbidden.length; i++) forbiddenStates[i] = forbidden[i].isHit();
+    open = evaluateDoorRule(states, rule, forbiddenStates);
 
     const targetY = open ? openY : closedY;
     const step = SLIDE_SPEED * deltaSeconds;

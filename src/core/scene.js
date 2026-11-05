@@ -4,11 +4,23 @@ import { ROOM_SIZE } from '../levels/data/constants.js';
 const WALL_HEIGHT = 3;
 const WALL_THICKNESS = 0.2;
 
+let wallMaterial = null;
+
+// One wall material shared by the room shell and every level's interior
+// walls (level-loader.js). Tagged `shared` so disposeLevel() leaves it alone.
+export function getWallMaterial() {
+  if (!wallMaterial) {
+    wallMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+    wallMaterial.userData.shared = true;
+  }
+  return wallMaterial;
+}
+
 function createRoom() {
   const room = new THREE.Group();
 
   const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x555555 });
-  const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+  const wallMaterial = getWallMaterial();
 
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE), floorMaterial);
   floor.rotation.x = -Math.PI / 2;

@@ -1,5 +1,10 @@
 # 0005 — Room geometry stays hardcoded; level data only covers gameplay objects
 
+> **Partly superseded (2026-11-05):** levels now declare interior `walls`
+> (`{ from: [x,z], to: [x,z], height?, thickness? }`, `src/gameplay/wall.js`),
+> which absorb beams and block the player. Level 8's divider uses it. The
+> outer 10×10 room shell is still fixed and shared, as below.
+
 ## Context
 
 `design/game-concept.md`'s anti-pillars describe the game as "not

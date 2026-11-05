@@ -37,10 +37,11 @@ export const level8 = {
   ],
   switches: [],
   filters: [],
-  blockers: [
+  blockers: [],
+  walls: [
     // The dividing wall: spans the full room width, so the only way
     // across is the portal below — no gap to walk (or beam) around.
-    { id: 'divider', position: [0, 1.5, 0], rotationY: 0, width: ROOM_HALF * 2, height: 3, thickness: 0.3 },
+    { from: [-ROOM_HALF, 0], to: [ROOM_HALF, 0], thickness: 0.3 },
   ],
   portals: [
     {

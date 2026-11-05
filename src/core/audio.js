@@ -12,24 +12,38 @@ function getAudioContext() {
   return audioContext;
 }
 
-const TONE_FREQUENCY = 880;
-const TONE_DURATION = 0.2;
-const TONE_GAIN = 0.2;
-
-// Receiver activation confirmation (spec §8, RF06: "efeito ... sonoro de
-// confirmação").
-export function playConfirmTone() {
+function playTone(frequency, duration, { type = 'sine', gain = 0.2, delay = 0, endFrequency = null } = {}) {
   const ctx = getAudioContext();
   if (!ctx) return;
+  const start = ctx.currentTime + delay;
   const oscillator = ctx.createOscillator();
-  const gain = ctx.createGain();
+  const gainNode = ctx.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, start);
+  if (endFrequency) oscillator.frequency.exponentialRampToValueAtTime(endFrequency, start + duration);
+  gainNode.gain.setValueAtTime(gain, start);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, start + duration);
+  oscillator.connect(gainNode).connect(ctx.destination);
+  oscillator.start(start);
+  oscillator.stop(start + duration);
+}
 
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(TONE_FREQUENCY, ctx.currentTime);
-  gain.gain.setValueAtTime(TONE_GAIN, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + TONE_DURATION);
+// Receiver activation / switch press (spec §8, RF06: "efeito ... sonoro de confirmação").
+export function playConfirmTone() {
+  playTone(880, 0.2);
+}
 
-  oscillator.connect(gain).connect(ctx.destination);
-  oscillator.start();
-  oscillator.stop(ctx.currentTime + TONE_DURATION);
+// A trap blocker started being hit (spec §7 NOT) — low, buzzy, clearly "wrong".
+export function playTrapTone() {
+  playTone(140, 0.35, { type: 'sawtooth', gain: 0.08 });
+}
+
+// A door unlocked.
+export function playDoorTone() {
+  playTone(330, 0.5, { type: 'triangle', gain: 0.15, endFrequency: 660 });
+}
+
+// Level complete: a short rising arpeggio.
+export function playLevelCompleteTone() {
+  [523, 659, 784, 1047].forEach((f, i) => playTone(f, 0.25, { gain: 0.15, delay: i * 0.09 }));
 }

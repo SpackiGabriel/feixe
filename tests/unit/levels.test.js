@@ -53,8 +53,9 @@ describe.each(getLevels().map((data) => [data.id, data]))('%s', (_id, data) => {
   });
 
   it('test_level_hasUniqueObjectIds', () => {
-    const ids = ['mirrors', 'emitters', 'receivers', 'switches', 'filters', 'blockers', 'portals', 'doors']
-      .flatMap((key) => (data[key] ?? []).map((o) => o.id));
+    const ids = ['mirrors', 'emitters', 'receivers', 'switches', 'filters', 'blockers', 'walls', 'portals', 'doors']
+      .flatMap((key) => (data[key] ?? []).map((o) => o.id))
+      .filter((id) => id !== undefined); // walls have no id
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -101,7 +102,7 @@ describe.each(getLevels().map((data) => [data.id, data]))('%s', (_id, data) => {
     for (const root of level.roots) {
       root.traverse((o) => {
         if (o.geometry) resources.push(o.geometry);
-        if (o.material) resources.push(o.material);
+        if (o.material && !o.material.userData.shared) resources.push(o.material);
       });
     }
     let disposed = 0;

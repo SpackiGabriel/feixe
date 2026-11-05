@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateDoorRule } from '../../src/gameplay/door-logic.js';
+import { evaluateDoorRule, isBlockerHit } from '../../src/gameplay/door-logic.js';
 
 describe('evaluateDoorRule', () => {
   it('test_evaluateDoorRule_andWithAllReceiversActive_opensDoor', () => {
@@ -25,5 +25,26 @@ describe('evaluateDoorRule', () => {
 
   it('test_evaluateDoorRule_unknownRule_throws', () => {
     expect(() => evaluateDoorRule([true], 'XOR')).toThrow();
+  });
+});
+
+describe('evaluateDoorRule — NOT (trap blockers, spec §7)', () => {
+  it('test_evaluateDoorRule_satisfiedButTrapHit_keepsDoorClosed', () => {
+    expect(evaluateDoorRule([true], 'AND', [true])).toBe(false);
+    expect(evaluateDoorRule([true, false], 'OR', [false, true])).toBe(false);
+  });
+
+  it('test_evaluateDoorRule_satisfiedAndNoTrapHit_opensDoor', () => {
+    expect(evaluateDoorRule([true], 'AND', [false])).toBe(true);
+  });
+});
+
+describe('isBlockerHit', () => {
+  const seg = { type: 'blocker' };
+  it('test_isBlockerHit_traceEndingOnThisBlocker_isHit', () => {
+    expect(isBlockerHit([{ status: 'hit-receiver', segment: {} }, { status: 'blocked', segment: seg }], seg)).toBe(true);
+  });
+  it('test_isBlockerHit_traceEndingOnOtherBlocker_isNotHit', () => {
+    expect(isBlockerHit([{ status: 'blocked', segment: { type: 'blocker' } }], seg)).toBe(false);
   });
 });

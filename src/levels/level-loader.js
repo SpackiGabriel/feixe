@@ -7,6 +7,8 @@ import { createFilter } from '../gameplay/filter.js';
 import { createBlocker } from '../gameplay/blocker.js';
 import { createPortalPair } from '../gameplay/portal.js';
 import { createDoor } from '../gameplay/door.js';
+import { createWall } from '../gameplay/wall.js';
+import { getWallMaterial } from '../core/scene.js';
 
 // The "construtor de cena comum" from spec §10: interprets a level's
 // declarative data into the scene graph, reusing the same small set of
@@ -92,9 +94,19 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       width: b.width,
       height: b.height,
       thickness: b.thickness,
+      trap: b.trap ?? false,
     });
     addToScene(blocker.mesh);
     return blocker;
+  });
+  const blockersById = new Map((data.blockers ?? []).map((b, i) => [b.id, blockers[i]]));
+
+  // Interior walls (spec §10's "paredes"). They share the room's wall
+  // material, which disposeLevel() must not free (see isShared()).
+  const walls = (data.walls ?? []).map((w) => {
+    const wall = createWall({ ...w, material: getWallMaterial() });
+    addToScene(wall.mesh);
+    return wall;
   });
 
   // Both ends of a pair are flattened into one list — laser-system.js and
@@ -118,18 +130,30 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       if (!activatable) throw new Error(`Level "${data.id}": door "${d.id}" references unknown receiver/switch "${id}"`);
       return activatable;
     });
+    const forbidden = (d.forbidIds ?? []).map((id) => {
+      const blocker = blockersById.get(id);
+      if (!blocker?.trap) throw new Error(`Level "${data.id}": door "${d.id}" forbidIds "${id}" must be a blocker with trap: true`);
+      return blocker;
+    });
     const door = createDoor({
       position: new THREE.Vector3(...d.position),
       rotationY: d.rotationY ?? 0,
       rule: d.rule,
       receivers: doorReceivers,
+      forbidden,
     });
     addToScene(door.mesh);
     if (d.exit) exitDoor = door;
     return door;
   });
 
-  return { mirrors, emitters, receivers, switches, filters, blockers, portals, doors, exitDoor, roots };
+  return { mirrors, emitters, receivers, switches, filters, blockers, walls, portals, doors, exitDoor, roots };
+}
+
+// Materials/textures cached across levels (src/core/scene.js, textures.js)
+// are tagged userData.shared and outlive any single level.
+function isShared(material) {
+  return material.userData?.shared === true;
 }
 
 // Reverses instantiateLevel(): removes every object it added to the scene
@@ -143,7 +167,7 @@ export function disposeLevel(loaded, scene, interactiveObjects) {
       const index = interactiveObjects.indexOf(object);
       if (index !== -1) interactiveObjects.splice(index, 1);
       object.geometry?.dispose();
-      object.material?.dispose();
+      if (object.material && !isShared(object.material)) object.material.dispose();
     });
   }
 }

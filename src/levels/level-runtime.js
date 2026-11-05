@@ -38,7 +38,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects }) 
     currentIndex = Math.max(0, Math.min(index, levels.length - 1));
     currentLevel = instantiateLevel(levels[currentIndex], scene, interactiveObjects);
     laserSystem = createLaserSystem({ scene, wallSegments, ...currentLevel });
-    levelColliders = currentLevel.blockers.map((blocker) => blocker.collider);
+    levelColliders = [...currentLevel.blockers, ...currentLevel.walls].map((o) => o.collider);
     doorColliderStart = levelColliders.length;
     for (const door of currentLevel.doors) levelColliders.push(door.getCollider());
     exitTriggered = false;
