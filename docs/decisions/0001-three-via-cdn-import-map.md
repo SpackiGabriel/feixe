@@ -1,5 +1,11 @@
 # 0001 — Load Three.js via CDN import map, no npm/bundler
 
+> **Superseded (2026-11-05):** the import map now points at a vendored copy,
+> `vendor/three/three.module.js` + `three.core.js` (r186, copied from
+> `node_modules/three/build/`), so the game runs offline for the
+> presentation. Still no bundler. To bump Three: `npm i three@X`, copy those
+> two files again; `tests/unit/three-version.test.js` checks they match.
+
 ## Context
 
 The project is pinned to "no build step" and `three` as the only

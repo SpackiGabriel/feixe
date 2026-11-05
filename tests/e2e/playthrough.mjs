@@ -40,6 +40,13 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const errors = [];
+  // Offline check: the game must not need anything beyond the local server.
+  const external = [];
+  await page.route('**/*', (route) => {
+    if (route.request().url().startsWith(base)) return route.continue();
+    external.push(route.request().url());
+    return route.abort();
+  });
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
@@ -130,6 +137,7 @@ try {
   check((await page.evaluate(() => localStorage.getItem('feixe.currentLevelIndex'))) === null, 'progress reset after finishing');
   if (shotsDir) await page.screenshot({ path: join(shotsDir, 'end.png') });
 
+  check(external.length === 0, `no external requests (runs offline)${external.length ? ': ' + external.join(', ') : ''}`);
   check(errors.length === 0, `no page errors${errors.length ? ': ' + errors.join(' | ') : ''}`);
 } finally {
   await browser.close();
