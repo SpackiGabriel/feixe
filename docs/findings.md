@@ -353,3 +353,16 @@ Magenta hit only by blue flickers exactly like a wrong color. Players may
 read "half there" as "blue doesn't belong here". The face shows both
 symbols, which is the only hint. Watch for it in playtests (L5, L10's
 yellow); a fix would be presentation only (light the matched symbols).
+
+## 2026-11-05 — Mirror reflections cost a scene pass, not pixels
+
+Source: `src/presentation/mirror-reflection.js`, timing renders with
+`gl.finish()` on L10 at 1920×1080 (Intel UHD).
+
+Each visible mirror face re-renders the whole scene (all draw calls and
+every beam's point light). Dropping MSAA or halving the texture to 256²
+changed nothing measurable; the number of visible mirrors does. If frame
+time is a problem, cap how many mirrors reflect per frame (nearest
+first) rather than lowering resolution. Reflector surfaces sit on layer
+1 so reflection cameras skip them: no mirror-in-mirror recursion.
+

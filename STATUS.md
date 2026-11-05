@@ -29,6 +29,25 @@ Next is **human** work:
 
 ## Verified (evidence from this checkpoint)
 
+- **Mirror reflection prototype** (2026-11-05, branch
+  `feat/mirror-reflection`, PR #3): each mirror face is a
+  Three.js `Reflector` (vendored `vendor/three/addons/Reflector.js`):
+  the scene re-rendered from the camera mirrored across the plate, oblique
+  near plane, 512² texture, tinted below the beams. Code:
+  `presentation/mirror-reflection.js`. Mirrors don't see other mirrors'
+  reflections (layer 1), so no recursion. Seen working on L3 and L10.
+  Cost measured on an Intel UHD (this machine, pane hidden, noisy):
+  +3.5–6 ms/frame at 1920×1080 with L10's four mirrors in view; MSAA and
+  texture size barely matter (the extra scene pass does). **Not measured
+  on the presentation machine; not playtested** (do reflected beams read
+  as extra beams?). The team tried it: no frame-rate loss, and no
+  mirror-in-mirror is wanted (less confusing). Menu "Reflexos"
+  (ligados/desligados, persisted, default on) toggles them instantly,
+  independent of "Qualidade"; off = the plate's env-mapped metal.
+  "Qualidade" sets the reflection texture (alta 512² + 4× MSAA, baixa
+  256² no MSAA; `REFLECTION_QUALITY`), applied to existing mirrors at
+  once.
+
 - Playtest fixes (2026-11-05): camera flick (Chromium/Windows pointer-lock
   delta spikes) handled in `core/input.js` with raw `unadjustedMovement`
   where supported, dropping one-event deltas > 250 px and the first 2

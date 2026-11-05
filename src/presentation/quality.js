@@ -1,6 +1,8 @@
-// Graphics quality: 'high' (metal reflections, up to 1.5×
-// pixel ratio) or 'low' (none of those, 1× pixels) for a modest
-// presentation machine. Persisted per browser.
+// Graphics quality: 'high' (env-mapped metal, up to 1.5× pixel ratio,
+// sharper mirror reflections) or 'low' (no env map, 1× pixels, coarser
+// mirror reflections — mirror-reflection.js REFLECTION_QUALITY) for a
+// modest presentation machine. Persisted per browser. Whether mirrors
+// reflect at all is the separate "Reflexos" option.
 const KEY = 'feixe.quality';
 const VALUES = ['high', 'low'];
 
