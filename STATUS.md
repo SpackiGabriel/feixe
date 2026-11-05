@@ -44,6 +44,9 @@ Next is **human** work:
   mirror-in-mirror is wanted (less confusing). Menu "Reflexos"
   (ligados/desligados, persisted, default on) toggles them instantly,
   independent of "Qualidade"; off = the plate's env-mapped metal.
+  "Qualidade" sets the reflection texture (alta 512² + 4× MSAA, baixa
+  256² no MSAA; `REFLECTION_QUALITY`), applied to existing mirrors at
+  once.
 
 - Playtest fixes (2026-11-05): camera flick (Chromium/Windows pointer-lock
   delta spikes) handled in `core/input.js` with raw `unadjustedMovement`

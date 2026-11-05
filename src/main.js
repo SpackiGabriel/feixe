@@ -14,7 +14,7 @@ import { loadSavedLevelIndex, getLevels } from './levels/level-manager.js';
 import { connectSfx, sfx, isMuted, setMuted } from './presentation/sfx.js';
 import { createCameraFx } from './presentation/camera-fx.js';
 import { setEnvMap } from './presentation/env-map.js';
-import { setMirrorReflections, loadReflectionsOn, saveReflectionsOn, showReflections } from './presentation/mirror-reflection.js';
+import { setMirrorReflections, setReflectionQuality, loadReflectionsOn, saveReflectionsOn, showReflections } from './presentation/mirror-reflection.js';
 import { loadQuality, saveQuality, pixelRatioFor } from './presentation/quality.js';
 import { createHud, manipulationHint } from './ui/hud.js';
 import { createMenu } from './ui/menu.js';
@@ -40,6 +40,7 @@ if (quality === 'high') {
 // Real mirror reflections: every mirror gets them; the menu's "Reflexos"
 // shows or hides them instantly.
 setMirrorReflections(true);
+setReflectionQuality(quality);
 let reflectionsOn = loadReflectionsOn();
 showReflections(camera, reflectionsOn);
 
@@ -96,6 +97,7 @@ const menu = createMenu(uiRoot, {
     quality = quality === 'high' ? 'low' : 'high';
     saveQuality(quality);
     renderer.setPixelRatio(currentPixelRatio());
+    setReflectionQuality(quality, scene);
     hud.showToast(quality === 'high' ? 'Qualidade alta · brilho metálico na próxima câmara' : 'Qualidade baixa');
   },
   onToggleSound: () => setMuted(!isMuted()),

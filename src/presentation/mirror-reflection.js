@@ -21,7 +21,13 @@ import { Reflector } from '../../vendor/three/addons/Reflector.js';
 // The laser tracer is unaffected: it works on the plate's geometric
 // segment (mirror.js getReflectiveSegment), not on what is drawn.
 export const REFLECTOR_LAYER = 1;
-const TEXTURE_SIZE = 512;
+// Reflection texture per graphics quality ("Qualidade"): size in texels
+// and MSAA samples. Note the frame cost is mostly the extra scene pass,
+// not these (docs/findings.md); they set how sharp the mirror looks.
+export const REFLECTION_QUALITY = {
+  high: { size: 512, samples: 4 },
+  low: { size: 256, samples: 0 },
+};
 const INSET = 0.94; // the plate's own edge stays visible as a thin frame
 // Overlay-blend tint (Reflector's shader): below mid-grey darkens the
 // reflection, so a mirror never outshines the beams (PIPE-05).
@@ -31,8 +37,22 @@ const TINT_HOVER = new THREE.Color(0xc4ccd0);
 // Whether mirrors get reflector surfaces at all: main.js turns this on;
 // headless tests leave it off. Showing/hiding them is separate (below).
 let enabled = false;
+let settings = REFLECTION_QUALITY.high;
 export function setMirrorReflections(value) {
   enabled = value;
+}
+
+// Applies to mirrors created from now on and, given the live scene, to
+// the existing ones immediately (their render targets are rebuilt).
+export function setReflectionQuality(quality, scene = null) {
+  settings = REFLECTION_QUALITY[quality] ?? REFLECTION_QUALITY.high;
+  scene?.traverse((object) => {
+    if (!object.isReflector) return;
+    const target = object.getRenderTarget();
+    target.dispose(); // frees GPU buffers; they're re-created on next render
+    target.samples = settings.samples;
+    target.setSize(settings.size, settings.size);
+  });
 }
 
 // The player's on/off choice, applied instantly by toggling
@@ -71,10 +91,10 @@ export function createMirrorReflection(width, height, thickness) {
   const faces = [];
   for (const side of [1, -1]) { // mirrors reflect on both faces
     const face = new Reflector(geometry, {
-      textureWidth: TEXTURE_SIZE,
-      textureHeight: TEXTURE_SIZE,
+      textureWidth: settings.size,
+      textureHeight: settings.size,
       color: TINT,
-      multisample: 4,
+      multisample: settings.samples,
     });
     face.position.z = side * (thickness / 2 + 0.002);
     if (side < 0) face.rotation.y = Math.PI;
