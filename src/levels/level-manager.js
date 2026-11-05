@@ -6,10 +6,11 @@ import { level5 } from './data/level-5.js';
 import { level6 } from './data/level-6.js';
 import { level7 } from './data/level-7.js';
 import { level8 } from './data/level-8.js';
+import { level9 } from './data/level-9.js';
+import { level10 } from './data/level-10.js';
 
-// TEMPORARY: levels 1-8 are real; levels 9-10 (design/game-concept.md
-// §11) are separate future work (STATUS.md's "Levels 1-10" row).
-const LEVELS = [level1, level2, level3, level4, level5, level6, level7, level8];
+// The fixed sequence (RF09). To add or reorder a level, edit this list.
+const LEVELS = [level1, level2, level3, level4, level5, level6, level7, level8, level9, level10];
 
 export function getLevels() {
   return LEVELS;

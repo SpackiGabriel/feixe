@@ -138,10 +138,17 @@ export function instantiateLevel(data, scene, interactiveObjects) {
   // as-is, no laser/color involved).
   let exitDoor = null;
   const doors = data.doors.map((d) => {
-    const doorReceivers = d.receiverIds.map((id) => {
+    const lookup = (id) => {
       const activatable = receiversById.get(id) ?? switchesById.get(id);
       if (!activatable) throw new Error(`Level "${data.id}": door "${d.id}" references unknown receiver/switch "${id}"`);
       return activatable;
+    };
+    // An entry may be `{ any: [ids] }` — satisfied when at least one is
+    // active — so one door can require "A AND (B OR C)" (spec §11 level 10).
+    const doorReceivers = d.receiverIds.map((entry) => {
+      if (typeof entry === 'string') return lookup(entry);
+      const group = entry.any.map(lookup);
+      return { isActive: () => group.some((r) => r.isActive()) };
     });
     const forbidden = (d.forbidIds ?? []).map((id) => {
       const blocker = blockersById.get(id);

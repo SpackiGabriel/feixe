@@ -50,6 +50,20 @@ describe.each(getLevels().map((data) => [data.id, data]))('%s', (_id, data) => {
     expect(loaded.level.exitDoor.isOpen()).toBe(true);
   });
 
+  // Optional test-only `scenarios`: [{ name, config, doors: { doorId: open? } }].
+  // `config` has the same shape as `solution`; checks intermediate states
+  // (a gate, a trap, an alternative route) the single `solution` can't.
+  it.each((data.scenarios ?? []).map((sc) => [sc.name, sc]))('test_level_scenario_%s', (_name, scenario) => {
+    const loaded = load(data);
+    applySolution(data, loaded.level, scenario.config);
+    tick(loaded);
+    for (const [doorId, expected] of Object.entries(scenario.doors)) {
+      const index = data.doors.findIndex((d) => d.id === doorId);
+      expect(index, `door "${doorId}" exists`).toBeGreaterThanOrEqual(0);
+      expect(loaded.level.doors[index].isOpen(), `door "${doorId}" open`).toBe(expected);
+    }
+  });
+
   // Shortcut guard: with every mirror/filter left untouched, rotating the
   // emitters alone (all of them together, 1° steps) must never open the exit
   // — otherwise the player can skip the puzzle by aiming the beam directly.
