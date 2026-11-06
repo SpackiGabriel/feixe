@@ -366,3 +366,13 @@ time is a problem, cap how many mirrors reflect per frame (nearest
 first) rather than lowering resolution. Reflector surfaces sit on layer
 1 so reflection cameras skip them: no mirror-in-mirror recursion.
 
+
+## 2026-11-06 — pointerLockElement changes before pointerlockchange runs
+
+Source: `tests/e2e/playthrough.mjs` ("and hides the menu"), flaky on CI
+after merging PR #3, passing locally.
+
+Chromium sets `document.pointerLockElement` first and dispatches
+`pointerlockchange` in a later task. Code reacting to the event (menu
+hide, HUD) is not done yet when the element flips; tests must wait for
+the effect (`g.until`), not read it right after detecting the lock.

@@ -112,7 +112,10 @@ try {
   await page.click('.mi.sel');
   const locked = await g.until(() => document.pointerLockElement !== null, null, 3000);
   check(locked, 'choosing the first menu item locks the pointer');
-  check(await g.eval(() => !document.querySelector('.menu').classList.contains('visible')), 'and hides the menu');
+  // pointerLockElement flips before the 'pointerlockchange' event (which
+  // hides the menu) is dispatched; on a slow runner a plain read can land
+  // in between. Wait for it like every other state change here.
+  check(await g.until(() => !document.querySelector('.menu').classList.contains('visible'), null, 5000), 'and hides the menu');
   check(await g.until(() => document.querySelector('.intro').classList.contains('visible')), 'the level title appears once play starts');
   await g.eval(() => document.exitPointerLock());
   check(await g.until(() => document.querySelector('.menu').classList.contains('visible')), 'losing the pointer lock pauses (menu shown)');
