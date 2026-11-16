@@ -15,7 +15,8 @@ dos algoritmos que o motor executa internamente". Toda resposta abaixo tem
 as duas partes: *o que o Three faz por dentro* e *onde nós fizemos à mão*.
 
 Antes de apresentar: `npm start`, abrir `http://localhost:8000/?debug`
-(painel de debug com posição, mira, receptores e portas; `F3` oculta) e
+(painel de debug com posição, mira, receptores e portas; `F3` oculta — mas
+no Chrome/Edge o F3 também abre o "Localizar": evite na apresentação) e
 deixar o editor aberto nos arquivos citados. Com `?debug`,
 `window.__feixe` dá acesso à câmera, ao `levelRuntime` etc. pelo console.
 
@@ -35,7 +36,10 @@ deixar o editor aberto nos arquivos citados. Com `?debug`,
 Os 10 requisitos têm o **mesmo peso** na nota: o tempo acompanha quantos
 cada eixo tem. Dica de ritmo: **uma fórmula dita por requisito** —
 mostrar no jogo → abrir o arquivo → a fórmula. Não ler código linha a
-linha. Deixar L3, L6 e L10 abertos em abas (`?debug&level=3` etc.).
+linha. Deixar L3, L6 e L10 abertos em abas (`?debug&level=3` etc.). A tecla
+`T` só tem efeito visível em níveis com parede interna norte-sul (L2 e
+L6): no L3 não há paredes internas e no L10 a parede é leste-oeste
+(rotação 0, R = I, então T·S·R = T·R·S).
 
 **O trabalho é "estritamente individual" no enunciado:** cada um de
 vocês precisa conseguir responder sozinho a qualquer item deste guia.
@@ -50,7 +54,7 @@ vocês precisa conseguir responder sozinho a qualquer item deste guia.
 `base.position.lerpVectors(railStart, railEnd, t)` — interpolação linear
 P = (1−t)·A + t·B); giro = rotação em Y (`mirror.js:106`); paredes =
 caixa unitária com a matriz **T·R·S composta à mão** a partir do nível
-(`wall.js:41-55` + `core/matrix.js`); feixe =
+(`wall.js:47-55` + `core/matrix.js`); feixe =
 cilindro unitário escalado em Z pelo comprimento de cada trecho
 (`laser-beam.js:151-153`).
 
@@ -87,16 +91,18 @@ o WebGL: `m[col·4 + linha]`), `transformPoint` (vetor homogêneo com
 w = 1). `composeTRS` = T·R·S; `composeTSR` = a ordem errada, para a
 demonstração. As **paredes internas usam essa matriz direto**:
 `mesh.matrixAutoUpdate = false` e `mesh.matrix` = `composeTRS(centro,
-ângulo, [comprimento, altura, espessura])` (`wall.js:41-55`), ou seja, o
+ângulo, [comprimento, altura, espessura])` (`wall.js:47-55`), ou seja, o
 Three não monta a matriz delas — nós montamos. Testes comparam cada
 função com o Three até 9 casas decimais (`tests/unit/matrix.test.js`).
 
 **Demonstração ao vivo — tecla `T`** (só com `?debug`): no L6, olhando a
 parede norte-sul da câmara lateral (de x ≈ 2,5, z ≈ −2,5, olhando para
 oeste), prever e apertar `T`: as paredes passam a T·S·R e a parede vira
-uma lâmina leste-oeste, abrindo a câmara (aparecem o espelho M3 e o
-receptor B). `T` de novo volta. É só visual: feixe e colisão continuam
-usando os dados do nível; `R` reinicia.
+uma lâmina leste-oeste, abrindo a câmara (aparecem o espelho M3 e, em
+parte, o receptor B). `T` de novo volta. Feixe e colisão continuam usando
+os dados do nível; **a mira usa a malha** (é o oclusor), então em T·S·R dá
+para mirar o M3 através de onde a parede de verdade está. `R` reinicia.
+Só tem efeito visível no L2 e no L6 (paredes a 90°).
 
 **Nível honesto:** avançado. Composição à mão nas paredes, rotação à mão
 no traçado do feixe (`laser.js`) e uso explícito de `matrixWorld` para
@@ -112,7 +118,7 @@ levar pontos locais ao mundo (`mirror.js:140-148`). Os demais objetos
 **Topologia vs. geometria:** geometria = *onde* estão os vértices
 (`position`); topologia = *como se ligam* (`setIndex`: triângulos
 `base, base+1, base+2` e `base+1, base+3, base+2`). Mesma topologia,
-geometria diferente: as paredes são todas a mesma caixa (mesma
+geometria diferente: as paredes internas são todas a mesma caixa (mesma
 conectividade), e a escala muda só as posições.
 
 **Pergunta clássica:** "um cubo tem 8 vértices; por que a `BoxGeometry`
@@ -153,9 +159,10 @@ por `applyMatrix4(plate.matrixWorld)` (`mirror.js:141-142`).
 |  0   0      −1                 0          |
 ```
 Pipeline: p_view = V·M·p; p_clip = P·p_view → **w_clip = −z_view** (a
-distância à câmera). A GPU divide por w: NDC = (x, y, z)/w. É essa
-divisão que causa o encurtamento perspectivo: o dobro de distância faz o
-objeto ocupar metade da tela. No nosso shader: `laser-beam.js:37`,
+profundidade ao longo do eixo óptico, não a distância euclidiana). A GPU
+divide por w: NDC = (x, y, z)/w. É essa divisão que causa o encurtamento
+perspectivo: o dobro da profundidade faz o objeto ter metade do tamanho
+linear na tela. No nosso shader: `laser-beam.js:37`,
 `gl_Position = projectionMatrix * mv;` — o shader entrega coordenadas de
 recorte e o hardware faz a divisão por w.
 
@@ -173,7 +180,7 @@ longe fica a metade da distância do centro da tela.
 **Demonstração ao vivo — painel de debug:** mirando qualquer objeto
 interativo, o painel mostra `à mão: w=… ndc=(…)` e, embaixo,
 `Three: ndc=(…)` — os mesmos números. Andar para trás e ver **w
-crescer** (w = distância à frente da câmera) e o ndc encolher para o
+crescer** (w = profundidade à frente da câmera) e o ndc encolher para o
 centro; `+`/`−` muda o FOV e o ndc muda junto (f na matriz).
 Código: `main.js:237` (`projectionLines`).
 
@@ -189,13 +196,15 @@ matemática está implementada e verificada à mão, e é mostrada ao vivo.
 - Andar: `movement.js:42` — frente = (−sin yaw, −cos yaw), direita =
   (cos yaw, −sin yaw); velocidade amortecida (aceleração ≠ desaceleração).
 - Colisão: AABB do jogador contra AABBs das paredes/portas, **por eixo
-  separado** (`movement.js:73-79`): tenta mover em x, depois em z — por
+  separado** (`movement.js:72-78`): tenta mover em x, depois em z — por
   isso o jogador desliza ao longo da parede em vez de parar.
 - Mirar/selecionar: raio do centro da câmera (`interaction.js:43`); o
   Three testa raio–triângulo; depois testamos se há
   parede/porta entre a câmera e o alvo (`interaction.js:49`).
-- Portal: atravessar remapeia posição e direção com a mesma `rotateXZ`
-  do feixe (`portal-crossing.js`).
+- Portal: atravessar leva o jogador ao portal ligado e soma a diferença de
+  orientação ao yaw (`portal-crossing.js:30-35`). É a mesma rotação que o
+  feixe recebe com `rotateXZ`: girar a frente (−sin y, −cos y) por θ dá
+  (−sin(y+θ), −cos(y+θ)).
 
 **Nível honesto:** avançado (quase toda própria).
 
@@ -223,7 +232,7 @@ albedo = cor × textura;  Ia = ambiente + hemisférica(N)
 ```
 - **Hemisférica:** Ia += mix(cor_chão, cor_céu, 0,5·(N·up) + 0,5).
 - **Pontual (feixes):** atenuação 1/d² (decay 2) com corte suave em
-  `distance`: × (1 − (d/dist)⁴)², `phong-material.js:95`.
+  `distance`: × (1 − (d/dist)⁴)², `phong-material.js:96-98`.
 - **Direcional:** só N·L, sem atenuação (fonte no infinito).
 - **O 1/π:** convenção de unidade de luz do Three (Lambert normalizado:
   ∫cosθ dω = π sobre o hemisfério, então a energia difusa refletida não
@@ -332,7 +341,7 @@ mipmaps (filtro trilinear) e anisotropia 4.
 
 ### IV. Animação independente de FPS
 
-**Onde:** `main.js:256` — `deltaSeconds = min(dt, 0,1)` (o teto evita
+**Onde:** `main.js:288` — `deltaSeconds = min(dt, 0,1)` (o teto evita
 um salto enorme depois de trocar de aba). Tudo recebe dt:
 - `movement.js`: posição += velocidade · dt (integração de Euler: a
   velocidade é exata por `damp`, a posição é independente de FPS em
@@ -399,7 +408,8 @@ um salto enorme depois de trocar de aba). Tudo recebe dt:
     Qualidade baixa e Reflexos desligados.
 18. **"Como o portal funciona?"** Não renderiza através (fora de escopo,
     spec §14): o feixe sai do centro do outro portal com a direção girada
-    pela diferença de orientação (`rotateXZ`); o jogador, idem.
+    pela diferença de orientação (`rotateXZ`); o jogador recebe a mesma
+    rotação somando θ ao yaw (equivalente).
 19. **"Como a cor combina?"** Aditiva por canal (OR de R, G, B) no
     receptor (`laser.js:151`); filtro = AND com a cor primária.
 20. **"Por que a animação é independente de FPS?"** §IV, com a
@@ -443,6 +453,26 @@ um salto enorme depois de trocar de aba). Tudo recebe dt:
 32. **"Euler ou quatérnio?"** O Three guarda a rotação como quatérnio; o
     Euler YXZ é só a nossa interface de yaw/pitch. Gimbal lock = perda de
     um grau de liberdade quando dois eixos de Euler se alinham.
+33. **"O que acontece com w ≤ 0 (ponto atrás da câmera)?"** O recorte
+    (clipping) é feito no espaço de clip, antes da divisão: só passa o que
+    tem −w ≤ x, y, z ≤ w. Sem isso, um ponto atrás da câmera apareceria
+    invertido na tela.
+34. **"Back-face culling?"** A ordem dos vértices (anti-horária) define a
+    frente; faces de costas são descartadas. Os condutos usam
+    `DoubleSide` (`conduits.js:120`) porque o sentido depende da direção
+    de cada perna.
+35. **"Como se calcula a normal de um triângulo?"**
+    n = normalize((b − a) × (c − a)).
+36. **"Transparência e ordem de desenho?"** O halo do feixe é aditivo com
+    `depthWrite: false` (`laser-beam.js:84-86`): soma é comutativa, então
+    a ordem entre halos não importa.
+37. **"Phong shading ou modelo de Phong?"** São coisas diferentes:
+    *Phong shading* = interpolar a normal e iluminar por pixel (o que a
+    tecla `L` alterna); *modelo de Phong* = a equação de reflexão.
+    Usamos o modelo **Blinn-Phong** com **Phong shading** (ou Gouraud).
+38. **"Por que dt variável e não passo fixo?"** O teto de 0,1 s evita
+    saltos; com essas velocidades a integração é estável, e o `damp`
+    exponencial é exato para qualquer dt.
 
 ---
 
@@ -459,11 +489,13 @@ Ensaiar cada uma: **dizer o efeito antes**, salvar e recarregar
 | Luz do feixe mais forte/alcance | `laser-beam.js:9-10` | mancha maior/mais clara onde o feixe bate |
 | Sala mais clara | `scene.js:123-129` intensidades | atenção: `setAtmosphere` (`scene.js:172`) **sobrescreve** hemisférica e ambiente a cada nível — mudar lá |
 | Neblina | `setAtmosphere`: `scene.fog.density` (não a linha 162, que é sobrescrita) | FogExp2: fator = 1 − e^(−(densidade·d)²) |
-| Espelho fosco | primeiro **desligar Reflexos no menu** (com eles ligados, o reflexo real cobre 94% da placa e o `roughness` só muda a moldura); depois `mirror.js:52-61` `roughness` ↑, Qualidade alta | reflexo do ambiente borrado |
-| Passo de giro | dado do nível: `rotationStepDegrees` (ex. `level-9.js`) ou `KEY_ROTATE_STEP` em `manipulation.js:5` | 15° no espelho = 30° no feixe |
+| Espelho fosco | primeiro **desligar Reflexos no menu** (com eles ligados, o reflexo real cobre ~88% da área da placa (94% por lado) e o `roughness` só muda a moldura); depois `mirror.js:52-61` `roughness` ↑, Qualidade alta | reflexo do ambiente borrado |
+| Passo de giro | só no dado do nível: `rotationStepDegrees` (ex. `level-9.js`). **Não** use `KEY_ROTATE_STEP` (`manipulation.js:5`): todo espelho dos 10 níveis define o próprio passo, então mudá-lo não tem efeito | 15° no espelho = 30° no feixe |
 | Mais reflexões | `laser.js:8` `MAX_REFLECTIONS` | só muda o limite de quiques por feixe |
 | Porta mais lenta | `door-motion.js` `DOOR_TIMING.rise` | segundos; continua reversível |
-| Ladrilho da parede | `wall.js:40` (1,5 / 2,5) | maior = ladrilhos maiores |
+| Ladrilho da parede | `wall.js:41` (1,5 / 2,5) | maior = ladrilhos maiores |
+| Malha gerada por código (I.2) | `conduits.js:11` `WIDTH` (0,07 m) | as faixas do chão ficam mais largas: muda só a geometria (posições); topologia (índices, 2 triângulos por perna) igual |
+| Hierarquia (I.3) | `mirror.js:63`: colocar `plate.position.y = 0.3` logo abaixo | a placa sobe 0,3 m em relação à base e continua acompanhando o trilho e girando: o filho herda a transformação do pai (o feixe usa a placa via `matrixWorld`, então continua certo na lógica 2D) |
 | Trocar a ordem das transformações | tecla `T` (com `?debug`) ou `__feixe.wallOrder('TSR')`; no código, `wall.js` chama `composeTSR` em vez de `composeTRS` | a 90°: parede fica leste-oeste, como se não girasse; a 45°: cisalhada, planta em losango (§I.1) |
 | Desligar o sombreamento suave | material PBR (ex. pedestais, `mirror.js:16`): `flatShading: true` | facetas visíveis em superfícies curvas |
 | Sombreamento por vértice | tecla `L` (ou `__feixe.phong.setShadingMode('vertex')`) | mancha de luz do feixe some no meio das paredes |
