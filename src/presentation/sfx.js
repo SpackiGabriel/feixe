@@ -139,10 +139,11 @@ export const sfx = {
 };
 
 // A door motor hum while any door is moving (shared, reference-counted).
+// The count is kept even without audio, so the bookkeeping is testable.
 export function motorStart() {
+  motorUsers++;
   const c = audio();
   if (!c) return;
-  motorUsers++;
   if (motor) {
     motor.gain.gain.setTargetAtTime(0.035, c.currentTime, 0.05);
     return;
@@ -162,10 +163,20 @@ export function motorStart() {
 }
 
 export function motorStop() {
-  if (!motor || !ctx) return;
   motorUsers = Math.max(0, motorUsers - 1);
-  if (motorUsers === 0) motor.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.08);
+  if (motorUsers === 0 && motor && ctx) motor.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.08);
 }
+
+// A level (re)load disposes its doors without a 'door:settled' — R while a
+// door moves, or leaving through an exit still lifting — so the count
+// would never return to zero and the hum would play for the rest of the
+// session. Every level starts silent.
+export function motorReset() {
+  motorUsers = 0;
+  if (motor && ctx) motor.gain.gain.setTargetAtTime(0, ctx.currentTime, 0.08);
+}
+
+export const getMotorUsers = () => motorUsers;
 
 // Ambient room tone: two detuned low saws and filtered air. `intensity`
 // 0..1 follows level progress — more detune, a brighter filter and a
@@ -249,6 +260,7 @@ export function connectSfx(events) {
   events.on('rotate:tick', sfx.tick);
   events.on('rail:limit', sfx.railLimit);
   events.on('level:enter', ({ index, count }) => {
+    motorReset();
     sfx.levelEnter();
     setDroneIntensity(count > 1 ? index / (count - 1) : 0);
   });
