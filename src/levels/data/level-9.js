@@ -41,7 +41,9 @@ export const level9 = {
     // S: slides onto blue's column, where red's row crosses it.
     { id: 's', rail: { start: [-1, H, ROW], end: [2, H, ROW] }, initialT: 1, initialRotationY: 0, positionEnabled: true, rotationEnabled: true, ...snapped },
     // The quick gate: turns blue east, low on the column, onto the decoy receiver.
-    { id: 'm4', rail: { start: [-1, H, 3.5], end: [1.5, H, 3.5] }, initialT: 1, initialRotationY: 0, positionEnabled: true, rotationEnabled: true, ...snapped },
+    // Shortened after the playtest (it looked oversized next to the spawn);
+    // it still reaches blue's column at x = 0 with slack on both sides.
+    { id: 'm4', rail: { start: [-0.6, H, 3.5], end: [1, H, 3.5] }, initialT: 1, initialRotationY: 0, positionEnabled: true, rotationEnabled: true, ...snapped },
   ],
   filters: [{ id: 'f-red', rail: { start: [-4.5, H, 3.5], end: [-2, H, 3.5] }, initialT: 1, rotationY: 0, primaryName: 'red' }],
   receivers: [
@@ -61,7 +63,7 @@ export const level9 = {
   ],
   scenarios: [
     { name: 'blue turned by S alone opens the gate only', config: { mirrors: { m1: { rotationY: 0 }, s: { t: 1 / 3, rotationY: Math.PI / 4 } } }, doors: { gate: true, exit: false } },
-    { name: 'the quick gate via M4 starves the exit', config: { mirrors: { m1: { rotationY: 0 }, m4: { t: 0.4, rotationY: Math.PI / 4 } } }, doors: { gate: true, exit: false } },
+    { name: 'the quick gate via M4 starves the exit', config: { mirrors: { m1: { rotationY: 0 }, m4: { t: 0.375, rotationY: Math.PI / 4 } } }, doors: { gate: true, exit: false } },
     {
       name: 'unfiltered white on the red receiver does not open the exit',
       config: { mirrors: { m1: { rotationY: Math.PI / 4 }, s: { t: 1 / 3, rotationY: Math.PI / 4 } } },

@@ -144,6 +144,9 @@ try {
   await g.load(7);
   check((await aimAt(0.45, 4.5, 0, true))?.startsWith('espelho m1'), 'mirror is selectable in plain view');
   check((await aimAt(0.45, -2, Math.PI, false)) === null, 'mirror behind the dividing wall is not selectable');
+  // Playtest softlock: from the strip, with door 1 shut, the mirror must
+  // still be re-aimable through the glass.
+  check((await aimAt(0.45, 1.0, Math.PI, true))?.startsWith('espelho m1'), 'mirror is selectable through the closed glass door');
 
   console.log('door reversal (level 2)');
   await g.load(1);

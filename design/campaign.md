@@ -206,3 +206,19 @@ Questions this playtest must answer:
 - L9: how long until the "S does both" moment? Does the decoy get used?
 - L10: is the merge understood, or found by accident?
 - All: are 15°/45° snaps comfortable with the mouse?
+
+## 8. Playtest results (owner, 2026-11-16)
+
+One player who knows the mechanics. Answers to §7's questions:
+
+| Lvl | Observation | Classification | Action |
+|---|---|---|---|
+| 5 | Flicker read as "something missing"; brought red, solved | productive | none (the feared misread didn't happen) |
+| 6 | Noticed A is unreachable; asked what it's for, then accepted once the motivation was explained | productive (borderline) | none, kept as designed |
+| 8 | Solved in the intended order, but leaving the open state from inside the strip shut door 1 and the mirror couldn't be aimed through the glass: `R` was the only way out. Off-center beam leaving the portal's center noticed, "a detail" | control friction (softlock) | aiming passes through glass doors/walls |
+| 9 | Fast and "intuitive", liked it; M4 (the decoy) read as oversized/ugly next to the spawn | presentation | M4 rail shortened to x ∈ [−0.6, 1] |
+| 10 | Merge understood; the portal-center exit "helps" | productive | none |
+| all | 45° snaps fine ("doesn't allow too many options", said positively) | — | none |
+
+Fallback if aiming through glass reads as odd: cut a square hole in
+L8's glass door (owner's suggestion). Not needed so far.

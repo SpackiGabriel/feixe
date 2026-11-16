@@ -6,28 +6,37 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 **Code is the source of truth for what's implemented.** If this file and
 `src/` disagree, `src/` is right — fix this file.
 
-## Current focus (checkpoint 2026-11-05, deadline ≈ 2026-11-12)
+## Current focus (checkpoint 2026-11-16)
 
-**Campaign redesign** (branch `campaign-redesign`, baseline tag
-`pre-redesign`): all ten levels re-authored, one idea each, inside spec
-§11's names and concepts. Design record: `design/campaign.md` (audit,
-what each level teaches, cards, playtest protocol); sources:
+**Campaign redesign** (merged into `main`, baseline tag `pre-redesign`):
+all ten levels re-authored, one idea each, inside spec §11's names and
+concepts. Design record: `design/campaign.md` (audit, what each level
+teaches, cards, playtest protocol and its results in §8); sources:
 `docs/research/level-design-research.md`; rules: `docs/decisions/0009`
 (snapped rotation, soft object counts, portal-center and two-sided
-mirrors as rules). New tool: `npm run analyze [N]`.
+mirrors as rules). Tool: `npm run analyze [N]`.
 
-Next is **human** work:
+**Owner playtest done (2026-11-16)**, results in `design/campaign.md` §8.
+Fixed from it: aiming passes through glass (L8 softlock), L9's M4 rail
+shortened. Next:
 
-1. **Owner playtest of the new campaign**, with a mouse, following
-   `design/campaign.md` §7. Open questions: L5 flicker read as "half"?
-   L6 rail reach noticed? L9 "one mirror, two beams" found? L10 merge
-   understood? Snapped rotation comfortable?
-2. Fix what the playtest shows (friction only, keep productive
-   difficulty), then merge `campaign-redesign` into `main`.
-3. Visual track: final assets can replace device meshes without touching
+1. Frame rate on the presentation machine; flick fix with a real mouse.
+2. Visual track: final assets can replace device meshes without touching
    logic (`docs/presentation.md`, "Swapping in final assets").
 
 ## Verified (evidence from this checkpoint)
+
+- **Playtest fixes** (2026-11-16): glass walls and doors (`style:
+  'glass'`) no longer block aiming (`occluder: null` in `wall.js` /
+  `door.js`), so in L8 the mirror stays re-aimable from the strip after
+  door 1 shuts; fixed (no-DOF) mirrors are no longer selectable, so L1's
+  display mirror behind glass stays inert. L9's M4 rail is now x ∈
+  [−0.6, 1]. `npm test` 292 pass; analyzer L9: still one route family;
+  `npm run e2e` all pass, incl. the new "selectable through the closed
+  glass door" check. `npm run lint` clean. `npm start` now runs
+  `scripts/start-server.mjs` (picks `python` on Windows, `python3`
+  elsewhere). `npm run analyze` works on Windows again (its main guard
+  compared a `file://` string against a backslash path).
 
 - **Mirror reflection prototype** (2026-11-05, branch
   `feat/mirror-reflection`, PR #3): each mirror face is a

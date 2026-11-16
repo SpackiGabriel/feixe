@@ -27,7 +27,7 @@ export function createDoor({ position, rotationY = 0, rule, receivers, forbidden
   let open = false;
   const door = {
     mesh: view.root,
-    occluder: view.panel,
+    occluder: style === 'glass' ? null : view.panel, // aim passes through glass (see wall.js)
     update,
     isOpen: () => open,
     isPassable: () => motion.isPassable(),

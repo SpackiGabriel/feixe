@@ -33,9 +33,10 @@ export function createWall({ from, to, height = DEFAULT_HEIGHT, thickness = DEFA
   mesh.position.set(center.x, height / 2, center.z);
   mesh.rotation.y = rotationY;
 
-  // `style` only changes the look (and the beam's contact flare): a glass
-  // wall absorbs beams and blocks the player exactly like a solid one.
+  // A glass wall absorbs beams and blocks the player exactly like a solid
+  // one, but doesn't block aiming: what you can see through, you can aim
+  // through (level 8 playtest: re-aiming the mirror from the strip).
   const segment = { type: 'wall', a, b, style };
   const collider = rotatedRectAABB(center, rotationY, length, thickness);
-  return { mesh, segment, collider };
+  return { mesh, segment, collider, occluder: style === 'glass' ? null : mesh };
 }

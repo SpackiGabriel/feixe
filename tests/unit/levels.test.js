@@ -83,6 +83,24 @@ describe.each(LEVELS_UNDER_TEST.map((data) => [data.id, data]))('%s', (_id, data
     }
   });
 
+  it('test_level_fixedMirrors_areNotInteractive', () => {
+    const loaded = load(data);
+    data.mirrors.forEach((m, i) => {
+      const plate = loaded.level.mirrors[i].plate;
+      expect(loaded.interactiveObjects.includes(plate)).toBe(Boolean(m.positionEnabled || m.rotationEnabled));
+    });
+  });
+
+  it('test_level_glassDoorsAndWalls_doNotBlockAiming', () => {
+    const loaded = load(data);
+    (data.walls ?? []).forEach((w, i) => {
+      expect(loaded.level.walls[i].occluder === null).toBe(w.style === 'glass');
+    });
+    data.doors.forEach((d, i) => {
+      expect(loaded.level.doors[i].occluder === null).toBe(d.style === 'glass');
+    });
+  });
+
   it('test_level_fixedEmitters_areNotInteractive', () => {
     const loaded = load(data);
     for (const emitter of loaded.level.emitters) {
