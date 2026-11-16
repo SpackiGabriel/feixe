@@ -20,7 +20,11 @@ export const levelTemplate = {
   spawn: { position: [0, 4.5], yaw: 0 },
 
   // Mirrors: a base (slides on its rail) + a plate (rotates). With a
-  // zero-length rail (start === end) the mirror is fixed in place.
+  // zero-length rail (start === end) the mirror is fixed in place; with
+  // neither positionEnabled nor rotationEnabled it's a display piece and
+  // can't be selected. Rails must keep devices apart: two devices stay at
+  // least (width1 + width2) / 2 apart at any rail positions (mirror 1 m,
+  // filter 0.8 m) — tests/unit/levels.test.js checks every pair.
   mirrors: [
     {
       id: 'm1',
@@ -67,8 +71,9 @@ export const levelTemplate = {
 
   // Interior walls, by endpoints [x, z]. Absorb beams, block the player and
   // block aiming. Keep them axis-aligned (player collision is box-based).
-  // style: 'glass' looks like frosted glass and blocks beams and the player
-  // the same, but not aiming (devices behind it stay selectable).
+  // Drawn as a unit box with a hand-composed T·R·S matrix (core/matrix.js).
+  // style: 'glass' is drawn as a thin frosted pane and blocks beams and the
+  // player the same, but not aiming (devices behind it stay selectable).
   walls: [
     // { from: [-ROOM_HALF, 0], to: [-1, 0], height: 3, thickness: 0.2, style: 'solid' },
   ],
@@ -83,7 +88,8 @@ export const levelTemplate = {
   // receiverIds lists receiver or switch ids; an entry { any: ['a', 'b'] }
   // counts as active when either is (so: r1 AND (a OR b)).
   // Exactly one door has exit: true — walking up to it while open
-  // finishes the level.
+  // finishes the level. style: 'glass' gives a framed glass panel with an
+  // open hatch that, like a glass wall, doesn't block aiming (level 8).
   doors: [
     {
       id: 'd1',

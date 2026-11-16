@@ -67,6 +67,8 @@ rules or change them here.
 | Sounds (named cues) + drone | `presentation/sfx.js` |
 | Camera effects | `presentation/camera-fx.js` |
 | Room, lights, fog, lamps, numeral | `core/scene.js`, textures in `gameplay/textures.js` |
+| Walls and floor shading (own Blinn-Phong, key `L` vertex/fragment) | `presentation/phong-material.js` |
+| Mirror reflections (planar Reflector, menu "Reflexos") | `presentation/mirror-reflection.js` |
 | Quality (pixel budget, reflections) | `presentation/quality.js` |
 | HUD / menu + ending / shutter + intro | `ui/hud.js`, `ui/menu.js`, `ui/transitions.js`, `ui/ui.css` |
 

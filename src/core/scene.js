@@ -27,7 +27,8 @@ export function getWallMaterial() {
 }
 
 // Frosted glass for `style: 'glass'` walls: light and shapes show through,
-// but it still blocks walking, beams and aiming like any wall.
+// and it still blocks walking and beams like any wall — but not aiming
+// (wall.js: no occluder), and it's drawn as a thin inset pane.
 export function getGlassMaterial() {
   if (!glassMaterial) {
     glassMaterial = new THREE.MeshStandardMaterial({

@@ -9,12 +9,17 @@
 ├── index.html                   # Import map (vendored Three.js) + HUD styles + canvas host
 ├── vendor/three/                # Three.js r186 build, vendored so the game runs offline (ADR 0001)
 ├── package.json                 # Dev tooling only (vitest, eslint); the game has no build step
+├── scripts/start-server.mjs      # npm start: Python http.server (python / python3)
+├── .github/workflows/ci.yml     # CI: lint + unit tests + e2e on every push
 ├── src/
 │   ├── main.js                  # Wiring + animation loop
 │   ├── core/                    # renderer, scene (room), camera, input, look, movement,
-│   │                            #   interaction (aim raycast), manipulation (drag/rotate), audio
+│   │                            #   interaction (aim raycast), manipulation (drag/rotate), events,
+│   │                            #   matrix.js (hand-written T·R·S, view, perspective, divide by w)
 │   ├── presentation/            # game feel (docs/presentation.md): motion/timing, door motion+view,
-│   │                            #   conduits, affordances, camera fx, sfx, quality, env map
+│   │                            #   conduits, affordances, camera fx, sfx (audio), quality, env map,
+│   │                            #   mirror-reflection.js (planar Reflector), phong-material.js
+│   │                            #   (own Blinn-Phong shader: walls + floor)
 │   ├── ui/                      # hud.js (crosshair, brackets, prompts), menu.js (menu + ending),
 │   │                            #   transitions.js (shutter, intro), ui.css
 │   ├── gameplay/                # one factory per object (mirror, emitter, receiver, door,
@@ -30,8 +35,9 @@
 │       └── exit-trigger.js, portal-crossing.js   # pure proximity/landing math
 ├── tests/unit/                  # Vitest — see .claude/rules/test-standards.md
 ├── tests/e2e/playthrough.mjs    # npm run e2e — Chromium playthrough of every level
-├── tests/support/               # shared by unit + e2e (apply-solution.js)
+├── tests/support/               # shared by unit + e2e (apply-solution.js); analyze-level.js (npm run analyze)
 ├── design/game-concept.md       # Pillars, scope boundaries, build order
+├── design/campaign.md           # Campaign redesign: level cards, playtest protocol + results
 ├── design/visual/               # Design premise, design-system discovery, gallery screenshots (evidence/)
 ├── gallery/                     # Grey-box visual-evaluation page (not game code; see gallery/README.md)
 ├── assets/                      # README only for now: planned layout for asset sources + GLBs
@@ -40,6 +46,8 @@
 │   ├── research/                # Asset-pipeline research briefs/assessment (not specs)
 │   ├── findings.md              # Append-only log of implementation discoveries/gotchas
 │   ├── level-authoring.md       # Designer workflow: copy → preview → test → register
+│   ├── presentation.md          # Game-feel rules and how to swap in final assets
+│   ├── defesa.md                # Defence guide (pt-BR): 20-min script, requirement map, Q&A, live changes
 │   └── engine-reference/threejs/VERSION.md    # Engine pin + version-risk notes
 ├── prototypes/                  # Throwaway validation code, isolated from src/
 └── .claude/                     # settings.json (permissions + hooks), rules/, skills/, hooks/, docs/

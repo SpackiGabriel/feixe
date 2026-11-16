@@ -27,10 +27,21 @@ export function wallPlacement(from, to) {
   };
 }
 
+// A glass wall is drawn as a thin pane inset from the floor, the ceiling
+// and its ends. A full-size transparent box would put its bottom face on
+// the floor, its top on the ceiling and its end caps on the room walls:
+// coplanar faces blended over those surfaces (a pale strip on the floor,
+// a smear where it meets a wall) and a doubled 20 cm slab. Visual only:
+// beams and collision use the level data (`segment`, `collider`).
+export const GLASS_PANE_THICKNESS = 0.04;
+export const GLASS_INSET = 0.01;
+const GLASS_TILE = 2.5; // metres per frosted bay (vs WALL_TILE_SIZE 1.5 for solid walls)
+const SOLID_TILE = 1.5;
+
 // An interior wall from level data (spec §10: "listas de paredes"). Absorbs
 // beams exactly like the room shell (a 'wall' trace segment) and blocks the
 // player. Authored by its two endpoints, which is easier to lay out than
-// center + angle. `style: 'glass'` makes it frosted glass (level 8).
+// center + angle. `style: 'glass'` makes it frosted glass (levels 1, 8).
 // Keep walls axis-aligned: the player collider is an AABB,
 // so a diagonal wall would block a much larger box than it looks.
 export function createWall({ from, to, height = DEFAULT_HEIGHT, thickness = DEFAULT_THICKNESS, material, style = 'solid' }) {
@@ -38,14 +49,18 @@ export function createWall({ from, to, height = DEFAULT_HEIGHT, thickness = DEFA
   const b = { x: to[0], z: to[1] };
   const { center, length, rotationY } = wallPlacement(a, b);
 
-  const mesh = new THREE.Mesh(tileUvs(UNIT_BOX.clone(), length, height, style === 'glass' ? 2.5 : 1.5, height), material);
+  const glass = style === 'glass';
+  const inset = glass ? GLASS_INSET : 0;
+  const drawnLength = length - 2 * inset;
+  const drawnHeight = height - 2 * inset;
+  const mesh = new THREE.Mesh(tileUvs(UNIT_BOX.clone(), drawnLength, drawnHeight, glass ? GLASS_TILE : SOLID_TILE, drawnHeight), material);
   // The model matrix is composed by hand (src/core/matrix.js), not by
   // Three from position/rotation/scale: M = T · R · S — scale the unit box
   // to length × height × thickness in its own axes, rotate it about Y,
   // then move it to the wall's centre. matrixAutoUpdate = false tells
   // Three to use this matrix as is.
   const position = [center.x, height / 2, center.z];
-  const size = [length, height, thickness];
+  const size = [drawnLength, drawnHeight, glass ? GLASS_PANE_THICKNESS : thickness];
   mesh.matrixAutoUpdate = false;
   function setOrder(order) {
     const m = order === 'TSR' ? composeTSR(position, rotationY, size) : composeTRS(position, rotationY, size);

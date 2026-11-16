@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { getLevels } from '../../src/levels/level-manager.js';
 import { instantiateLevel, disposeLevel } from '../../src/levels/level-loader.js';
+import { collectAimOccluders } from '../../src/levels/level-runtime.js';
 import { createLaserSystem } from '../../src/gameplay/laser-system.js';
 import { createScene } from '../../src/core/scene.js';
 import { applySolution } from '../support/apply-solution.js';
@@ -133,6 +134,18 @@ describe.each(LEVELS_UNDER_TEST.map((data) => [data.id, data]))('%s', (_id, data
     });
     data.doors.forEach((d, i) => {
       expect(loaded.level.doors[i].occluder === null).toBe(d.style === 'glass');
+    });
+  });
+
+  it('test_collectAimOccluders_level_excludesGlassIncludesSolid', () => {
+    const loaded = load(data);
+    const occluders = collectAimOccluders([], loaded.level);
+    expect(occluders).not.toContain(null);
+    (data.walls ?? []).forEach((w, i) => {
+      expect(occluders.includes(loaded.level.walls[i].mesh)).toBe(w.style !== 'glass');
+    });
+    data.doors.forEach((d, i) => {
+      expect(occluders.includes(loaded.level.doors[i].occluder ?? 'glass')).toBe(d.style !== 'glass');
     });
   });
 

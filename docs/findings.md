@@ -376,3 +376,30 @@ Chromium sets `document.pointerLockElement` first and dispatches
 `pointerlockchange` in a later task. Code reacting to the event (menu
 hide, HUD) is not done yet when the element flips; tests must wait for
 the effect (`g.until`), not read it right after detecting the lock.
+
+## 2026-11-16 — Transparent boxes smear over the surfaces they touch
+
+Source: glass walls (`src/gameplay/wall.js`), owner report "mixing with the
+wall and floor". A frosted glass wall drawn as a full-size box (floor to
+ceiling, end to end, 20 cm thick) puts faces exactly on the floor, the
+ceiling and the room walls. Transparent and blended, those coplanar faces
+paint a pale strip on the floor and a smear where they meet a wall, and the
+two big faces read as a doubled slab. Draw glass as a thin pane (4 cm) inset
+1 cm from every surface it meets; keep collision and beams on the level data.
+
+## 2026-11-16 — `file://${process.argv[1]}` never matches on Windows
+
+Source: `tests/support/analyze-level.js` (`npm run analyze` printed nothing on
+Windows). The usual "is this module the entry script?" check compared
+`import.meta.url` with a hand-built `file://` string; on Windows `argv[1]`
+has a drive letter and backslashes, so it never matched and the CLI exited
+silently. Use `import.meta.url === pathToFileURL(process.argv[1]).href`.
+Test: `tests/unit/analyze-cli.test.js`.
+
+## 2026-11-16 — A level reload skips the 'door:settled' event
+
+Source: the door-motor hum (`src/presentation/sfx.js`). Anything reference-
+counted on "started/finished" events must also reset on `level:enter`:
+disposing a level (R, or leaving through an exit still lifting) drops its
+moving doors without ever emitting the "finished" event, so the count never
+returns to zero.

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
-import { wallPlacement, createWall } from '../../src/gameplay/wall.js';
+import { wallPlacement, createWall, GLASS_PANE_THICKNESS } from '../../src/gameplay/wall.js';
 import { segmentFromCenter } from '../../src/gameplay/aabb.js';
 
 describe('createWall', () => {
@@ -20,6 +20,30 @@ describe('createWall', () => {
     expect(scale.x).toBeCloseTo(4);
     expect(scale.y).toBeCloseTo(2.5);
     expect(scale.z).toBeCloseTo(0.3);
+  });
+
+  // Regression (owner, 2026-11-16): a full-size transparent glass box put
+  // faces on the floor, ceiling and room walls and smeared over them.
+  it('test_createWall_glass_isAThinPaneInsetFromFloorCeilingAndEnds', () => {
+    const wall = createWall({ from: [-5, 2], to: [-1, 2], material, style: 'glass' });
+    wall.mesh.updateMatrixWorld();
+    const box = new THREE.Box3().setFromObject(wall.mesh);
+    expect(box.min.y).toBeGreaterThan(0);
+    expect(box.max.y).toBeLessThan(3);
+    expect(box.min.x).toBeGreaterThan(-5); // not on the west room wall's plane
+    expect(box.max.x).toBeLessThan(-1);
+    expect(box.max.z - box.min.z).toBeCloseTo(GLASS_PANE_THICKNESS);
+    // Collision keeps the level data's 0.2 m thickness.
+    expect(wall.collider.maxZ - wall.collider.minZ).toBeCloseTo(0.2);
+  });
+
+  it('test_createWall_solid_fillsFloorToCeiling', () => {
+    const wall = createWall({ from: [-5, 2], to: [-1, 2], material });
+    wall.mesh.updateMatrixWorld();
+    const box = new THREE.Box3().setFromObject(wall.mesh);
+    expect(box.min.y).toBeCloseTo(0);
+    expect(box.max.y).toBeCloseTo(3);
+    expect(box.max.z - box.min.z).toBeCloseTo(0.2);
   });
 
   it('test_createWall_wrongOrder_isRevertible', () => {
