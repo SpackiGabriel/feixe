@@ -6,7 +6,7 @@ changes or a slice of work finishes — see the workflow in `CLAUDE.md`.
 **Code is the source of truth for what's implemented.** If this file and
 `src/` disagree, `src/` is right — fix this file.
 
-## Current focus (checkpoint 2026-11-16)
+## Current focus (checkpoint 2026-11-16, deadline 2026-11-18)
 
 **Campaign redesign** (merged into `main`, baseline tag `pre-redesign`):
 all ten levels re-authored, one idea each, inside spec §11's names and
