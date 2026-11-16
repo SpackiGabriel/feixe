@@ -54,7 +54,7 @@ vocês precisa conseguir responder sozinho a qualquer item deste guia.
 `base.position.lerpVectors(railStart, railEnd, t)` — interpolação linear
 P = (1−t)·A + t·B); giro = rotação em Y (`mirror.js:106`); paredes =
 caixa unitária com a matriz **T·R·S composta à mão** a partir do nível
-(`wall.js:47-55` + `core/matrix.js`); feixe =
+(`wall.js:62-70` + `core/matrix.js`); feixe =
 cilindro unitário escalado em Z pelo comprimento de cada trecho
 (`laser-beam.js:151-153`).
 
@@ -91,7 +91,7 @@ o WebGL: `m[col·4 + linha]`), `transformPoint` (vetor homogêneo com
 w = 1). `composeTRS` = T·R·S; `composeTSR` = a ordem errada, para a
 demonstração. As **paredes internas usam essa matriz direto**:
 `mesh.matrixAutoUpdate = false` e `mesh.matrix` = `composeTRS(centro,
-ângulo, [comprimento, altura, espessura])` (`wall.js:47-55`), ou seja, o
+ângulo, [comprimento, altura, espessura])` (`wall.js:62-70`), ou seja, o
 Three não monta a matriz delas — nós montamos. Testes comparam cada
 função com o Three até 9 casas decimais (`tests/unit/matrix.test.js`).
 
@@ -182,7 +182,7 @@ interativo, o painel mostra `à mão: w=… ndc=(…)` e, embaixo,
 `Three: ndc=(…)` — os mesmos números. Andar para trás e ver **w
 crescer** (w = profundidade à frente da câmera) e o ndc encolher para o
 centro; `+`/`−` muda o FOV e o ndc muda junto (f na matriz).
-Código: `main.js:237` (`projectionLines`).
+Código: `main.js:244` (`projectionLines`).
 
 **Nível honesto:** a câmera que renderiza é a do Three; a mesma
 matemática está implementada e verificada à mão, e é mostrada ao vivo.
@@ -210,7 +210,7 @@ matemática está implementada e verificada à mão, e é mostrada ao vivo.
 
 ### III.1 Iluminação
 
-**Onde:** `scene.js:120-131` — luz hemisférica (céu frio, chão quente),
+**Onde:** `scene.js:121-131` — luz hemisférica (céu frio, chão quente),
 ambiente fraca e uma direcional fraca: as salas são propositalmente
 escuras. **Cada feixe é uma fonte de luz dinâmica**: uma `PointLight` na
 cor do feixe, logo antes do ponto onde ele bate (`laser-beam.js:116` e
@@ -341,7 +341,7 @@ mipmaps (filtro trilinear) e anisotropia 4.
 
 ### IV. Animação independente de FPS
 
-**Onde:** `main.js:288` — `deltaSeconds = min(dt, 0,1)` (o teto evita
+**Onde:** `main.js:295` — `deltaSeconds = min(dt, 0,1)` (o teto evita
 um salto enorme depois de trocar de aba). Tudo recebe dt:
 - `movement.js`: posição += velocidade · dt (integração de Euler: a
   velocidade é exata por `damp`, a posição é independente de FPS em
@@ -487,13 +487,13 @@ Ensaiar cada uma: **dizer o efeito antes**, salvar e recarregar
 | Andar mais rápido | `movement.js:3` `MOVE_SPEED` | m/s; independe do FPS |
 | Feixe mais grosso | `laser-beam.js:6-7` `CORE_RADIUS`, `HALO_RADIUS` | só visual; a lógica usa o raio geométrico |
 | Luz do feixe mais forte/alcance | `laser-beam.js:9-10` | mancha maior/mais clara onde o feixe bate |
-| Sala mais clara | `scene.js:123-129` intensidades | atenção: `setAtmosphere` (`scene.js:172`) **sobrescreve** hemisférica e ambiente a cada nível — mudar lá |
-| Neblina | `setAtmosphere`: `scene.fog.density` (não a linha 162, que é sobrescrita) | FogExp2: fator = 1 − e^(−(densidade·d)²) |
+| Sala mais clara | `scene.js:124-130` intensidades | atenção: `setAtmosphere` (`scene.js:173`) **sobrescreve** hemisférica e ambiente a cada nível — mudar lá |
+| Neblina | `setAtmosphere`: `scene.fog.density` (não a linha 163, que é sobrescrita) | FogExp2: fator = 1 − e^(−(densidade·d)²) |
 | Espelho fosco | primeiro **desligar Reflexos no menu** (com eles ligados, o reflexo real cobre ~88% da área da placa (94% por lado) e o `roughness` só muda a moldura); depois `mirror.js:52-61` `roughness` ↑, Qualidade alta | reflexo do ambiente borrado |
 | Passo de giro | só no dado do nível: `rotationStepDegrees` (ex. `level-9.js`). **Não** use `KEY_ROTATE_STEP` (`manipulation.js:5`): todo espelho dos 10 níveis define o próprio passo, então mudá-lo não tem efeito | 15° no espelho = 30° no feixe |
 | Mais reflexões | `laser.js:8` `MAX_REFLECTIONS` | só muda o limite de quiques por feixe |
 | Porta mais lenta | `door-motion.js` `DOOR_TIMING.rise` | segundos; continua reversível |
-| Ladrilho da parede | `wall.js:41` (1,5 / 2,5) | maior = ladrilhos maiores |
+| Ladrilho da parede | `wall.js:38-39` `GLASS_TILE` 2,5 / `SOLID_TILE` 1,5 | maior = ladrilhos maiores |
 | Malha gerada por código (I.2) | `conduits.js:11` `WIDTH` (0,07 m) | as faixas do chão ficam mais largas: muda só a geometria (posições); topologia (índices, 2 triângulos por perna) igual |
 | Hierarquia (I.3) | `mirror.js:63`: colocar `plate.position.y = 0.3` logo abaixo | a placa sobe 0,3 m em relação à base e continua acompanhando o trilho e girando: o filho herda a transformação do pai (o feixe usa a placa via `matrixWorld`, então continua certo na lógica 2D) |
 | Trocar a ordem das transformações | tecla `T` (com `?debug`) ou `__feixe.wallOrder('TSR')`; no código, `wall.js` chama `composeTSR` em vez de `composeTRS` | a 90°: parede fica leste-oeste, como se não girasse; a 45°: cisalhada, planta em losango (§I.1) |
