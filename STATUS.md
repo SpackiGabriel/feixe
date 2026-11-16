@@ -18,9 +18,11 @@ mirrors as rules). Tool: `npm run analyze [N]`.
 
 **Owner playtest done (2026-11-16)**, results in `design/campaign.md` §8.
 Fixed from it: aiming passes through glass (L8 softlock), L9's M4 rail
-shortened. Next:
+shortened. Owner then reported (2026-11-16, by feel, no numbers): frame
+rate "super smooth", camera smooth with a real mouse (flick fix holds),
+sound fine. Next:
 
-1. Frame rate on the presentation machine; flick fix with a real mouse.
+1. Second owner playtest (checks the L8/L9 fixes).
 2. Visual track: final assets can replace device meshes without touching
    logic (`docs/presentation.md`, "Swapping in final assets").
 
@@ -98,14 +100,14 @@ shortened. Next:
 
 ## Not verified (needs a human)
 
-- Camera flick gone with a real mouse (fast swipes, Esc → resume).
-- Mouse feel of grab/slide/rotate, the FOV lean-in and the door rumble
-  (camera comfort). Sound mix and levels (headless has no audio output).
-- Whether the atmosphere reads as intended, and clarity for a first-time
-  player: does the trap, the conduit/pip language and the portal pairing
-  explain themselves without a hint?
-- Frame rate on the *actual* presentation machine. Run with "Qualidade:
-  baixa" if it's weaker than the Radeon 610M.
+(2026-11-16: camera flick, mouse/camera feel, sound and frame rate were
+reported fine by the owner on their machine — see Current focus.)
+
+- Clarity for a first-time player (the owner knows the mechanics): does
+  the trap, the conduit/pip language and the portal pairing explain
+  themselves without a hint? Do L1–L4 teach the controls?
+- Frame rate on the presentation machine, if it isn't the owner's. Run
+  with "Qualidade: baixa" if it's weaker than the Radeon 610M.
 - CI's e2e step on GitHub (never run remotely).
 
 ## Level presentation audit (2026-11-05)
