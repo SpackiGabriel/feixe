@@ -32,13 +32,19 @@ const { scene, colliders, wallSegments, occluders, setAtmosphere } = createScene
 const camera = createCamera();
 const cameraFx = createCameraFx(camera);
 
-// Reflection map for metal, built once (high quality only). Must exist
-// before the first level is instantiated, since materials read it then.
-if (quality === 'high') {
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  setEnvMap(pmrem.fromScene(new RoomEnvironment(), 0.04).texture);
-  pmrem.dispose();
+// Reflection map for metal (high quality only), built the first time it's
+// needed and kept. Must be set before a level is instantiated, since
+// materials read it then: switching quality applies from the next chamber.
+let metalEnvMap = null;
+function applyEnvMapForQuality() {
+  if (quality === 'high' && !metalEnvMap) {
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    metalEnvMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
+  }
+  setEnvMap(quality === 'high' ? metalEnvMap : null);
 }
+applyEnvMapForQuality();
 // Real mirror reflections: every mirror gets them; the menu's "Reflexos"
 // shows or hides them instantly.
 setMirrorReflections(true);
@@ -100,6 +106,7 @@ const menu = createMenu(uiRoot, {
     saveQuality(quality);
     renderer.setPixelRatio(currentPixelRatio());
     setReflectionQuality(quality, scene);
+    applyEnvMapForQuality(); // started on low and switched up: build it now
     hud.showToast(quality === 'high' ? 'Qualidade alta · brilho metálico na próxima câmara' : 'Qualidade baixa');
   },
   onToggleSound: () => setMuted(!isMuted()),
@@ -286,7 +293,9 @@ let lastHovered = null;
 function animate(timestamp) {
   timer.update(timestamp);
   const deltaSeconds = Math.min(timer.getDelta(), 0.1);
-  if (input.isLocked() || debugMode) movement.update(deltaSeconds);
+  // ?debug walks without pointer lock (for e2e and the defence), but not
+  // while the menu is open: W/S also move its cursor.
+  if (input.isLocked() || (debugMode && !menu.isVisible())) movement.update(deltaSeconds);
   interaction.update();
   levelRuntime.update(deltaSeconds, camera);
 

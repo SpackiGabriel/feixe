@@ -72,6 +72,8 @@ async function openGame(browser, { reducedMotion = 'no-preference', level = 1 } 
     }, [x, z, yaw]),
     // Hold W until `fn` is true (or give up).
     walkUntil: async (fn, arg, timeout = 30000) => {
+      // ?debug only walks while the menu is closed (W/S also drive it).
+      await page.evaluate(() => window.__feixe.menu.hide());
       await page.keyboard.down('KeyW');
       const ok = await g.until(fn, arg, timeout);
       await page.keyboard.up('KeyW');
@@ -124,6 +126,12 @@ try {
   await page.keyboard.press('Enter');
   check(await g.until(() => document.pointerLockElement !== null, null, 3000), 'Enter on Continuar resumes (pointer locked again)');
   await g.eval(() => document.exitPointerLock());
+  // Losing the lock reopens the pause menu on 'pointerlockchange', and the
+  // lock request's fallback (input.js lockPointer) can deliver a late
+  // lock/unlock pair after it; ?debug doesn't walk while the menu is open,
+  // so let the lock state settle before hiding it.
+  await g.until(() => document.querySelector('.menu').classList.contains('visible'), null, 5000);
+  await page.waitForTimeout(1500);
   await g.hideOverlays();
 
   console.log('input');
@@ -168,6 +176,11 @@ try {
 
   console.log('level 8 route on foot (real W key)');
   await g.load(7);
+  // Regression (Orca review, 2026-11-16): the shared portal clock was never
+  // advanced, so the portal surfaces never animated.
+  const portalTime = () => g.eval(() => window.__feixe.levelRuntime.getCurrentLevel().portals[0].mesh.children[0].material.uniforms.uTime.value);
+  const t0 = await portalTime();
+  check(await g.until((t) => window.__feixe.levelRuntime.getCurrentLevel().portals[0].mesh.children[0].material.uniforms.uTime.value > t + 0.05, t0), 'portal surfaces animate (shared clock advances)');
   const rotateM1 = (angle) => g.eval((a) => {
     const m = window.__feixe.levelRuntime.getCurrentLevel().mirrors[0];
     m.applyRotationDelta(a - m.plate.rotation.y);
@@ -229,6 +242,20 @@ try {
   check(g.external.length === 0, `no external requests (runs offline)${g.external.length ? ': ' + g.external.join(', ') : ''}`);
   check(g.errors.length === 0, `no page errors${g.errors.length ? ': ' + g.errors.join(' | ') : ''}`);
   await context.close();
+
+  // Regression (Orca review, 2026-11-16): starting on low quality and
+  // switching to high promised a metal sheen that was never built.
+  console.log('quality low → high');
+  const lowContext = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+  await lowContext.addInitScript(() => localStorage.setItem('feixe.quality', 'low'));
+  const lowPage = await lowContext.newPage();
+  await lowPage.goto(`${base}/index.html?debug`);
+  await lowPage.waitForFunction(() => window.__feixe, null, { timeout: 20000 });
+  const hasEnvMap = () => lowPage.evaluate(async () => (await import('/src/presentation/env-map.js')).getEnvMap() !== null);
+  check(!(await hasEnvMap()), 'starting on low quality: no metal env map');
+  await lowPage.evaluate(() => [...document.querySelectorAll('.mi')].find((b) => b.querySelector('.mi-label').textContent.trim().toLowerCase() === 'qualidade').click());
+  check(await hasEnvMap(), 'switching to high quality builds the metal env map');
+  await lowContext.close();
 
   console.log('reduced motion');
   const reduced = await openGame(browser, { reducedMotion: 'reduce', level: 1 });

@@ -4,6 +4,7 @@ import { getLevels, loadSavedLevelIndex, saveLevelIndex, resetProgress, nextAfte
 import { events } from '../core/events.js';
 import { isPlayerAtExit } from './exit-trigger.js';
 import { isPlayerAtPortal, computePortalLanding } from './portal-crossing.js';
+import { advancePortalClock } from '../gameplay/portal.js';
 
 const EXIT_TRIGGER_RADIUS = 1.2; // meters — see exit-trigger.js for why this stands in for physically walking through
 // Portal crossing is a doorway, not a point (portal-crossing.js): the panel
@@ -12,6 +13,18 @@ const EXIT_TRIGGER_RADIUS = 1.2; // meters — see exit-trigger.js for why this 
 const PORTAL_DOOR_HALF_WIDTH = 0.9; // meters, across the portal face
 const PORTAL_DOOR_DEPTH = 0.7; // meters, along the portal's facing normal
 const PORTAL_CLEARANCE = 0.8; // meters pushed out from the landing portal's face (> DOOR_DEPTH, so the player lands clear of the doorway)
+
+// What blocks aiming (interaction.js): the room shell, solid doors and
+// walls, and blockers. Glass doors and walls have no occluder (null) —
+// what you can see through, you can aim through (level 8 playtest).
+export function collectAimOccluders(roomOccluders, level) {
+  return [
+    ...roomOccluders,
+    ...level.doors.map((d) => d.occluder),
+    ...level.blockers.map((b) => b.mesh),
+    ...level.walls.map((w) => w.occluder),
+  ].filter(Boolean);
+}
 
 // Owns the currently-loaded level's objects and its laser system, and
 // handles what RF09 requires: a fixed level sequence, quick restart of
@@ -59,12 +72,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
     doorColliderStart = levelColliders.length;
     for (const door of currentLevel.doors) levelColliders.push(door.getCollider());
     devices = [...currentLevel.mirrors, ...currentLevel.filters, ...currentLevel.emitters];
-    levelOccluders = [
-      ...roomOccluders,
-      ...currentLevel.doors.map((d) => d.occluder),
-      ...currentLevel.blockers.map((b) => b.mesh),
-      ...currentLevel.walls.map((w) => w.occluder),
-    ].filter(Boolean); // glass doors/walls have no occluder
+    levelOccluders = collectAimOccluders(roomOccluders, currentLevel);
     exitTriggered = false;
     portalCooldownId = null;
     complete = false;
@@ -105,6 +113,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
     stats.seconds += deltaSeconds;
     laserSystem.update(deltaSeconds); // must run before doors, since it updates receivers' active state
     for (const receiver of currentLevel.receivers) receiver.update(deltaSeconds);
+    advancePortalClock(deltaSeconds); // shared by every portal surface (was never called before)
     for (const portal of currentLevel.portals) portal.update(deltaSeconds); // after the laser marked beams
     for (const device of devices) device.update(deltaSeconds);
     for (const blocker of currentLevel.blockers) blocker.update(deltaSeconds);
