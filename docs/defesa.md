@@ -25,15 +25,20 @@ deixar o editor aberto nos arquivos citados. Com `?debug`,
 
 | Tempo | Bloco | No jogo | No código |
 |---|---|---|---|
-| 0:00–1:30 | Abertura: o que é o Feixe (puzzle de laser em 1ª pessoa; 10 níveis; tudo procedural, nenhum modelo importado) | Jogar o L3 ("Ângulo"): girar o espelho, o feixe gira o dobro | — |
-| 1:30–6:00 | **Eixo I** — transformações, malhas, hierarquia | L6: deslizar (translação) e girar (rotação) espelhos; paredes de tamanhos diferentes (escala) | `mirror.js`, `wall.js`, `conduits.js`, `laser.js` |
-| 6:00–9:00 | **Eixo II** — câmera/projeção e navegação | `+`/`−` no FOV; andar, colidir, mirar | `camera.js`, `look.js`, `movement.js`, `interaction.js` |
-| 9:00–14:00 | **Eixo III** — luz, sombreamento, materiais, texturas | L10 escuro: o feixe ilumina a parede; tecla `L` (por vértice: a mancha some); espelho com reflexo real; texturas | `phong-material.js`, `scene.js`, `laser-beam.js`, `mirror.js`, `textures.js`, `mirror-reflection.js` |
-| 14:00–16:00 | **Eixo IV** — animação independente de FPS | Porta subindo/descendo e revertendo; pulso dos condutos | `main.js`, `motion.js`, `door-motion.js` |
-| 16:00–20:00 | Perguntas / alteração ao vivo | — | §4 deste guia |
+| 0:00–1:00 | Abertura: o que é o Feixe (puzzle de laser em 1ª pessoa; 10 níveis; tudo procedural, nenhum modelo importado) | Jogar o L3 ("Ângulo"): girar o espelho, o feixe gira o dobro | — |
+| 1:00–5:30 | **Eixo I** (3 requisitos) — transformações, malhas, hierarquia | L6: deslizar (translação) e girar (rotação) espelhos; paredes de tamanhos diferentes (escala) | `mirror.js`, `wall.js`, `conduits.js`, `laser.js` |
+| 5:30–8:30 | **Eixo II** (2) — câmera/projeção e navegação | `+`/`−` no FOV; andar, colidir, mirar | `camera.js`, `look.js`, `movement.js`, `interaction.js` |
+| 8:30–14:30 | **Eixo III** (4) — luz, sombreamento, materiais, texturas | L10 escuro: o feixe ilumina a parede; tecla `L` (por vértice: a mancha some); espelho com reflexo real; texturas | `phong-material.js`, `scene.js`, `laser-beam.js`, `mirror.js`, `textures.js`, `mirror-reflection.js` |
+| 14:30–16:30 | **Eixo IV** (1) — animação independente de FPS | Porta subindo/descendo e revertendo; pulso dos condutos | `main.js`, `motion.js`, `door-motion.js` |
+| 16:30–20:00 | Perguntas / alteração ao vivo | — | §4 deste guia |
 
-Dica de ritmo: cada eixo = **mostrar no jogo → abrir o arquivo → uma
-fórmula**. Não ler código linha a linha.
+Os 10 requisitos têm o **mesmo peso** na nota: o tempo acompanha quantos
+cada eixo tem. Dica de ritmo: **uma fórmula dita por requisito** —
+mostrar no jogo → abrir o arquivo → a fórmula. Não ler código linha a
+linha. Deixar L3, L6 e L10 abertos em abas (`?debug&level=3` etc.).
+
+**O trabalho é "estritamente individual" no enunciado:** cada um de
+vocês precisa conseguir responder sozinho a qualquer item deste guia.
 
 ---
 
@@ -67,8 +72,11 @@ jogador num portal.
 **Por que a ordem importa (pergunta provável):** numa parede norte-sul
 (rotação 90°) com escala (4, 3, 0,2): T·R·S escala a caixa no espaço
 local (4 m de comprimento) e depois gira — certo. T·S·R giraria primeiro
-e escalaria nos eixos do mundo: o comprimento viraria 0,2 m e a espessura
-4 m. Com escala não uniforme, R·S ≠ S·R. No Three, a ordem em que se
+e escalaria nos eixos do mundo: como o cubo unitário é simétrico, girar
+90° não muda nada visível, e a parede fica leste-oeste, **como se não
+tivesse girado**. A 45° o efeito é pior: a escala não uniforme depois da
+rotação **cisalha** a caixa (a planta vira um losango). Com escala não
+uniforme, R·S ≠ S·R. No Three, a ordem em que se
 atribuem `position/rotation/scale` no código **não** importa: `compose`
 sempre usa T·R·S.
 
@@ -143,7 +151,7 @@ distorção maior nas bordas.
 **Onde (lógica própria):**
 - Olhar: `look.js:49` — yaw e pitch acumulados do mouse, Euler na ordem
   `'YXZ'` (gira em Y do mundo, depois inclina em X local; sem rolagem);
-  pitch limitado a ±(90° − 0,01) para não virar de cabeça para baixo.
+  pitch limitado a ±(π/2 − 0,01 rad) ≈ ±89,4°.
 - Andar: `movement.js:42` — frente = (−sin yaw, −cos yaw), direita =
   (cos yaw, −sin yaw); velocidade amortecida (aceleração ≠ desaceleração).
 - Colisão: AABB do jogador contra AABBs das paredes/portas, **por eixo
@@ -172,7 +180,7 @@ as superfícies onde a luz dos feixes cai. É um shader próprio
 (`ShaderMaterial`); do Three ele só recebe os valores das luzes da cena
 (`lights: true` preenche `pointLights[]`, `hemisphereLights[]`,
 `directionalLights[]` e `ambientLightColor`, já em espaço de câmera) e a
-neblina. O cálculo é nosso (`phong-material.js:60-100`):
+neblina. O cálculo é nosso (`phong-material.js:63-103`):
 ```
 cor = albedo · (ka·Ia + Σ kd·max(N·L, 0)·I_luz) / π
     + Σ ks·max(N·H, 0)^n · I_luz          (só onde N·L > 0)
@@ -181,15 +189,22 @@ albedo = cor × textura;  Ia = ambiente + hemisférica(N)
 ```
 - **Hemisférica:** Ia += mix(cor_chão, cor_céu, 0,5·(N·up) + 0,5).
 - **Pontual (feixes):** atenuação 1/d² (decay 2) com corte suave em
-  `distance`: × (1 − (d/dist)⁴)², `phong-material.js:92`.
+  `distance`: × (1 − (d/dist)⁴)², `phong-material.js:95`.
 - **Direcional:** só N·L, sem atenuação (fonte no infinito).
-- **O 1/π:** convenção de unidade de luz do Three (Lambert normalizado,
-  conserva energia). Mantém o brilho idêntico ao material PBR que
-  substituímos — conferido por screenshots antes/depois.
+- **O 1/π:** convenção de unidade de luz do Three (Lambert normalizado:
+  ∫cosθ dω = π sobre o hemisfério, então a energia difusa refletida não
+  passa da recebida). Com kd = ka = 0,95 o **difuso e o ambiente** ficam
+  equivalentes ao material PBR que substituímos (que usava albedo ×
+  (1 − metalness 0,05)/π) — conferido por screenshots antes/depois. O
+  especular é outro modelo (Blinn-Phong de livro, sem normalização) e
+  não tenta imitar o GGX antigo; nas paredes ele é fraco de propósito.
 
-**Por que Blinn-Phong e não Phong puro?** (N·H)^n é mais barato (não
-calcula o vetor refletido R = 2(N·L)N − L para cada luz) e o brilho se
-comporta melhor em ângulos rasantes. Phong: ks·(R·V)^n.
+**Por que Blinn-Phong e não Phong puro?** O Phong (ks·(R·V)^n) corta o
+brilho de repente quando R·V < 0, o que acontece em ângulos rasantes; o
+vetor do meio H não tem esse problema. Custo: H exige um `normalize` por
+luz e `reflect` também é barato, então só há ganho real quando luz e
+observador estão no infinito (H constante). Para o mesmo tamanho de
+brilho, n_Blinn ≈ 4·n_Phong.
 
 Os outros objetos (espelhos, emissores, receptores, portas) continuam
 com o material PBR do Three (Cook-Torrance: distribuição GGX, Smith,
@@ -202,8 +217,9 @@ precisa do mapa de ambiente (reflexo).
 **Demonstração ao vivo — tecla `L`:** alterna o nosso Blinn-Phong entre
 **por fragmento** (padrão) e **por vértice** (Gouraud). É a mesma
 função `blinnPhong()`, chamada no fragment shader ou no vertex shader,
-escolhida pelo `#define PER_VERTEX` (`phong-material.js:106-157`); trocar
-o define recompila o programa.
+escolhida pelo `#define PER_VERTEX` (`phong-material.js:109-168`); trocar
+o define recompila o programa (a primeira troca dá um pequeno engasgo:
+ver checklist).
 - **Por fragmento (Phong shading):** o vertex shader passa posição e
   normal (espaço de câmera); a GPU **interpola a normal**; o fragment
   shader re-normaliza (interpolar vetores unitários encurta) e calcula
@@ -211,18 +227,24 @@ o define recompila o programa.
 - **Por vértice (Gouraud):** a luz é calculada só nos vértices; a GPU
   **interpola a cor** já iluminada.
 
-**O que mostrar (L10, parede oeste):** a luz do feixe faz uma mancha
-vermelha numa parede que tem **2 triângulos por face**. Aperte `L`: a
-mancha **some**, porque a luz só é avaliada nos 4 cantos da parede,
-longe demais do ponto onde o feixe bate. Aperte de novo: volta. Prever
-antes de apertar. Brilho especular também some no meio de faces grandes,
-pelo mesmo motivo; Gouraud só funciona bem com malhas muito subdivididas.
+**O que mostrar (L10, canto sudoeste):** no início do L10 a luz
+vermelha do feixe fica em (−4; 1,2; 4,75), a 0,25 m da parede **sul** e a
+1 m da oeste: a mancha forte está na parede sul, atrás do emissor
+vermelho. A parede tem **2 triângulos por face**. Prever, depois apertar
+`L`: a mancha localizada **some** (ou vira um gradiente fraco e largo
+vindo do canto), porque a luz só é avaliada nos 4 cantos da parede, longe
+do ponto onde o feixe bate. Apertar de novo: volta. O brilho especular
+também some no meio de faces grandes pelo mesmo motivo; Gouraud só
+funciona bem com malhas muito subdivididas.
 
-**Normais (`phong-material.js:122`):** `normalMatrix · normal`, onde
-normalMatrix = inversa transposta da 3×3 da model-view. Necessária porque
-as paredes têm **escala não uniforme** (caixa unitária × comprimento ×
-altura × espessura): multiplicar a normal pela própria model-view a
-deixaria torta, não mais perpendicular à superfície.
+**Normais (`phong-material.js:127`):** `normalMatrix · normal`, onde
+normalMatrix = inversa transposta da 3×3 da model-view. Regra geral: se
+t é tangente à superfície, n·t = 0; depois da transformação M, a
+tangente vira M·t e a normal que continua perpendicular é (M⁻¹)ᵀ·n.
+Nas nossas caixas escaladas daria o mesmo resultado que usar M (cada
+normal de face está alinhada com um eixo da escala, só o comprimento
+muda e o `normalize` corrige); a diferença aparece em normais oblíquas,
+como num cilindro ou esfera com escala não uniforme.
 
 Outro shader próprio: o halo do feixe (`laser-beam.js:44-60`) usa
 `facing = |N·V|` por fragmento para deixar a borda do cilindro
@@ -238,8 +260,8 @@ roughness 0,07, mapa de ambiente); aço dos pedestais (metalness 0,7,
 roughness 0,38); paredes foscas; núcleo do feixe `MeshBasicMaterial`
 (sem iluminação: é ele que emite); receptores e lâmpadas emissivos.
 
-**Coeficientes ka, kd, ks e n (`phong-material.js:28`, `PHONG`):**
-paredes ka 1, kd 0,95, ks 0,04, n 12 (concreto fosco: quase nenhum
+**Coeficientes ka, kd, ks e n (`phong-material.js:31-34`, `PHONG`):**
+paredes ka 0,95, kd 0,95, ks 0,04, n 12 (concreto fosco: quase nenhum
 brilho); piso ka 1, kd 1, ks 0,08, n 32 (um pouco mais polido: brilho
 menor e mais concentrado). Cada um vira um uniform do shader e pode ser
 mudado ao vivo pelo console (§4).
@@ -254,8 +276,10 @@ ambiente/hemisférica ≈ ka.
 `vendor/three/addons/Reflector.js`): a cena é renderizada de novo com
 a câmera **refletida no plano do espelho** (reflexão de Householder
 v' = v − 2(v·n)n, `Reflector.js:135`) e um plano de recorte oblíquo
-(Lengyel, `Reflector.js:175-182`) corta o que está atrás do espelho. É
-rasterização, não ray tracing.
+(Lengyel, `Reflector.js:170-213`: o plano do espelho em espaço de câmera
+substitui a 3ª linha da matriz de projeção, então o "near" passa a ser o
+próprio plano) corta o que está atrás do espelho. É rasterização, não
+ray tracing.
 
 ### III.4 Texturas
 
@@ -276,7 +300,9 @@ mipmaps (filtro trilinear) e anisotropia 4.
 
 **Onde:** `main.js:256` — `deltaSeconds = min(dt, 0,1)` (o teto evita
 um salto enorme depois de trocar de aba). Tudo recebe dt:
-- `movement.js`: posição += velocidade · dt.
+- `movement.js`: posição += velocidade · dt (integração de Euler: a
+  velocidade é exata por `damp`, a posição é independente de FPS em
+  regime constante, com erro pequeno só na rampa de ~0,07 s).
 - `motion.js:27`, `damp`: x ← alvo + (x − alvo)·e^(−λ·dt). É
   independente de FPS porque e^(−λ·dt1)·e^(−λ·dt2) = e^(−λ·(dt1+dt2)):
   dois quadros curtos dão exatamente o mesmo resultado que um longo. O
@@ -307,49 +333,81 @@ um salto enorme depois de trocar de aba). Tudo recebe dt:
 6. **"O feixe é ray tracing?"** Não. É traçado de um raio geométrico
    para a lógica do jogo; a imagem é rasterizada (cilindros).
 7. **"O que é a divisão por w?"** §II.1.
-8. **"Por que o pitch é limitado?"** Em ±90° a frente fica paralela ao
-   eixo Y e o yaw perde sentido (a câmera "vira"): limitamos a 89,4°.
+8. **"Por que o pitch é limitado?"** Para não passar da vertical: depois
+   de ±90° a imagem ficaria de cabeça para baixo e o yaw do mouse
+   inverteria. Limitamos a π/2 − 0,01 rad ≈ 89,4°. (Com Euler YXZ não
+   há singularidade no nosso código; gimbal lock é outra coisa — ver 32.)
 9. **"Por que Euler 'YXZ'?"** Yaw em Y do mundo primeiro, pitch no X já
    girado: é o comportamento de câmera em primeira pessoa; outra ordem
    faria o pitch inclinar a câmera de lado depois de virar.
 10. **"Por vértice vs. por fragmento?"** §III.2: apertar `L` no L10 e
     mostrar a mancha de luz sumindo (prever antes).
-11. **"Onde estão ka, kd e ks?"** `phong-material.js:28` (`PHONG`), viram
-    uniforms; fórmula em §III.1. Mudar o ks ao vivo (§4).
-21. **"Por que normalMatrix e não a model-view na normal?"** Escala não
-    uniforme deforma a normal; a inversa transposta preserva a
-    perpendicularidade (§III.2). As nossas paredes são escaladas assim.
-22. **"Por que dividir por π?"** Lambert normalizado: a energia
-    refletida por uma superfície difusa não pode passar da recebida; é
-    a convenção de unidades do Three, e mantém o brilho igual ao PBR.
-23. **"Por que re-normalizar a normal no fragment shader?"** A
+11. **"Onde estão ka, kd e ks?"** `phong-material.js:31-34` (`PHONG`),
+    viram uniforms; fórmula em §III.1. Mudar o ks ao vivo (§4).
+12. **"Por que normalMatrix e não a model-view na normal?"** Regra
+    geral (M⁻¹)ᵀ, de n·t = 0 (§III.2). Nas nossas caixas daria o mesmo;
+    importa com normais oblíquas e escala não uniforme.
+13. **"Por que dividir por π?"** Lambert normalizado: ∫cosθ dω = π,
+    então a energia difusa refletida não passa da recebida; é a
+    convenção de unidades do Three e mantém o difuso igual ao PBR antigo.
+14. **"Por que re-normalizar a normal no fragment shader?"** A
     interpolação linear entre dois vetores unitários gera vetores mais
     curtos que 1 no meio do triângulo; sem normalizar, a luz escurece no
     centro das faces.
-12. **"A luz do feixe projeta sombra?"** Não: sombras desligadas (custo
+15. **"A luz do feixe projeta sombra?"** Não: sombras desligadas (custo
     de shadow map por luz pontual = 6 renders de cubo). Decisão de
     desempenho.
-13. **"Como a textura não estica na parede escalada?"** `tileUvs`
+16. **"Como a textura não estica na parede escalada?"** `tileUvs`
     (§III.4).
-14. **"O que garante 60 FPS?"** Pools fixos (nenhuma alocação por quadro
+17. **"O que garante 60 FPS?"** Pools fixos (nenhuma alocação por quadro
     no feixe), uma luz por feixe (ADR 0003), orçamento de pixels, opção
     Qualidade baixa e Reflexos desligados.
-15. **"Como o portal funciona?"** Não renderiza através (fora de escopo,
+18. **"Como o portal funciona?"** Não renderiza através (fora de escopo,
     spec §14): o feixe sai do centro do outro portal com a direção girada
     pela diferença de orientação (`rotateXZ`); o jogador, idem.
-16. **"Como a cor combina?"** Aditiva por canal (OR de R, G, B) no
+19. **"Como a cor combina?"** Aditiva por canal (OR de R, G, B) no
     receptor (`laser.js:151`); filtro = AND com a cor primária.
-17. **"Por que a animação é independente de FPS?"** §IV, com a
+20. **"Por que a animação é independente de FPS?"** §IV, com a
     identidade da exponencial.
-18. **"Qual a diferença entre a luz pontual e a direcional?"** Pontual:
+21. **"Qual a diferença entre a luz pontual e a direcional?"** Pontual:
     posição, direção L varia por ponto, atenua com d². Direcional: só
     direção, L constante, sem atenuação.
-19. **"Por que a ordem de somar luzes não muda o resultado?"** A
+22. **"Por que a ordem de somar luzes não muda o resultado?"** A
     contribuição de cada luz é somada (soma é comutativa); só a conversão para sRGB e o
     corte em [0, 1] no fim são não lineares (não usamos tone mapping).
-20. **"O que o raycaster do Three faz?"** Para cada malha: testa a
+23. **"O que o raycaster do Three faz?"** Para cada malha: testa a
     bounding sphere/box, leva o raio ao espaço local (inversa da
     matrixWorld) e testa raio–triângulo, triângulo a triângulo.
+24. **"Como é a matriz de visão?"** V = (matriz de mundo da câmera)⁻¹ =
+    Rᵀ·T(−olho). Mover a câmera equivale a mover o mundo ao contrário.
+25. **"E depois da divisão por w?"** NDC em [−1, 1]³ → transformação de
+    viewport para pixels; z vai para o depth buffer. A profundidade é não
+    linear em z (mais precisão perto da câmera), por isso near = 0,1 e
+    não 0 (z-fighting). Os condutos no chão usam `polygonOffset`
+    (`conduits.js:118`) para não brigar com o piso.
+26. **"E se a projeção fosse ortográfica?"** A última linha da matriz
+    vira (0, 0, 0, 1): w = 1, sem encurtamento — o tamanho na tela não
+    depende da distância.
+27. **"Por que w = 1 para pontos e w = 0 para direções?"** Com w = 0 a
+    coluna de translação é anulada: direções (normais, direção de luz)
+    giram mas não se deslocam (`transformDirection` no Three).
+28. **"Por que o especular depende de V e o difuso não?"** Lambert
+    espalha igual em todas as direções; o especular se concentra em torno
+    da reflexão, então depende de onde está o olho. n controla a largura
+    do lóbulo.
+29. **"Por que iluminar em espaço de câmera?"** O olho fica na origem,
+    então V = normalize(−P). Qualquer espaço serve, desde que N, L e V
+    estejam no mesmo.
+30. **"Por que mipmaps e por que sRGB?"** Mipmaps evitam aliasing quando
+    a textura é reduzida (minificação). A conta de luz é linear: a
+    textura sRGB é decodificada ao amostrar e o resultado é codificado
+    de volta no fim (`colorspace_fragment`).
+31. **"O modelo é local: o que falta?"** Sombras e luz indireta (uma
+    superfície iluminando outra). O termo ambiente (ka·Ia) é o remendo
+    empírico para a indireta.
+32. **"Euler ou quatérnio?"** O Three guarda a rotação como quatérnio; o
+    Euler YXZ é só a nossa interface de yaw/pitch. Gimbal lock = perda de
+    um grau de liberdade quando dois eixos de Euler se alinham.
 
 ---
 
@@ -366,19 +424,21 @@ Ensaiar cada uma: **dizer o efeito antes**, salvar e recarregar
 | Luz do feixe mais forte/alcance | `laser-beam.js:9-10` | mancha maior/mais clara onde o feixe bate |
 | Sala mais clara | `scene.js:123-129` intensidades | atenção: `setAtmosphere` (`scene.js:172`) **sobrescreve** hemisférica e ambiente a cada nível — mudar lá |
 | Neblina | `setAtmosphere`: `scene.fog.density` (não a linha 162, que é sobrescrita) | FogExp2: fator = 1 − e^(−(densidade·d)²) |
-| Espelho fosco | `mirror.js:52-61` `roughness` ↑ (o env map exige metalness 1 em Qualidade alta) | reflexo do ambiente borrado |
+| Espelho fosco | primeiro **desligar Reflexos no menu** (com eles ligados, o reflexo real cobre 94% da placa e o `roughness` só muda a moldura); depois `mirror.js:52-61` `roughness` ↑, Qualidade alta | reflexo do ambiente borrado |
 | Passo de giro | dado do nível: `rotationStepDegrees` (ex. `level-9.js`) ou `KEY_ROTATE_STEP` em `manipulation.js:5` | 15° no espelho = 30° no feixe |
 | Mais reflexões | `laser.js:8` `MAX_REFLECTIONS` | só muda o limite de quiques por feixe |
 | Porta mais lenta | `door-motion.js` `DOOR_TIMING.rise` | segundos; continua reversível |
 | Ladrilho da parede | `wall.js:40` (1,5 / 2,5) | maior = ladrilhos maiores |
-| Trocar a ordem das transformações | numa parede: `mesh.matrixAutoUpdate = false; mesh.matrix.copy(T).multiply(S).multiply(R)` (precisa importar `Matrix4`) | parede norte-sul fica com o comprimento errado (§I.1) |
+| Trocar a ordem das transformações | numa parede: `mesh.matrixAutoUpdate = false; mesh.matrix.copy(T).multiply(S).multiply(R)` (`wall.js` já importa `THREE`: `new THREE.Matrix4().makeRotationY(...)` etc.) | a 90°: parede fica leste-oeste, como se não girasse; a 45°: cisalhada, planta em losango (§I.1) |
 | Desligar o sombreamento suave | material PBR (ex. pedestais, `mirror.js:16`): `flatShading: true` | facetas visíveis em superfícies curvas |
 | Sombreamento por vértice | tecla `L` (ou `__feixe.phong.setShadingMode('vertex')`) | mancha de luz do feixe some no meio das paredes |
-| Parede mais brilhante (especular) | `phong-material.js:28` `PHONG.wall.ks` / `shininess` | ks ↑ = reflexo mais forte; n ↑ = reflexo menor e mais concentrado |
-| Sem luz ambiente | `PHONG.wall.ka = 0` | partes longe dos feixes ficam pretas; só sobra a luz direta |
+| Parede mais brilhante (especular) | `phong-material.js:32` `PHONG.wall.ks` / `shininess` (melhor pelo console, abaixo) | ks ↑ = reflexo mais forte; n ↑ = reflexo menor e mais concentrado. **Não usar n = 0** (`pow(0, 0)` é indefinido em GLSL) |
+| Sem luz ambiente | `uKa = 0` nas paredes (console) | longe dos feixes as paredes leste e sul ficam pretas; oeste e norte ainda recebem um pouco da direcional (N·L ≈ 0,56 e 0,37); o piso tem `ka` próprio e não muda |
 
 Pelo console (com `?debug`), sem recarregar:
-- FOV: `__feixe.camera.fov = 100; __feixe.camera.updateProjectionMatrix()`.
+- FOV: `__feixe.cameraFx.setBaseFov(100)` (ou as teclas `+`/`−`). Mudar
+  `camera.fov` direto **não funciona**: `camera-fx.js` regrava o FOV a
+  cada quadro.
 - Coeficientes do Blinn-Phong (materiais `'paredes'` e `'piso'`):
   `const w = __feixe.phong.materials().find((m) => m.name === 'paredes');
   w.uniforms.uKs.value = 0.6; w.uniforms.uShininess.value = 64;` —
@@ -415,6 +475,13 @@ animação por dt com `damp`. O que é "básico" (pronto do Three):
       `camera.js`, `look.js`, `movement.js`, `scene.js`,
       `laser-beam.js`, `phong-material.js`, `textures.js`, `motion.js`,
       `main.js`.
-- [ ] Testar a tecla `L` no L10 (parede oeste) na máquina da apresentação.
+- [ ] Testar a tecla `L` no L10 (canto sudoeste, parede sul) na máquina
+      da apresentação.
+- [ ] **Aquecer os shaders** depois do último reload: em cada nível que
+      será mostrado, apertar `L` duas vezes. A primeira troca compila os
+      programas (pequeno engasgo) e cada nível com outro número de luzes
+      pontuais compila de novo; o cache dura até recarregar a página.
+- [ ] Preferir o console (uniforms) a editar e recarregar nas alterações
+      ao vivo: efeito imediato e sem perder o estado do nível.
 - [ ] Ensaiar 3 alterações ao vivo da §4 com cronômetro.
 - [ ] Ter o jogo já no L3 e saber pular de nível (`?debug&level=N` na URL; só funciona com `debug`).

@@ -211,6 +211,7 @@ let debugVisible = debugMode;
 if (debugMode) {
   window.__feixe = {
     levelRuntime, camera, scene, renderer, hud, menu, transitions, look, interaction, events,
+    cameraFx, // FOV from the console: cameraFx.setBaseFov(100) (it rewrites camera.fov every frame)
     phong: { materials: getPhongMaterials, setShadingMode, getShadingMode },
   };
   const jumpTo = parseInt(params.get('level'), 10);

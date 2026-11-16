@@ -15,8 +15,11 @@ import * as THREE from 'three';
 //
 // albedo = uColor × texture (the diffuse colour); Ia = ambient light plus
 // the hemisphere light's sky/ground blend for this normal. The 1/π is
-// Three's light-unit convention (a normalised Lambert term), so these
-// surfaces stay as bright as the PBR material they replaced.
+// Three's light-unit convention (a normalised Lambert term: ∫cosθ dω = π
+// over the hemisphere), so the diffuse and ambient terms match the PBR
+// material these surfaces used before (whose diffuse was albedo × (1 −
+// metalness 0.05) / π). The specular term is plain textbook Blinn-Phong,
+// not normalised, and is not meant to match the old GGX highlight.
 //
 // The same lighting function runs either per fragment (Phong shading: the
 // normal is interpolated, lighting computed per pixel — the default) or
@@ -26,7 +29,7 @@ import * as THREE from 'three';
 
 // Coefficients per surface (dimensionless; shininess = the exponent n).
 export const PHONG = {
-  wall: { ka: 1, kd: 0.95, ks: 0.04, shininess: 12 },
+  wall: { ka: 0.95, kd: 0.95, ks: 0.04, shininess: 12 },
   floor: { ka: 1, kd: 1, ks: 0.08, shininess: 32 },
 };
 
@@ -116,9 +119,11 @@ const vertexShader = /* glsl */ `
   void main() {
     vUv = ( uvTransform * vec3( uv, 1.0 ) ).xy;
     vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
-    // normalMatrix = inverse transpose of the model-view 3x3: keeps the
-    // normal perpendicular under non-uniform scale (the walls are a unit
-    // box scaled by length × height × thickness).
+    // normalMatrix = inverse transpose of the model-view 3x3: the general
+    // rule that keeps a normal perpendicular to the surface under
+    // non-uniform scale (from n·t = 0 for every tangent t). For our scaled
+    // boxes each face normal lies along a scale axis, so only its length
+    // would change; it matters for oblique normals (a scaled cylinder).
     vec3 N = normalize( normalMatrix * normal );
     #ifdef PER_VERTEX
       blinnPhong( mvPosition.xyz, N, vDiffuse, vSpecular );
