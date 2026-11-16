@@ -17,7 +17,8 @@ teaches, cards, playtest protocol and its results in §8); sources:
 mirrors as rules). Tool: `npm run analyze [N]`.
 
 **Owner playtest done (2026-11-16)**, results in `design/campaign.md` §8.
-Fixed from it: aiming passes through glass (L8 softlock), L9's M4 rail
+Fixed from it: aiming passes through glass (L8 softlock; L8 door 1 has an
+open square hatch showing it, visual only), L9's M4 rail
 shortened; rails keep devices ≥ 1 m apart (L9 M2 started inside M1;
 test `railDevices_cannotOverlap`). Owner then reported (2026-11-16, by feel, no numbers): frame
 rate "super smooth", camera smooth with a real mouse (flick fix holds),
