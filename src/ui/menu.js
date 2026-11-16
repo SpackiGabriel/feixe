@@ -14,6 +14,7 @@ const CONTROLS = [
   ['R', 'reiniciar câmara'],
   ['+ / −', 'campo de visão'],
   ['M', 'som'],
+  ['L', 'sombreamento: vértice / fragmento'],
   ['Esc', 'pausar'],
 ];
 
