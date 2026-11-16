@@ -67,7 +67,8 @@ export const levelTemplate = {
 
   // Interior walls, by endpoints [x, z]. Absorb beams, block the player and
   // block aiming. Keep them axis-aligned (player collision is box-based).
-  // style: 'glass' looks like frosted glass but blocks exactly the same.
+  // style: 'glass' looks like frosted glass and blocks beams and the player
+  // the same, but not aiming (devices behind it stay selectable).
   walls: [
     // { from: [-ROOM_HALF, 0], to: [-1, 0], height: 3, thickness: 0.2, style: 'solid' },
   ],

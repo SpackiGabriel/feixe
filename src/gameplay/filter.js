@@ -6,7 +6,7 @@ import { COLOR_NAMES } from './colors.js';
 import { colorToHex } from './laser.js';
 import { symbolFaceTexture } from './textures.js';
 
-const PANEL_WIDTH = 0.8;
+export const PANEL_WIDTH = 0.8;
 const PANEL_HEIGHT = 0.8;
 const PANEL_THICKNESS = 0.05;
 

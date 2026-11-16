@@ -63,8 +63,8 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
       ...roomOccluders,
       ...currentLevel.doors.map((d) => d.occluder),
       ...currentLevel.blockers.map((b) => b.mesh),
-      ...currentLevel.walls.map((w) => w.mesh),
-    ];
+      ...currentLevel.walls.map((w) => w.occluder),
+    ].filter(Boolean); // glass doors/walls have no occluder
     exitTriggered = false;
     portalCooldownId = null;
     complete = false;

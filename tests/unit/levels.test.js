@@ -10,6 +10,8 @@ import { createLaserSystem } from '../../src/gameplay/laser-system.js';
 import { createScene } from '../../src/core/scene.js';
 import { applySolution } from '../support/apply-solution.js';
 import { levelTemplate } from '../../src/levels/data/level-template.js';
+import { PLATE_WIDTH } from '../../src/gameplay/mirror.js';
+import { PANEL_WIDTH } from '../../src/gameplay/filter.js';
 
 function load(levelData) {
   const { scene, wallSegments } = createScene();
@@ -23,6 +25,22 @@ function load(levelData) {
 function tick({ level, laserSystem }) {
   laserSystem.update();
   for (const door of level.doors) door.update(0.016);
+}
+
+// Smallest distance on the floor plane (x, z) between two rails, sampled
+// finely enough for rail lengths of a few metres.
+function railDistance(railA, railB) {
+  const STEPS = 100;
+  const at = (rail, t) => [rail.start[0] + (rail.end[0] - rail.start[0]) * t, rail.start[2] + (rail.end[2] - rail.start[2]) * t];
+  let min = Infinity;
+  for (let i = 0; i <= STEPS; i++) {
+    const p = at(railA, i / STEPS);
+    for (let j = 0; j <= STEPS; j++) {
+      const q = at(railB, j / STEPS);
+      min = Math.min(min, Math.hypot(p[0] - q[0], p[1] - q[1]));
+    }
+  }
+  return min;
 }
 
 // The template is validated too, so the example designers copy always works.
@@ -81,6 +99,41 @@ describe.each(LEVELS_UNDER_TEST.map((data) => [data.id, data]))('%s', (_id, data
         expect(loaded.level.exitDoor.isOpen(), `exit opened with emitter at +${deg + 1}°`).toBe(false);
       }
     }
+  });
+
+  // Nothing stops one device sliding into another, so the rails must keep
+  // them apart: at any rail positions, two devices are at least half of
+  // each width apart (playtest: L9's M2 started inside M1).
+  it('test_level_railDevices_cannotOverlap', () => {
+    const devices = [
+      ...data.mirrors.map((m) => ({ id: m.id, width: PLATE_WIDTH, rail: m.rail })),
+      ...(data.filters ?? []).map((f) => ({ id: f.id, width: PANEL_WIDTH, rail: f.rail })),
+    ];
+    for (let i = 0; i < devices.length; i++) {
+      for (let j = i + 1; j < devices.length; j++) {
+        const [a, b] = [devices[i], devices[j]];
+        const gap = railDistance(a.rail, b.rail);
+        expect(gap, `${a.id}/${b.id} can come ${gap.toFixed(2)} m apart`).toBeGreaterThanOrEqual((a.width + b.width) / 2 - 1e-9);
+      }
+    }
+  });
+
+  it('test_level_fixedMirrors_areNotInteractive', () => {
+    const loaded = load(data);
+    data.mirrors.forEach((m, i) => {
+      const plate = loaded.level.mirrors[i].plate;
+      expect(loaded.interactiveObjects.includes(plate)).toBe(Boolean(m.positionEnabled || m.rotationEnabled));
+    });
+  });
+
+  it('test_level_glassDoorsAndWalls_doNotBlockAiming', () => {
+    const loaded = load(data);
+    (data.walls ?? []).forEach((w, i) => {
+      expect(loaded.level.walls[i].occluder === null).toBe(w.style === 'glass');
+    });
+    data.doors.forEach((d, i) => {
+      expect(loaded.level.doors[i].occluder === null).toBe(d.style === 'glass');
+    });
   });
 
   it('test_level_fixedEmitters_areNotInteractive', () => {

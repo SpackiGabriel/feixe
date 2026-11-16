@@ -27,8 +27,16 @@ frameMaterial.userData.shared = true;
 // for exit doors — a warm glow behind the panel and a light spill.
 // It only *reads* state; door.js and door-motion.js own the logic.
 // `style: 'glass'`: a framed glass pane instead of the metal slab (level 8's
-// door in the glass partition), so it reads as part of that wall. Visual
-// only: it still blocks walking, beams and aiming while closed.
+// door in the glass partition), so it reads as part of that wall. It has an
+// open square hatch spanning beam and eye height: it shows why the beam
+// and the player's aim pass the closed door (level 8 playtest), while the
+// door still blocks walking (door.js) — there's no jumping. Visual only:
+// beams never stop at doors (laser-system.js doesn't trace them) and a
+// glass door has no aim occluder (door.js).
+const HATCH_WIDTH = 1.2;
+const HATCH_BOTTOM = 1.0; // above the floor, with the panel closed
+const HATCH_TOP = 2.2;
+
 function glassPanel() {
   const material = new THREE.MeshStandardMaterial({
     color: 0xd4e2e6,
@@ -41,24 +49,34 @@ function glassPanel() {
     depthWrite: false,
     side: THREE.DoubleSide,
   });
-  const pane = new THREE.Mesh(new THREE.BoxGeometry(DOOR_WIDTH, PANEL_HEIGHT, 0.05), material);
-  pane.renderOrder = 1; // after the opaque rim, so the rim isn't washed out
+  const panel = new THREE.Group();
+  const bottom = HATCH_BOTTOM - PANEL_HEIGHT / 2; // panel-local y (origin at the panel's centre)
+  const top = HATCH_TOP - PANEL_HEIGHT / 2;
+  const side = (DOOR_WIDTH - HATCH_WIDTH) / 2;
+  const box = (w, h, d, x, y, mat) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    mesh.position.set(x, y, 0);
+    panel.add(mesh);
+    return mesh;
+  };
+  // Glass around the hatch: below, above, and the two sides.
+  const glass = [
+    box(DOOR_WIDTH, bottom + PANEL_HEIGHT / 2, 0.05, 0, (bottom - PANEL_HEIGHT / 2) / 2, material),
+    box(DOOR_WIDTH, PANEL_HEIGHT / 2 - top, 0.05, 0, (top + PANEL_HEIGHT / 2) / 2, material),
+    box(side, top - bottom, 0.05, -(HATCH_WIDTH + side) / 2, (top + bottom) / 2, material),
+    box(side, top - bottom, 0.05, (HATCH_WIDTH + side) / 2, (top + bottom) / 2, material),
+  ];
+  for (const g of glass) g.renderOrder = 1; // after the opaque rim, so the rim isn't washed out
+  // Outer rim, then the hatch's own frame (so it reads as a cut, not a gap).
   const rim = 0.07;
-  const rimGeometryV = new THREE.BoxGeometry(rim, PANEL_HEIGHT, PANEL_THICKNESS);
-  const rimGeometryH = new THREE.BoxGeometry(DOOR_WIDTH, rim, PANEL_THICKNESS);
-  for (const side of [-1, 1]) {
-    const v = new THREE.Mesh(rimGeometryV, frameMaterial);
-    v.position.x = side * (DOOR_WIDTH / 2 - rim / 2);
-    pane.add(v);
-    const h = new THREE.Mesh(rimGeometryH, frameMaterial);
-    h.position.y = side * (PANEL_HEIGHT / 2 - rim / 2);
-    pane.add(h);
+  for (const s of [-1, 1]) {
+    box(rim, PANEL_HEIGHT, PANEL_THICKNESS, s * (DOOR_WIDTH / 2 - rim / 2), 0, frameMaterial);
+    box(DOOR_WIDTH, rim, PANEL_THICKNESS, 0, s * (PANEL_HEIGHT / 2 - rim / 2), frameMaterial);
+    box(rim, top - bottom + rim, PANEL_THICKNESS, s * (HATCH_WIDTH / 2 + rim / 2), (top + bottom) / 2, frameMaterial);
   }
-  // Mid rail at hand height: makes the pane read as a door, not a window.
-  const rail = new THREE.Mesh(new THREE.BoxGeometry(DOOR_WIDTH, 0.05, PANEL_THICKNESS * 0.8), frameMaterial);
-  rail.position.y = 1.0 - PANEL_HEIGHT / 2;
-  pane.add(rail);
-  return pane;
+  box(HATCH_WIDTH + rim * 2, rim, PANEL_THICKNESS, 0, bottom - rim / 2, frameMaterial);
+  box(HATCH_WIDTH + rim * 2, rim, PANEL_THICKNESS, 0, top + rim / 2, frameMaterial);
+  return panel;
 }
 
 export function createDoorView({ position, rotationY, inputCount, trapCount, exit, style }) {

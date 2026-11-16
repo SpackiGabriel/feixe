@@ -11,6 +11,7 @@
 //
 //   node tests/support/analyze-level.js            all levels
 //   node tests/support/analyze-level.js 6 9        some levels
+import { pathToFileURL } from 'node:url';
 import { traceBeam, composeReceiverColor, isReceiverSatisfied, MAX_REFLECTIONS } from '../../src/gameplay/laser.js';
 import { segmentFromCenter } from '../../src/gameplay/aabb.js';
 import { COLOR_NAMES } from '../../src/gameplay/colors.js';
@@ -339,7 +340,10 @@ export function report(level) {
   return { problems, grid, rnd };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// pathToFileURL, not `file://${argv[1]}`: on Windows argv has backslashes
+// and a drive letter, so the naive string never matched and the CLI
+// silently printed nothing.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { getLevels } = await import('../../src/levels/level-manager.js');
   const wanted = process.argv.slice(2).map(Number);
   const levels = getLevels().filter((_, i) => !wanted.length || wanted.includes(i + 1));

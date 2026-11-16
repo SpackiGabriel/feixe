@@ -37,7 +37,9 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     });
     addToScene(mirror.base);
     for (const extra of mirror.extras) addToScene(extra);
-    interactiveObjects.push(mirror.plate);
+    // Like emitters: a mirror with no degree of freedom (level 1's display
+    // piece, now aimable through its glass) isn't selectable.
+    if (m.positionEnabled || m.rotationEnabled) interactiveObjects.push(mirror.plate);
     mirror.plate.userData.debugInfo = () => `espelho ${m.id}  t=${mirror.getT().toFixed(3)}  rot=${degrees(mirror.plate.rotation.y)}°`;
     return mirror;
   });

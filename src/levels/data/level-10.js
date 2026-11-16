@@ -21,6 +21,9 @@ import { BEAM_HEIGHT, ROOM_HALF } from './constants.js';
 const H = BEAM_HEIGHT;
 const WALL_Z = 0;
 const ROW = 2; // red's and blue's shared row
+// M2's rail starts 1 m (a plate's width) from M1, so they can't overlap.
+const M2_RAIL = [-3, -1.2];
+const M2_AT_PORTAL = (-2.7 - M2_RAIL[0]) / (M2_RAIL[1] - M2_RAIL[0]); // x = -2.7, beside green's column
 const snapped = { rotationStepDegrees: 45 };
 
 export const level10 = {
@@ -35,7 +38,7 @@ export const level10 = {
   mirrors: [
     { id: 'm1', rail: { start: [-4, H, ROW], end: [-4, H, ROW] }, initialT: 0.5, initialRotationY: 0, positionEnabled: false, rotationEnabled: true, ...snapped },
     // Red's turn into the portal; its back face can send blue south.
-    { id: 'm2', rail: { start: [-3.6, H, ROW], end: [-1.2, H, ROW] }, initialT: 1, initialRotationY: 0, positionEnabled: true, rotationEnabled: true, ...snapped },
+    { id: 'm2', rail: { start: [M2_RAIL[0], H, ROW], end: [M2_RAIL[1], H, ROW] }, initialT: 1, initialRotationY: 0, positionEnabled: true, rotationEnabled: true, ...snapped },
     { id: 'm5', rail: { start: [2, H, ROW], end: [2, H, ROW] }, initialT: 0.5, initialRotationY: 0, positionEnabled: false, rotationEnabled: true, ...snapped },
     { id: 'm6', rail: { start: [3, H, ROW], end: [4.4, H, ROW] }, initialT: 1, initialRotationY: 0, positionEnabled: true, rotationEnabled: true, ...snapped },
   ],
@@ -69,22 +72,22 @@ export const level10 = {
   scenarios: [
     {
       name: 'blue off the back of m2 onto the south receiver also works',
-      config: { filters: { 'f-red': { t: 0.45 } }, mirrors: { m1: { rotationY: Math.PI / 4 }, m2: { t: 0.375, rotationY: Math.PI / 4 }, m5: { rotationY: -Math.PI / 4 } } },
+      config: { filters: { 'f-red': { t: 0.45 } }, mirrors: { m1: { rotationY: Math.PI / 4 }, m2: { t: M2_AT_PORTAL, rotationY: Math.PI / 4 }, m5: { rotationY: -Math.PI / 4 } } },
       doors: { exit: true },
     },
     {
       name: 'm6 left out sends blue into the trap',
-      config: { filters: { 'f-red': { t: 0.45 } }, mirrors: { m1: { rotationY: Math.PI / 4 }, m2: { t: 0.375, rotationY: Math.PI / 4 }, m5: { rotationY: Math.PI / 4 } } },
+      config: { filters: { 'f-red': { t: 0.45 } }, mirrors: { m1: { rotationY: Math.PI / 4 }, m2: { t: M2_AT_PORTAL, rotationY: Math.PI / 4 }, m5: { rotationY: Math.PI / 4 } } },
       doors: { exit: false },
     },
     {
       name: 'filter left on green starves the yellow receiver',
-      config: { mirrors: { m1: { rotationY: Math.PI / 4 }, m2: { t: 0.375, rotationY: Math.PI / 4 }, m5: { rotationY: Math.PI / 4 }, m6: { t: 0.5, rotationY: Math.PI / 4 } } },
+      config: { mirrors: { m1: { rotationY: Math.PI / 4 }, m2: { t: M2_AT_PORTAL, rotationY: Math.PI / 4 }, m5: { rotationY: Math.PI / 4 }, m6: { t: 0.5, rotationY: Math.PI / 4 } } },
       doors: { exit: false },
     },
     {
       name: 'filter slid onto blue starves both blue receivers',
-      config: { filters: { 'f-red': { t: 1 } }, mirrors: { m1: { rotationY: Math.PI / 4 }, m2: { t: 0.375, rotationY: Math.PI / 4 }, m5: { rotationY: Math.PI / 4 }, m6: { t: 0.5, rotationY: Math.PI / 4 } } },
+      config: { filters: { 'f-red': { t: 1 } }, mirrors: { m1: { rotationY: Math.PI / 4 }, m2: { t: M2_AT_PORTAL, rotationY: Math.PI / 4 }, m5: { rotationY: Math.PI / 4 }, m6: { t: 0.5, rotationY: Math.PI / 4 } } },
       doors: { exit: false },
     },
     {
@@ -97,7 +100,7 @@ export const level10 = {
     filters: { 'f-red': { t: 0.45 } }, // x ≈ -0.13, clear of green and blue
     mirrors: {
       m1: { rotationY: Math.PI / 4 }, // red east along the row
-      m2: { t: 0.375, rotationY: Math.PI / 4 }, // x = -2.7: red north into the portal beside green
+      m2: { t: M2_AT_PORTAL, rotationY: Math.PI / 4 }, // x = -2.7: red north into the portal beside green
       m5: { rotationY: Math.PI / 4 }, // blue east
       m6: { t: 0.5, rotationY: Math.PI / 4 }, // x = 3.7: blue north through the gap
     },

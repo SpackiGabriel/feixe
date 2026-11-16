@@ -133,8 +133,8 @@ the owner solved it).
 
 **L9 Circuito.** *For:* one mirror can do two jobs. *Start:* trap lit;
 blue runs up the middle onto the red receiver (flicker). *Wrong turns:*
-(1) turn red north with M2: its rail stops at x = −0.6, so red lands beside
-the receiver; (2) open the gate quickly with M4 onto the decoy: the gate
+(1) turn red north with M2: its rail stops at x = −1.3, so red hits the wall beside
+the gate; (2) open the gate quickly with M4 onto the decoy: the gate
 opens, but blue no longer reaches the receiver the exit needs (it has
 two conduits, one per door). *Idea:* S, the mirror on blue's column, also
 sits on red's row: red hits one face, blue the other. Both doors open
@@ -206,3 +206,20 @@ Questions this playtest must answer:
 - L9: how long until the "S does both" moment? Does the decoy get used?
 - L10: is the merge understood, or found by accident?
 - All: are 15°/45° snaps comfortable with the mouse?
+
+## 8. Playtest results (owner, 2026-11-16)
+
+One player who knows the mechanics. Answers to §7's questions:
+
+| Lvl | Observation | Classification | Action |
+|---|---|---|---|
+| 5 | Flicker read as "something missing"; brought red, solved | productive | none (the feared misread didn't happen) |
+| 6 | Noticed A is unreachable; asked what it's for, then accepted once the motivation was explained | productive (borderline) | none, kept as designed |
+| 8 | Solved in the intended order, but leaving the open state from inside the strip shut door 1 and the mirror couldn't be aimed through the glass: `R` was the only way out. Off-center beam leaving the portal's center noticed, "a detail" | control friction (softlock) | aiming passes through glass doors/walls; door 1 got an open square hatch (1.2 × 1.2 m, beam and eye height) so beam and aim visibly pass it |
+| 9 | Fast and "intuitive", liked it; M4 (the decoy) read as oversized/ugly next to the spawn | presentation | M4 rail shortened to x ∈ [−0.6, 1] |
+| 9 (2nd run) | M2 started inside M1 (0.5 m apart, plates 1 m wide); M2 and S could slide through each other | presentation (bug) | rails keep ≥ 1 m: M2 x ∈ [−2.5, −1.3], S x ∈ [−0.3, 2]; L10 M2 from x = −3; new test `railDevices_cannotOverlap` |
+| 10 | Merge understood; the portal-center exit "helps" | productive | none |
+| all | 45° snaps fine ("doesn't allow too many options", said positively) | — | none |
+
+The owner then asked for the square hole they had suggested: door 1
+now has an open hatch (visual only; the door still blocks walking).
