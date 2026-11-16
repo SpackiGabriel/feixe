@@ -144,6 +144,7 @@ chamber numerals, spawns that frame the mechanism.
 | RF10 / NFR feedback, color symbols, HUD | `src/ui/hud.js`, `presentation/conduits.js`, `src/gameplay/{textures,colors}.js` |
 | §9 portals (beam + player) | `src/gameplay/portal.js`, `src/levels/portal-crossing.js` |
 | NFR persistence | `level-manager.js` (`localStorage`, reset on finish / Novo jogo) |
+| §13 I scale on base meshes from level data | interior walls: one unit-box base mesh, `mesh.scale` = (length, height, thickness) from `walls` (`src/gameplay/wall.js`); also beam segments (`laser-beam.js`) |
 | §13 III lighting/materials/textures | `core/scene.js`, `textures.js`, env-mapped metal (`presentation/env-map.js`) |
 | §13 IV animation | door motion, receiver charge/lock, conduit pulses, beam flow, portal surface, transitions |
 
