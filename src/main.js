@@ -16,6 +16,7 @@ import { createCameraFx } from './presentation/camera-fx.js';
 import { setEnvMap } from './presentation/env-map.js';
 import { setMirrorReflections, setReflectionQuality, loadReflectionsOn, saveReflectionsOn, showReflections } from './presentation/mirror-reflection.js';
 import { loadQuality, saveQuality, pixelRatioFor } from './presentation/quality.js';
+import { toggleShadingMode, setShadingMode, getShadingMode, getPhongMaterials } from './presentation/phong-material.js';
 import { createHud, manipulationHint } from './ui/hud.js';
 import { createMenu } from './ui/menu.js';
 import { createTransitions } from './ui/transitions.js';
@@ -175,6 +176,12 @@ const fovStep = (delta) => () => {
 };
 for (const code of ['Equal', 'NumpadAdd']) input.onKeyDown(code, fovStep(5));
 for (const code of ['Minus', 'NumpadSubtract']) input.onKeyDown(code, fovStep(-5));
+// Enunciado §3 III: per-vertex (Gouraud) vs per-fragment (Phong) shading
+// of our Blinn-Phong walls and floor, switched live.
+input.onKeyDown('KeyL', () => {
+  const mode = toggleShadingMode();
+  hud.showToast(mode === 'vertex' ? 'Sombreamento por vértice (Gouraud)' : 'Sombreamento por fragmento (Phong)');
+});
 input.onKeyDown('KeyM', () => {
   setMuted(!isMuted());
   hud.showToast(isMuted() ? 'Som desligado' : 'Som ligado');
@@ -202,7 +209,10 @@ document.addEventListener('pointerlockchange', () => {
 // pointer lock, and `?debug&level=N` jumps straight to level N (1-based).
 let debugVisible = debugMode;
 if (debugMode) {
-  window.__feixe = { levelRuntime, camera, scene, renderer, hud, menu, transitions, look, interaction, events };
+  window.__feixe = {
+    levelRuntime, camera, scene, renderer, hud, menu, transitions, look, interaction, events,
+    phong: { materials: getPhongMaterials, setShadingMode, getShadingMode },
+  };
   const jumpTo = parseInt(params.get('level'), 10);
   if (Number.isInteger(jumpTo)) levelRuntime.loadLevel(jumpTo - 1);
   input.onKeyDown('F3', () => { debugVisible = !debugVisible; });

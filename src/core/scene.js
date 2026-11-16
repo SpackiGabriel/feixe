@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { ROOM_SIZE } from '../levels/data/constants.js';
 import { floorTexture, wallTexture, ceilingTexture, stencilTexture, glassTexture, flareTexture, tileUvs } from '../gameplay/textures.js';
+import { createPhongMaterial, PHONG } from '../presentation/phong-material.js';
 
 const WALL_HEIGHT = 3;
 const WALL_THICKNESS = 0.2;
@@ -11,9 +12,15 @@ let glassMaterial = null;
 
 // One wall material shared by the room shell and every level's interior
 // walls (level-loader.js). Tagged `shared` so disposeLevel() leaves it alone.
+// Our own Blinn-Phong shader (presentation/phong-material.js); headless
+// (no canvas, so no texture) it falls back to a plain material.
 export function getWallMaterial() {
   if (!wallMaterial) {
-    wallMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, map: wallTexture(), roughness: 0.85, metalness: 0.05 });
+    const map = wallTexture();
+    wallMaterial = map
+      ? createPhongMaterial({ map, ...PHONG.wall })
+      : new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, metalness: 0.05 });
+    wallMaterial.name = 'paredes'; // found by name from the console (docs/defesa.md §4)
     wallMaterial.userData.shared = true;
   }
   return wallMaterial;
@@ -43,7 +50,11 @@ function createRoom() {
   const room = new THREE.Group();
   const walls = [];
 
-  const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xd8d8d8, map: floorTexture(ROOM_SIZE), roughness: 0.9 });
+  const floorMap = floorTexture(ROOM_SIZE);
+  const floorMaterial = floorMap
+    ? createPhongMaterial({ map: floorMap, color: 0xd8d8d8, ...PHONG.floor })
+    : new THREE.MeshStandardMaterial({ color: 0xd8d8d8, roughness: 0.9 });
+  floorMaterial.name = 'piso';
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE), floorMaterial);
   floor.rotation.x = -Math.PI / 2;
   room.add(floor);

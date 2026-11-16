@@ -131,6 +131,13 @@ try {
   check(await g.walkUntil((z) => window.__feixe.camera.position.z < z - 0.5, z0), 'holding W walks forward');
   await page.keyboard.press('KeyR');
   check(await g.until((z) => Math.abs(window.__feixe.camera.position.z - z) < 1e-6, z0), 'R restarts the chamber and returns the player to spawn');
+  // Our Blinn-Phong walls/floor: L recompiles them per vertex and back;
+  // a GLSL compile error would show up in the "no page errors" check.
+  await page.keyboard.press('KeyL');
+  check(await g.until(() => window.__feixe.phong.getShadingMode() === 'vertex'), 'L switches walls and floor to per-vertex shading');
+  await g.eval(() => new Promise((resolve) => { let n = 3; const step = () => (--n <= 0 ? resolve() : requestAnimationFrame(step)); requestAnimationFrame(step); }));
+  await page.keyboard.press('KeyL');
+  check(await g.until(() => window.__feixe.phong.getShadingMode() === 'fragment'), 'and L again back to per-fragment');
 
   console.log('aim occlusion (level 8)');
   // Wait for a few rendered frames (interaction updates once per frame;

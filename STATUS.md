@@ -145,6 +145,7 @@ chamber numerals, spawns that frame the mechanism.
 | §9 portals (beam + player) | `src/gameplay/portal.js`, `src/levels/portal-crossing.js` |
 | NFR persistence | `level-manager.js` (`localStorage`, reset on finish / Novo jogo) |
 | §13 I scale on base meshes from level data | interior walls: one unit-box base mesh, `mesh.scale` = (length, height, thickness) from `walls` (`src/gameplay/wall.js`); also beam segments (`laser-beam.js`) |
+| Enunciado §3 III empirical lighting (Blinn-Phong, ka/kd/ks), per-vertex vs per-fragment (key L) | `src/presentation/phong-material.js` (walls, interior walls, floor); defence guide `docs/defesa.md` |
 | §13 III lighting/materials/textures | `core/scene.js`, `textures.js`, env-mapped metal (`presentation/env-map.js`) |
 | §13 IV animation | door motion, receiver charge/lock, conduit pulses, beam flow, portal surface, transitions |
 
