@@ -13,9 +13,22 @@ describe('createWall', () => {
     expect(local.x).toBeCloseTo(1);
     expect(local.y).toBeCloseTo(1);
     expect(local.z).toBeCloseTo(1);
-    expect(mesh.scale.x).toBeCloseTo(4);
-    expect(mesh.scale.y).toBeCloseTo(2.5);
-    expect(mesh.scale.z).toBeCloseTo(0.3);
+    // The scale lives in the hand-composed matrix (T·R·S), not mesh.scale.
+    const scale = new THREE.Vector3();
+    mesh.matrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
+    expect(mesh.matrixAutoUpdate).toBe(false);
+    expect(scale.x).toBeCloseTo(4);
+    expect(scale.y).toBeCloseTo(2.5);
+    expect(scale.z).toBeCloseTo(0.3);
+  });
+
+  it('test_createWall_wrongOrder_isRevertible', () => {
+    const wall = createWall({ from: [-2, -5], to: [-2, -1], material });
+    const right = [...wall.mesh.matrix.elements];
+    wall.setOrder('TSR');
+    expect(wall.mesh.matrix.elements).not.toEqual(right);
+    wall.setOrder('TRS');
+    expect(wall.mesh.matrix.elements).toEqual(right);
   });
 
   it('test_createWall_northSouthWall_worldBoundsMatchItsEndpoints', () => {

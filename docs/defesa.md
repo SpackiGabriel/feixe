@@ -26,8 +26,8 @@ deixar o editor aberto nos arquivos citados. Com `?debug`,
 | Tempo | Bloco | No jogo | No código |
 |---|---|---|---|
 | 0:00–1:00 | Abertura: o que é o Feixe (puzzle de laser em 1ª pessoa; 10 níveis; tudo procedural, nenhum modelo importado) | Jogar o L3 ("Ângulo"): girar o espelho, o feixe gira o dobro | — |
-| 1:00–5:30 | **Eixo I** (3 requisitos) — transformações, malhas, hierarquia | L6: deslizar (translação) e girar (rotação) espelhos; paredes de tamanhos diferentes (escala) | `mirror.js`, `wall.js`, `conduits.js`, `laser.js` |
-| 5:30–8:30 | **Eixo II** (2) — câmera/projeção e navegação | `+`/`−` no FOV; andar, colidir, mirar | `camera.js`, `look.js`, `movement.js`, `interaction.js` |
+| 1:00–5:30 | **Eixo I** (3 requisitos) — transformações, malhas, hierarquia | L6: deslizar (translação) e girar (rotação) espelhos; paredes = caixa unitária × T·R·S à mão; tecla `T` (ordem errada) | `matrix.js`, `wall.js`, `mirror.js`, `conduits.js`, `laser.js` |
+| 5:30–8:30 | **Eixo II** (2) — câmera/projeção e navegação | Mirar um espelho: painel mostra w e ndc à mão = Three; andar para trás (w cresce); `+`/`−` no FOV; colidir | `matrix.js`, `camera.js`, `look.js`, `movement.js`, `interaction.js` |
 | 8:30–14:30 | **Eixo III** (4) — luz, sombreamento, materiais, texturas | L10 escuro: o feixe ilumina a parede; tecla `L` (por vértice: a mancha some); espelho com reflexo real; texturas | `phong-material.js`, `scene.js`, `laser-beam.js`, `mirror.js`, `textures.js`, `mirror-reflection.js` |
 | 14:30–16:30 | **Eixo IV** (1) — animação independente de FPS | Porta subindo/descendo e revertendo; pulso dos condutos | `main.js`, `motion.js`, `door-motion.js` |
 | 16:30–20:00 | Perguntas / alteração ao vivo | — | §4 deste guia |
@@ -49,7 +49,8 @@ vocês precisa conseguir responder sozinho a qualquer item deste guia.
 **Onde:** espelho no trilho = translação (`mirror.js:89`,
 `base.position.lerpVectors(railStart, railEnd, t)` — interpolação linear
 P = (1−t)·A + t·B); giro = rotação em Y (`mirror.js:106`); paredes =
-escala de uma caixa unitária lida do nível (`wall.js:40-44`); feixe =
+caixa unitária com a matriz **T·R·S composta à mão** a partir do nível
+(`wall.js:41-55` + `core/matrix.js`); feixe =
 cilindro unitário escalado em Z pelo comprimento de cada trecho
 (`laser-beam.js:151-153`).
 
@@ -80,10 +81,27 @@ uniforme, R·S ≠ S·R. No Three, a ordem em que se
 atribuem `position/rotation/scale` no código **não** importa: `compose`
 sempre usa T·R·S.
 
-**Nível honesto:** intermediário. A composição TRS das malhas é do Three;
-a parte "à mão" está no traçado do feixe (`laser.js`: reflexão, rotação,
-interseção) e no uso explícito de `matrixWorld` para levar pontos locais
-ao mundo (`mirror.js:140-148`). Ver §5 (melhoria C).
+**Matrizes compostas à mão (`src/core/matrix.js`):** `translation`,
+`rotationX/Y/Z`, `scaling`, `multiply` (produto 4×4, coluna-maior como
+o WebGL: `m[col·4 + linha]`), `transformPoint` (vetor homogêneo com
+w = 1). `composeTRS` = T·R·S; `composeTSR` = a ordem errada, para a
+demonstração. As **paredes internas usam essa matriz direto**:
+`mesh.matrixAutoUpdate = false` e `mesh.matrix` = `composeTRS(centro,
+ângulo, [comprimento, altura, espessura])` (`wall.js:41-55`), ou seja, o
+Three não monta a matriz delas — nós montamos. Testes comparam cada
+função com o Three até 9 casas decimais (`tests/unit/matrix.test.js`).
+
+**Demonstração ao vivo — tecla `T`** (só com `?debug`): no L6, olhando a
+parede norte-sul da câmara lateral (de x ≈ 2,5, z ≈ −2,5, olhando para
+oeste), prever e apertar `T`: as paredes passam a T·S·R e a parede vira
+uma lâmina leste-oeste, abrindo a câmara (aparecem o espelho M3 e o
+receptor B). `T` de novo volta. É só visual: feixe e colisão continuam
+usando os dados do nível; `R` reinicia.
+
+**Nível honesto:** avançado. Composição à mão nas paredes, rotação à mão
+no traçado do feixe (`laser.js`) e uso explícito de `matrixWorld` para
+levar pontos locais ao mundo (`mirror.js:140-148`). Os demais objetos
+(espelhos, portas) usam o `compose` do Three — mesma matemática.
 
 ### I.2 Modelagem 3D (malhas; topologia vs. geometria)
 
@@ -144,7 +162,23 @@ recorte e o hardware faz a divisão por w.
 **FOV maior** → f menor → mais mundo na tela, objetos menores e
 distorção maior nas bordas.
 
-**Nível honesto:** básico (câmera pronta). Ver §5 (melhoria B).
+**Feito à mão (`src/core/matrix.js`):** `perspective(fov, a, near, far)`
+monta exatamente a matriz acima; `viewMatrix(olho, pitch, yaw)` monta
+V = Rx(−pitch)·Ry(−yaw)·T(−olho), a inversa da matriz de mundo da câmera
+(C = T·Ry·Rx, ordem `'YXZ'`); `projectPoint` faz P·V·p e **divide por
+w**. Os testes conferem as três contra o Three (`projectionMatrix`,
+`matrixWorldInverse`, `Vector3.project`) e que um ponto duas vezes mais
+longe fica a metade da distância do centro da tela.
+
+**Demonstração ao vivo — painel de debug:** mirando qualquer objeto
+interativo, o painel mostra `à mão: w=… ndc=(…)` e, embaixo,
+`Three: ndc=(…)` — os mesmos números. Andar para trás e ver **w
+crescer** (w = distância à frente da câmera) e o ndc encolher para o
+centro; `+`/`−` muda o FOV e o ndc muda junto (f na matriz).
+Código: `main.js:237` (`projectionLines`).
+
+**Nível honesto:** a câmera que renderiza é a do Three; a mesma
+matemática está implementada e verificada à mão, e é mostrada ao vivo.
 
 ### II.2 Navegação
 
@@ -318,7 +352,7 @@ um salto enorme depois de trocar de aba). Tudo recebe dt:
 ## 3. Perguntas prováveis (com resposta curta)
 
 1. **"Qual a ordem das transformações e por que importa?"** T·R·S;
-   exemplo da parede (§I.1).
+   exemplo da parede, mostrar com a tecla `T` no L6 (§I.1).
 2. **"O que acontece se a placa não for filha da base?"** Ao deslizar a
    base, a placa ficaria parada no lugar: não herdaria a translação.
 3. **"Como o feixe reflete?"** r = d − 2(d·n)n (`laser.js:25`); n é a
@@ -332,7 +366,8 @@ um salto enorme depois de trocar de aba). Tudo recebe dt:
    100% testável.
 6. **"O feixe é ray tracing?"** Não. É traçado de um raio geométrico
    para a lógica do jogo; a imagem é rasterizada (cilindros).
-7. **"O que é a divisão por w?"** §II.1.
+7. **"O que é a divisão por w?"** §II.1; mostrar o painel de debug
+   (w e ndc à mão = Three) e andar para trás.
 8. **"Por que o pitch é limitado?"** Para não passar da vertical: depois
    de ±90° a imagem ficaria de cabeça para baixo e o yaw do mouse
    inverteria. Limitamos a π/2 − 0,01 rad ≈ 89,4°. (Com Euler YXZ não
@@ -429,7 +464,7 @@ Ensaiar cada uma: **dizer o efeito antes**, salvar e recarregar
 | Mais reflexões | `laser.js:8` `MAX_REFLECTIONS` | só muda o limite de quiques por feixe |
 | Porta mais lenta | `door-motion.js` `DOOR_TIMING.rise` | segundos; continua reversível |
 | Ladrilho da parede | `wall.js:40` (1,5 / 2,5) | maior = ladrilhos maiores |
-| Trocar a ordem das transformações | numa parede: `mesh.matrixAutoUpdate = false; mesh.matrix.copy(T).multiply(S).multiply(R)` (`wall.js` já importa `THREE`: `new THREE.Matrix4().makeRotationY(...)` etc.) | a 90°: parede fica leste-oeste, como se não girasse; a 45°: cisalhada, planta em losango (§I.1) |
+| Trocar a ordem das transformações | tecla `T` (com `?debug`) ou `__feixe.wallOrder('TSR')`; no código, `wall.js` chama `composeTSR` em vez de `composeTRS` | a 90°: parede fica leste-oeste, como se não girasse; a 45°: cisalhada, planta em losango (§I.1) |
 | Desligar o sombreamento suave | material PBR (ex. pedestais, `mirror.js:16`): `flatShading: true` | facetas visíveis em superfícies curvas |
 | Sombreamento por vértice | tecla `L` (ou `__feixe.phong.setShadingMode('vertex')`) | mancha de luz do feixe some no meio das paredes |
 | Parede mais brilhante (especular) | `phong-material.js:32` `PHONG.wall.ks` / `shininess` (melhor pelo console, abaixo) | ks ↑ = reflexo mais forte; n ↑ = reflexo menor e mais concentrado. **Não usar n = 0** (`pow(0, 0)` é indefinido em GLSL) |
@@ -446,7 +481,7 @@ Pelo console (com `?debug`), sem recarregar:
 
 ---
 
-## 5. Onde a nota de artefato pode subir (decidir antes do dia 18)
+## 5. Onde a nota de artefato subiu
 
 O que já é "avançado" (lógica própria): traçado do feixe (reflexão,
 interseção, rotação, portais), navegação e colisão, condutos (malha por
@@ -457,12 +492,11 @@ animação por dt com `damp`. O que é "básico" (pronto do Three):
   Blinn-Phong próprio (`phong-material.js`) com ka/kd/ks/n como uniforms
   nas paredes e no piso, e a tecla `L` alternando por vértice ↔ por
   fragmento ao vivo (§III.1–III.3).
-- **B. Câmera/projeção:** projetar um ponto à mão (P·V·M, divisão por w)
-  e comparar com o Three num teste; opcionalmente mostrar w do alvo
-  mirado no painel de debug. Custo: pequeno.
-- **C. Transformações:** compor T·R·S à mão para a placa do espelho e
-  comparar com `matrixWorld` num teste, incluindo o contraexemplo
-  T·S·R. Custo: pequeno.
+- **B. Câmera/projeção — FEITO (16/11):** perspectiva, matriz de visão
+  e divisão por w à mão (`core/matrix.js`), conferidas contra o Three e
+  mostradas ao vivo no painel de debug (§II.1).
+- **C. Transformações — FEITO (16/11):** T·R·S composta à mão nas paredes
+  internas, com a ordem errada T·S·R na tecla `T` (§I.1).
 
 ---
 
@@ -473,7 +507,7 @@ animação por dt com `damp`. O que é "básico" (pronto do Three):
 - [ ] Abrir com `?debug`; Qualidade/Reflexos conforme a máquina.
 - [ ] Editor aberto em: `laser.js`, `mirror.js`, `wall.js`,
       `camera.js`, `look.js`, `movement.js`, `scene.js`,
-      `laser-beam.js`, `phong-material.js`, `textures.js`, `motion.js`,
+      `laser-beam.js`, `phong-material.js`, `matrix.js`, `textures.js`, `motion.js`,
       `main.js`.
 - [ ] Testar a tecla `L` no L10 (canto sudoeste, parede sul) na máquina
       da apresentação.
@@ -484,4 +518,6 @@ animação por dt com `damp`. O que é "básico" (pronto do Three):
 - [ ] Preferir o console (uniforms) a editar e recarregar nas alterações
       ao vivo: efeito imediato e sem perder o estado do nível.
 - [ ] Ensaiar 3 alterações ao vivo da §4 com cronômetro.
+- [ ] Ensaiar as duas demonstrações de matriz: tecla `T` no L6 (ordem
+      errada) e o painel de debug com w/ndc à mão = Three (andar para trás).
 - [ ] Ter o jogo já no L3 e saber pular de nível (`?debug&level=N` na URL; só funciona com `debug`).

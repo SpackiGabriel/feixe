@@ -17,6 +17,7 @@ import { setEnvMap } from './presentation/env-map.js';
 import { setMirrorReflections, setReflectionQuality, loadReflectionsOn, saveReflectionsOn, showReflections } from './presentation/mirror-reflection.js';
 import { loadQuality, saveQuality, pixelRatioFor } from './presentation/quality.js';
 import { toggleShadingMode, setShadingMode, getShadingMode, getPhongMaterials } from './presentation/phong-material.js';
+import { perspective, viewMatrix, projectPoint } from './core/matrix.js';
 import { createHud, manipulationHint } from './ui/hud.js';
 import { createMenu } from './ui/menu.js';
 import { createTransitions } from './ui/transitions.js';
@@ -208,15 +209,43 @@ document.addEventListener('pointerlockchange', () => {
 // shows a live readout (F3 toggles it), lets the player move without
 // pointer lock, and `?debug&level=N` jumps straight to level N (1-based).
 let debugVisible = debugMode;
+let wallOrder = 'TRS'; // debug demo state; a (re)loaded level builds its walls in T·R·S
+events.on('level:enter', () => { wallOrder = 'TRS'; });
 if (debugMode) {
   window.__feixe = {
     levelRuntime, camera, scene, renderer, hud, menu, transitions, look, interaction, events,
     cameraFx, // FOV from the console: cameraFx.setBaseFov(100) (it rewrites camera.fov every frame)
+    wallOrder: (order) => {
+      wallOrder = order === 'TSR' ? 'TSR' : 'TRS';
+      for (const wall of levelRuntime.getCurrentLevel().walls) wall.setOrder(wallOrder);
+      return wallOrder === 'TSR' ? 'T·S·R (ordem errada)' : 'T·R·S (ordem certa)';
+    },
     phong: { materials: getPhongMaterials, setShadingMode, getShadingMode },
   };
   const jumpTo = parseInt(params.get('level'), 10);
   if (Number.isInteger(jumpTo)) levelRuntime.loadLevel(jumpTo - 1);
   input.onKeyDown('F3', () => { debugVisible = !debugVisible; });
+  // Defence demo (enunciado §3 I): interior walls composed in the wrong
+  // order, T·S·R, and back to T·R·S. Visual only; R restarts the level.
+  input.onKeyDown('KeyT', () => hud.showToast(`Paredes: ${window.__feixe.wallOrder(wallOrder === 'TRS' ? 'TSR' : 'TRS')}`));
+}
+
+// Enunciado §3 II: the aimed object's centre projected by hand
+// (core/matrix.js: P · V · p, then divide by w) next to Three's own
+// Vector3.project, so the defence can show they agree and what w is.
+const _aimedPosition = new THREE.Vector3();
+function projectionLines(object) {
+  object.getWorldPosition(_aimedPosition);
+  camera.updateMatrixWorld();
+  const projection = perspective(camera.fov, camera.aspect, camera.near, camera.far);
+  const view = viewMatrix(camera.position.toArray(), camera.rotation.x, camera.rotation.y, camera.rotation.z);
+  const { w, ndc } = projectPoint(projection, view, _aimedPosition.toArray());
+  const three = _aimedPosition.clone().project(camera);
+  const f = (v) => v.toFixed(3);
+  return [
+    `à mão: w=${w.toFixed(2)}  ndc=(${f(ndc[0])}, ${f(ndc[1])}, ${f(ndc[2])})`,
+    `Three: ndc=(${f(three.x)}, ${f(three.y)}, ${f(three.z)})`,
+  ];
 }
 
 function debugText() {
@@ -227,6 +256,8 @@ function debugText() {
     `jogador x=${camera.position.x.toFixed(2)} z=${camera.position.z.toFixed(2)} yaw=${yaw}°`,
     `mira: ${interaction.getHovered()?.userData.debugInfo?.() ?? '-'}`,
   ];
+  const aimed = interaction.getHovered();
+  if (aimed) lines.push(...projectionLines(aimed));
   for (const r of level.receivers) lines.push(`receptor ${r.levelId} (${r.colorName}): ${r.isActive() ? 'ATIVO' : 'inativo'}`);
   for (const b of level.blockers) if (b.trap) lines.push(`armadilha: ${b.isHit() ? 'ATINGIDA' : 'livre'}`);
   for (const d of level.doors) lines.push(`porta ${d.levelId}: ${d.isOpen() ? 'destravada' : 'travada'} · ${Math.round(d.getOpenness() * 100)}%`);
