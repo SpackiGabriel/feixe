@@ -8,23 +8,27 @@ Three.js r186, plain ES modules, no build step.
 | Command | What it does |
 |---|---|
 | `npm install` | Install dev tooling (Vitest, ESLint). The game itself has no npm dependencies. |
-| `npm start` | Serve the repo at `http://localhost:8000/` (ES modules don't load from `file://`). Works offline: Three.js is vendored in `vendor/three/` (`docs/decisions/0001`). |
-| `npm run lint` | ESLint over `src/` and `tests/` — catches undefined names and unused code. |
+| `npm start` | Serve the repo at `http://localhost:8000/` (ES modules don't load from `file://`) via `scripts/start-server.mjs`, which runs Python's `http.server` (`python` on Windows, `python3` elsewhere) — **needs Python 3 on the PATH**. Works offline: Three.js is vendored in `vendor/three/` (`docs/decisions/0001`). |
+| `npm run lint` | ESLint over the repo (`eslint .`: `src/`, `tests/`, `scripts/`, `gallery/`, `assets/viewer/`) — catches undefined names and unused code. |
 | `npm test` | Vitest unit tests (~1 s), incl. headless validation of every level. Single file: `npx vitest run tests/unit/laser.test.js`. |
+| `npm run analyze [N]` | Puzzle analyzer for level N (or all): self-check, every route family that opens the exit, slack around the solution (`docs/level-authoring.md`). |
 | `npm run e2e` | Plays every level in headless Chromium (software WebGL, ~90 s, offline). Once per machine: `npx playwright-core install chromium`. `node tests/e2e/playthrough.mjs --shots <dir>` also saves a screenshot per level. |
 
-Node ≥ 22. CI (`.github/workflows/ci.yml`) runs lint, unit tests and the e2e playthrough on every push.
+Node ≥ 22 and Python 3 (for `npm start`). CI (`.github/workflows/ci.yml`) runs lint, unit tests and the e2e playthrough on every push.
 
 ## Playing
 
 Open `http://localhost:8000/` and choose **Iniciar / Continuar** (mouse or ↑↓ + Enter). Progress is
-saved per browser; **Novo jogo** starts over. The menu also has **Qualidade** (Alta/Baixa) and **Som**.
+saved per browser; **Novo jogo** starts over. The menu also has **Qualidade** (Alta/Baixa), **Sensibilidade**,
+**Reflexos** and **Som**.
 WASD move · mouse look · click grabs/releases/presses the object under the crosshair ·
 while holding: mouse slides or rotates; objects that do both rotate with the wheel or Q/E ·
-`R` restart level · `+`/`−` field of view · `M` sound · `Esc` pause.
+`R` restart level · `+`/`−` field of view · `M` sound · `L` shading per vertex / per fragment · `Esc` pause.
 
 Debug / level authoring: `http://localhost:8000/?debug&level=N` jumps to level N, shows a live
-panel (F3) with positions, the aimed object's rail `t`/rotation, and receiver/door states.
+panel (F3) with positions, the aimed object's rail `t`/rotation, its w/NDC projected by hand next to
+Three's, and receiver/door states; `T` switches interior walls to the wrong transform order (T·S·R).
+Defence guide: `docs/defesa.md`.
 Building levels: `docs/level-authoring.md`.
 
 ## Delivering

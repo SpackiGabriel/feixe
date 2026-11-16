@@ -19,16 +19,43 @@ mirrors as rules). Tool: `npm run analyze [N]`.
 **Owner playtest done (2026-11-16)**, results in `design/campaign.md` §8.
 Fixed from it: aiming passes through glass (L8 softlock; L8 door 1 has an
 open square hatch showing it, visual only), L9's M4 rail
-shortened; rails keep devices ≥ 1 m apart (L9 M2 started inside M1;
-test `railDevices_cannotOverlap`). Owner then reported (2026-11-16, by feel, no numbers): frame
+shortened; rails keep devices apart (L9 M2 started inside M1;
+test `railDevices_cannotOverlap`; the rule is (w1+w2)/2, i.e. 1 m between
+mirrors, 0.9 m mirror–filter). Owner then reported (2026-11-16, by feel, no numbers): frame
 rate "super smooth", camera smooth with a real mouse (flick fix holds),
-sound fine. Next:
+sound fine. Second playtest of the L8/L9 fixes: fine.
 
-1. Second owner playtest (checks the L8/L9 fixes).
-2. Visual track: final assets can replace device meshes without touching
-   logic (`docs/presentation.md`, "Swapping in final assets").
+**Defence on 2026-11-18.** Course-brief work (2026-11-16): own Blinn-Phong
+shader (key `L`), hand-written matrices (key `T` in `?debug`, w/NDC
+readout), defence guide `docs/defesa.md`. A three-reviewer Orca review
+(requirements, code health, completeness) was applied the same day.
+Next:
+
+1. Rehearse with `docs/defesa.md` (script, the three demos, questions).
+2. Run the checklist in `docs/defesa.md` §6 on the presentation machine.
+3. After the defence, optional visual track: final assets can replace
+   device meshes without touching logic (`docs/presentation.md`).
 
 ## Verified (evidence from this checkpoint)
+
+- **Orca review fixes** (2026-11-16): door-motor hum no longer sticks after
+  `R` or an exit mid-move (`sfx.js` `motorReset` on `level:enter`, test
+  `sfx.test.js`); glass walls are a 4 cm pane inset 1 cm from floor,
+  ceiling and ends (they were full transparent boxes smearing over those
+  surfaces; test in `wall.test.js`, screenshots of L1/L8 reviewed); portal
+  surfaces animate (the shared clock was never advanced; e2e check);
+  switching quality low → high builds the metal env map (e2e check);
+  `?debug` doesn't walk while the menu is open; aim occluders assembled by
+  a tested `collectAimOccluders`; `npm run analyze` CLI test. `npm test`
+  341 pass; `npm run e2e` all pass (twice in a row).
+- **CI on GitHub runs lint + test + e2e** and is green on `main` (first
+  verified 2026-11-16, run 43933601020).
+- **Course-brief work** (2026-11-16): `src/core/matrix.js` (T·R·S, view,
+  perspective, divide by w) matches Three to 9 decimals in tests; walls
+  render identically with the hand-composed matrix; Blinn-Phong
+  per-fragment matches the old look in before/after screenshots, per
+  vertex the beam's light spot disappears (L10). **Not checked on the
+  presentation machine:** keys `L` and `T` and the debug readout.
 
 - **Playtest fixes** (2026-11-16): glass walls and doors (`style:
   'glass'`) no longer block aiming (`occluder: null` in `wall.js` /
@@ -72,8 +99,8 @@ sound fine. Next:
 
 - Redesign: `npm test` 258 tests pass (new scenarios pin each level's
   intended wrong turns); `npm run analyze`: every level self-checks, and
-  only the intended route families open each exit (two in L10, one
-  elsewhere); every rail has ≥ 0.3 m slack; every rotation is snapped.
+  only the intended route families open each exit (two in L10, one in
+  L2–L9; L1's switch isn't sampled, so it reports 0); every rail has ≥ 0.3 m slack; every rotation is snapped.
   `npm run e2e`: 71 checks pass on the new levels. Spawn screenshots of
   all ten unsolved levels reviewed (L6 and L9 spawns adjusted).
 - **Not re-verified after the redesign:** frame time on real hardware
@@ -110,7 +137,8 @@ reported fine by the owner on their machine — see Current focus.)
   themselves without a hint? Do L1–L4 teach the controls?
 - Frame rate on the presentation machine, if it isn't the owner's. Run
   with "Qualidade: baixa" if it's weaker than the Radeon 610M.
-- CI's e2e step on GitHub (never run remotely).
+- The defence demos on the presentation machine (keys `L` in L10, `T` in
+  L6 with `?debug`, the w/NDC readout) — `docs/defesa.md` §6.
 
 ## Level presentation audit (2026-11-05)
 
@@ -145,7 +173,7 @@ chamber numerals, spawns that frame the mechanism.
 | §9 portals (beam + player) | `src/gameplay/portal.js`, `src/levels/portal-crossing.js` |
 | NFR persistence | `level-manager.js` (`localStorage`, reset on finish / Novo jogo) |
 | Enunciado §3 I/II hand-written matrices: T·R·S, view, perspective, divide by w (key T and the ?debug readout) | `src/core/matrix.js` (tests vs Three in `tests/unit/matrix.test.js`); interior walls use `composeTRS` directly (`wall.js`) |
-| §13 I scale on base meshes from level data | interior walls: one unit-box base mesh, `mesh.scale` = (length, height, thickness) from `walls` (`src/gameplay/wall.js`); also beam segments (`laser-beam.js`) |
+| §13 I scale on base meshes from level data | interior walls: one unit-box base mesh scaled by (length, height, thickness) from `walls` inside the hand-composed T·R·S matrix (`composeTRS`, not `mesh.scale`; `src/gameplay/wall.js`); also beam segments (`laser-beam.js`) |
 | Enunciado §3 III empirical lighting (Blinn-Phong, ka/kd/ks), per-vertex vs per-fragment (key L) | `src/presentation/phong-material.js` (walls, interior walls, floor); defence guide `docs/defesa.md` |
 | §13 III lighting/materials/textures | `core/scene.js`, `textures.js`, env-mapped metal (`presentation/env-map.js`) |
 | §13 IV animation | door motion, receiver charge/lock, conduit pulses, beam flow, portal surface, transitions |
@@ -154,6 +182,10 @@ chamber numerals, spawns that frame the mechanism.
 
 - **No emitter tilt** (RF03/§6 "em casos específicos"): the tracer is 2D at
   one beam height. Decided with the team on 2026-11-05.
+- **Emitter rotation** (RF03) is implemented (`emitter.js`,
+  `rotationEnabled`) but no level of the redesigned campaign uses it: a
+  rotatable emitter tends to shortcut the puzzle (the levels test guards
+  against it). Mirrors carry all rotation puzzles.
 - Outer room fixed at 10×10 m for every level; sub-areas use `walls`.
 - Mirrors reflect on both faces, and a portal re-emits beams from the far
   portal's center: both are now game rules levels 9–10 rely on

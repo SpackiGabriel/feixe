@@ -33,9 +33,9 @@ export function reflect(dir, normal) {
 // plate (or, here, a portal) has rotation.y = angle (see mirror.js's
 // getReflectiveSegment). Used by a portal's exit-direction remap (spec
 // §9: "a direção remapeada pela diferença de orientação entre os dois
-// portais") and reused as-is by src/levels/portal-crossing.js for the
-// player's own heading, so a beam and the player get the exact same
-// physics through a portal.
+// portais"). The player crossing a portal gets the same rotation by
+// adding the angle to their yaw (src/levels/portal-crossing.js):
+// rotating the forward (−sin y, −cos y) by θ gives (−sin(y+θ), −cos(y+θ)).
 export function rotateXZ(v, angle) {
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);

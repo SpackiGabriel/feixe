@@ -32,6 +32,12 @@ engine code: a level is one plain data file.
      (so it fails if the solution needs a disabled degree of freedom);
    - every `scenario` ends with the door states it declares;
    - rotating the emitters alone can't open the exit (shortcut guard);
+   - no two devices on rails can overlap at any rail position
+     (`railDevices_cannotOverlap`, rule 12);
+   - a mirror with no degree of freedom isn't selectable
+     (`fixedMirrors_areNotInteractive`, rule 13);
+   - glass walls and doors never block aiming
+     (`glassDoorsAndWalls_doNotBlockAiming`, `collectAimOccluders`, rule 7);
    - unloading the level frees everything.
 6. **Analyze**: `npm run analyze N` (a few seconds). It checks itself
    against your `solution`/`scenarios`, then reports every *route family*
@@ -56,15 +62,15 @@ See `level-template.js` for exact shapes and defaults.
 
 | Field | What it is | Player can |
 |---|---|---|
-| `mirrors` | Plate on a base. Zero-length rail = fixed position | slide (`positionEnabled`), rotate (`rotationEnabled`), optional snap `rotationStepDegrees` |
+| `mirrors` | Plate on a base. Zero-length rail = fixed position. With neither degree of freedom it's a display piece: not selectable | slide (`positionEnabled`), rotate (`rotationEnabled`), optional snap `rotationStepDegrees` |
 | `emitters` | Fixed beam source: `red`, `green`, `blue` or `white` | rotate only if `rotationEnabled` (default **off**) |
 | `receivers` | Panel lit by the right color. Composites need all components at once | — |
 | `filters` | Lets only its primary through; white → that primary | slide on its rail |
 | `blockers` | Absorbs beams, blocks the player. `trap: true` = NOT | — |
-| `walls` | Interior walls by endpoints `[x, z]`; `style: 'glass'` for frosted glass (looks see-through, blocks the same) | — (blocks walking and aiming) |
+| `walls` | Interior walls by endpoints `[x, z]`. Drawn as a unit box with a hand-composed T·R·S matrix (`src/core/matrix.js`). `style: 'glass'`: a thin frosted pane, blocks beams and walking like a wall but **not aiming** | — (solid: blocks walking and aiming; glass: blocks walking only) |
 | `portals` | Pair; beam and player go in one, out the other | walk through |
 | `switches` | Button, no laser | click to toggle |
-| `doors` | `AND` / `OR` over `receiverIds` (`{ any: [...] }` = nested OR), `forbidIds` (traps), one has `exit: true` | walk through when open |
+| `doors` | `AND` / `OR` over `receiverIds` (`{ any: [...] }` = nested OR), `forbidIds` (traps), one has `exit: true`. `style: 'glass'`: framed glass panel with an open hatch, doesn't block aiming (level 8) | walk through when open |
 | `spawn` | Start position + yaw (default `[0, 4.5]`, facing north). Aim it so the first view shows the mechanism | — |
 
 Automatic presentation (no level data needed): floor conduits from every
@@ -99,10 +105,12 @@ lives in `src/gameplay/colors.js`.
    that, the player must open them in sequence (levels 8, 9).
 6. **A trap only matters if some reachable configuration hits it.** On a
    straight, mirror-less line nothing ever changes the beam's path.
-7. **Walls, closed doors and blockers block aiming.** The player can't
-   grab an object they can't see. Make sure every object the solution
-   needs is visible from somewhere the player can stand at that point,
-   e.g. through an open door (level 8).
+7. **Solid walls, closed solid doors and blockers block aiming;
+   `style: 'glass'` walls and doors don't** — what you can see through,
+   you can aim through. Make sure every object the solution needs is
+   aimable from somewhere the player can stand at that point. Level 8's
+   mirror stays re-aimable from the strip through glass door 1 (a closed
+   solid door there was a softlock, playtest 2026-11-16).
 8. **Portals**: author each end's `rotationY` facing away from its wall.
    The player is pushed 0.8 m out of the far portal. Keep 1 m clear
    around a portal, or the player will step into it by accident
@@ -115,12 +123,20 @@ lives in `src/gameplay/colors.js`.
     standing right behind one fills the screen with its housing.
 11. Keep walls axis-aligned: player collision is box-based, so a diagonal
     wall blocks its whole bounding box.
+12. **Devices on rails must not overlap.** Nothing stops one sliding into
+    another, so at any rail positions two devices must stay at least half
+    of each width apart: (w1 + w2) / 2, with a mirror 1 m and a filter
+    0.8 m (so 1 m between two mirrors, 0.9 m mirror–filter). Shorten or
+    move rails; the test names the pair.
+13. **A mirror with neither `positionEnabled` nor `rotationEnabled`** is a
+    display piece and isn't selectable (level 1's mirror behind glass).
 
 ## Limits (by design)
 
 - Everything happens on one horizontal plane (`BEAM_HEIGHT`). No tilt, no
   vertical routes: the tracer is 2D. Emitter tilt from RF03 is deliberately
-  not implemented.
+  not implemented. Emitter *rotation* is implemented (`rotationEnabled`)
+  but no level of the current campaign uses it.
 - The outer room is always 10×10 m. Use `walls` for sub-areas.
 - At most 8 reflections or portal hops per beam (`MAX_REFLECTIONS`).
 
