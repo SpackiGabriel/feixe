@@ -6,7 +6,7 @@ import { getEnvMap } from '../presentation/env-map.js';
 import { createMirrorReflection } from '../presentation/mirror-reflection.js';
 import { createDial, createRailState, createManipulable } from '../presentation/affordances.js';
 
-const PLATE_WIDTH = 1;
+export const PLATE_WIDTH = 1;
 const PLATE_HEIGHT = 1;
 const PLATE_THICKNESS = 0.05;
 const PEDESTAL_RADIUS = 0.06;

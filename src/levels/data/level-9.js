@@ -11,7 +11,8 @@
 //     and S is also where blue turns east. Red hits one face of S, blue the
 //     other: one mirror, two beams.
 //   - M2's rail on red's row is the naive plan ("turn red north here"):
-//     it stops at x = -0.6, so red lands beside the receiver (as in L6).
+//     it stops at x = -1.3, so red turned north hits the dividing wall
+//     beside the gate (as in L6).
 //   - M4 is the tempting quick gate: blue onto the decoy receiver opens
 //     the gate but starves the exit. The receiver both doors share has two
 //     conduits, one to each door.
@@ -24,6 +25,8 @@ const H = BEAM_HEIGHT;
 const ROW = 2; // red's eastward row: M1 → M2's rail → S
 const WALL_Z = -1;
 const snapped = { rotationStepDegrees: 45 };
+const S_RAIL = [-0.3, 2]; // S's rail x range on the row
+const S_AT_COLUMN = (0 - S_RAIL[0]) / (S_RAIL[1] - S_RAIL[0]); // S's t at x = 0, blue's column
 
 export const level9 = {
   id: 'level-9',
@@ -36,10 +39,13 @@ export const level9 = {
   mirrors: [
     // White's corner: -45° → west into the trap (start), +45° → east along the row.
     { id: 'm1', rail: { start: [-3.5, H, ROW], end: [-3.5, H, ROW] }, initialT: 0.5, initialRotationY: -Math.PI / 4, positionEnabled: false, rotationEnabled: true, ...snapped },
-    // The naive plan: slides along red's row but stops short of the column.
-    { id: 'm2', rail: { start: [-3, H, ROW], end: [-0.6, H, ROW] }, initialT: 0, initialRotationY: 0, positionEnabled: true, rotationEnabled: true, ...snapped },
+    // The naive plan: slides along red's row but stops short of the column
+    // (red turned north here hits the dividing wall beside the gate).
+    // Rails on a shared row keep ≥ 1 m (a plate's width) between devices,
+    // so mirrors can't start inside or slide through each other.
+    { id: 'm2', rail: { start: [-2.5, H, ROW], end: [-1.3, H, ROW] }, initialT: 0, initialRotationY: 0, positionEnabled: true, rotationEnabled: true, ...snapped },
     // S: slides onto blue's column, where red's row crosses it.
-    { id: 's', rail: { start: [-1, H, ROW], end: [2, H, ROW] }, initialT: 1, initialRotationY: 0, positionEnabled: true, rotationEnabled: true, ...snapped },
+    { id: 's', rail: { start: [S_RAIL[0], H, ROW], end: [S_RAIL[1], H, ROW] }, initialT: 1, initialRotationY: 0, positionEnabled: true, rotationEnabled: true, ...snapped },
     // The quick gate: turns blue east, low on the column, onto the decoy receiver.
     // Shortened after the playtest (it looked oversized next to the spawn);
     // it still reaches blue's column at x = 0 with slack on both sides.
@@ -62,25 +68,25 @@ export const level9 = {
     { id: 'exit', position: [3, 1.5, -(ROOM_HALF - 0.1)], rotationY: Math.PI, rule: 'AND', receiverIds: ['r-red', 'r-blue'], forbidIds: ['trap'], exit: true },
   ],
   scenarios: [
-    { name: 'blue turned by S alone opens the gate only', config: { mirrors: { m1: { rotationY: 0 }, s: { t: 1 / 3, rotationY: Math.PI / 4 } } }, doors: { gate: true, exit: false } },
+    { name: 'blue turned by S alone opens the gate only', config: { mirrors: { m1: { rotationY: 0 }, s: { t: S_AT_COLUMN, rotationY: Math.PI / 4 } } }, doors: { gate: true, exit: false } },
     { name: 'the quick gate via M4 starves the exit', config: { mirrors: { m1: { rotationY: 0 }, m4: { t: 0.375, rotationY: Math.PI / 4 } } }, doors: { gate: true, exit: false } },
     {
       name: 'unfiltered white on the red receiver does not open the exit',
-      config: { mirrors: { m1: { rotationY: Math.PI / 4 }, s: { t: 1 / 3, rotationY: Math.PI / 4 } } },
+      config: { mirrors: { m1: { rotationY: Math.PI / 4 }, s: { t: S_AT_COLUMN, rotationY: Math.PI / 4 } } },
       doors: { gate: true, exit: false },
     },
     {
-      name: 'red turned north by M2 lands beside the receiver',
-      config: { filters: { 'f-red': { t: 0.4 } }, mirrors: { m1: { rotationY: Math.PI / 4 }, m2: { t: 1, rotationY: Math.PI / 4 }, s: { t: 1 / 3, rotationY: Math.PI / 4 } } },
+      name: 'red turned north by M2 hits the wall beside the gate',
+      config: { filters: { 'f-red': { t: 0.4 } }, mirrors: { m1: { rotationY: Math.PI / 4 }, m2: { t: 1, rotationY: Math.PI / 4 }, s: { t: S_AT_COLUMN, rotationY: Math.PI / 4 } } },
       doors: { gate: true, exit: false },
     },
-    { name: 'white into the trap holds both doors shut', config: { mirrors: { s: { t: 1 / 3, rotationY: Math.PI / 4 } }, filters: { 'f-red': { t: 0.4 } } }, doors: { gate: false, exit: false } },
+    { name: 'white into the trap holds both doors shut', config: { mirrors: { s: { t: S_AT_COLUMN, rotationY: Math.PI / 4 } }, filters: { 'f-red': { t: 0.4 } } }, doors: { gate: false, exit: false } },
   ],
   solution: {
     filters: { 'f-red': { t: 0.4 } }, // x = -3.5, on white's column
     mirrors: {
       m1: { rotationY: Math.PI / 4 }, // white (now red) east along the row
-      s: { t: 1 / 3, rotationY: Math.PI / 4 }, // x = 0: red east → north, blue north → east
+      s: { t: S_AT_COLUMN, rotationY: Math.PI / 4 }, // x = 0: red east → north, blue north → east
     },
   },
 };

@@ -18,7 +18,8 @@ mirrors as rules). Tool: `npm run analyze [N]`.
 
 **Owner playtest done (2026-11-16)**, results in `design/campaign.md` §8.
 Fixed from it: aiming passes through glass (L8 softlock), L9's M4 rail
-shortened. Owner then reported (2026-11-16, by feel, no numbers): frame
+shortened; rails keep devices ≥ 1 m apart (L9 M2 started inside M1;
+test `railDevices_cannotOverlap`). Owner then reported (2026-11-16, by feel, no numbers): frame
 rate "super smooth", camera smooth with a real mouse (flick fix holds),
 sound fine. Next:
 
