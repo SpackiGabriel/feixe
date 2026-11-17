@@ -10,6 +10,11 @@ import { level9 } from './data/level-9.js';
 import { level10 } from './data/level-10.js';
 import { browserStorage, readKey, writeKey, removeKey } from '../core/storage.js';
 
+// The level *sequence* and the player's *progress*, both stateless: the
+// fixed level list, where a saved session resumes, the furthest level
+// reached, and what an exit leads to. The live level (objects, per-frame
+// update, exit/portal triggers) is level-runtime.js's job.
+
 // The fixed sequence (RF09). To add or reorder a level, edit this list.
 const LEVELS = [level1, level2, level3, level4, level5, level6, level7, level8, level9, level10];
 

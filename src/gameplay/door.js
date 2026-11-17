@@ -17,11 +17,11 @@ const DOOR_THICKNESS = 0.15;
 //     they see.
 // The visuals (frame, pips, lamps, glow) live in door-view.js and only
 // read these states, so a modelled door can replace them later.
-export function createDoor({ position, rotationY = 0, rule, receivers, forbidden = [], exit = false, style }) {
+export function createDoor({ position, rotationY = 0, rule, inputs, forbidden = [], exit = false, style }) {
   const motion = createDoorMotion();
-  const view = createDoorView({ position, rotationY, inputCount: receivers.length, trapCount: forbidden.length, exit, style });
+  const view = createDoorView({ position, rotationY, inputCount: inputs.length, trapCount: forbidden.length, exit, style });
 
-  const states = new Array(receivers.length); // reused every update() — see .claude/rules/code-conventions.md
+  const states = new Array(inputs.length); // reused every update() — see .claude/rules/code-conventions.md
   const forbiddenStates = new Array(forbidden.length);
   const collider = rotatedRectAABB(position, rotationY, DOOR_WIDTH, DOOR_THICKNESS); // static closed footprint
   let open = false;
@@ -39,7 +39,7 @@ export function createDoor({ position, rotationY = 0, rule, receivers, forbidden
   };
 
   function update(deltaSeconds) {
-    for (let i = 0; i < receivers.length; i++) states[i] = receivers[i].isActive();
+    for (let i = 0; i < inputs.length; i++) states[i] = inputs[i].isActive();
     for (let i = 0; i < forbidden.length; i++) forbiddenStates[i] = forbidden[i].isHit();
     const next = evaluateDoorRule(states, rule, forbiddenStates);
     if (next !== open) {

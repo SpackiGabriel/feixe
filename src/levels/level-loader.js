@@ -144,7 +144,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
     };
     // An entry may be `{ any: [ids] }` — satisfied when at least one is
     // active — so one door can require "A AND (B OR C)" (spec §11 level 10).
-    const doorReceivers = d.receiverIds.map((entry) => {
+    const doorInputs = d.receiverIds.map((entry) => {
       if (typeof entry === 'string') return lookup(entry);
       const group = entry.any.map(lookup);
       return { isActive: () => group.some((r) => r.isActive()) };
@@ -160,7 +160,7 @@ export function instantiateLevel(data, scene, interactiveObjects) {
       position: new THREE.Vector3(...d.position),
       rotationY: d.rotationY ?? 0,
       rule: d.rule,
-      receivers: doorReceivers,
+      inputs: doorInputs,
       forbidden,
       exit: d.exit ?? false,
       style: d.style,
