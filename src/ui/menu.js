@@ -61,6 +61,18 @@ export function createMenu(root, handlers) {
   let items = [];
   let selected = 0;
   let confirming = false;
+  let pick = 0; // level chosen in "Selecionar câmara" (0-based)
+
+  // Only levels already reached on this machine; ← → cycle, Enter loads.
+  function levelSelectDef(s) {
+    const count = s.reachedIndex + 1;
+    return {
+      label: 'Câmara',
+      meta: `◂ ${String(pick + 1).padStart(2, '0')} · ${s.levelName(pick)} ▸`,
+      run: () => handlers.onSelectLevel(pick),
+      adjust: (direction) => { pick = (pick + direction + count) % count; },
+    };
+  }
 
   function render() {
     const s = handlers.getState();
@@ -68,9 +80,11 @@ export function createMenu(root, handlers) {
     const defs = [];
     if (mode === 'start') {
       defs.push({ label: s.hasProgress ? 'Continuar' : 'Iniciar', meta: s.levelLabel, run: handlers.onResume });
+      if (s.reachedIndex >= 1) defs.push(levelSelectDef(s));
       if (s.hasProgress) defs.push({ label: 'Novo jogo', meta: 'do nível 01', run: handlers.onNewGame, confirm: true });
     } else {
       defs.push({ label: 'Continuar', meta: '', run: handlers.onResume });
+      if (s.reachedIndex >= 1) defs.push(levelSelectDef(s));
       defs.push({ label: 'Reiniciar câmara', meta: 'R', run: handlers.onRestart });
       defs.push({ label: 'Novo jogo', meta: 'do nível 01', run: handlers.onNewGame, confirm: true });
     }
@@ -154,6 +168,7 @@ export function createMenu(root, handlers) {
       confirming = false;
       hint.textContent = '';
       selected = 0;
+      pick = Math.min(handlers.getState().currentIndex, handlers.getState().reachedIndex);
       render();
       menu.classList.add('visible');
     },

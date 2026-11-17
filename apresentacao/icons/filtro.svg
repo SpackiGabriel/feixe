@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#d9d4c7" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Trilho e suporte -->
+  <line x1="12" y1="56" x2="52" y2="56" stroke-opacity="0.4" />
+  <rect x="24" y="51" width="16" height="4" rx="1.5" />
+  <line x1="32" y1="42" x2="32" y2="51" />
+  <!-- Moldura estrutural com barras superior e inferior -->
+  <rect x="18" y="10" width="28" height="4" rx="1.5" />
+  <rect x="18" y="38" width="28" height="4" rx="1.5" />
+  <!-- Placa translúcida na moldura -->
+  <rect x="20" y="14" width="24" height="24" fill="#fff1d6" fill-opacity="0.08" />
+  <line x1="24" y1="18" x2="30" y2="24" stroke-opacity="0.4" />
+  <line x1="34" y1="28" x2="40" y2="34" stroke-opacity="0.4" />
+  <line x1="24" y1="34" x2="28" y2="30" stroke-opacity="0.4" />
+  <!-- Feixe atravessando e sendo filtrado (detalhe em #fff1d6) -->
+  <line x1="6" y1="23" x2="20" y2="23" stroke="#fff1d6" stroke-width="1.5" stroke-opacity="0.55" />
+  <line x1="6" y1="26" x2="20" y2="26" stroke="#fff1d6" stroke-width="2" />
+  <line x1="6" y1="29" x2="20" y2="29" stroke="#fff1d6" stroke-width="1.5" stroke-opacity="0.55" />
+  <line x1="20" y1="26" x2="44" y2="26" stroke="#fff1d6" stroke-width="1.75" stroke-dasharray="2.5 2.5" />
+  <line x1="44" y1="26" x2="58" y2="26" stroke="#fff1d6" stroke-width="2.25" />
+  <circle cx="44" cy="26" r="2" fill="#fff1d6" stroke="none" />
+</svg>

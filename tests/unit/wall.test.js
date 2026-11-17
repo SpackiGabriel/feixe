@@ -49,10 +49,31 @@ describe('createWall', () => {
   it('test_createWall_wrongOrder_isRevertible', () => {
     const wall = createWall({ from: [-2, -5], to: [-2, -1], material });
     const right = [...wall.mesh.matrix.elements];
-    wall.setOrder('TSR');
+    expect(wall.setOrder('TSR')).toBe(true);
     expect(wall.mesh.matrix.elements).not.toEqual(right);
-    wall.setOrder('TRS');
+    expect(wall.setOrder('TRS')).toBe(true);
     expect(wall.mesh.matrix.elements).toEqual(right);
+  });
+
+  it('test_createWall_eastWestWall_reportsOrderUnchanged', () => {
+    const wall = createWall({ from: [-5, 0], to: [2.5, 0], material });
+    const right = [...wall.mesh.matrix.elements];
+    expect(wall.setOrder('TSR')).toBe(false);
+    expect(wall.mesh.matrix.elements).toEqual(right);
+  });
+
+  it('test_createWall_wrongOrder_keepsAimOccluderAtRealWall', () => {
+    const wall = createWall({ from: [-2, -5], to: [-2, -1], material });
+    expect(wall.setOrder('TSR')).toBe(true);
+    wall.mesh.updateMatrixWorld();
+
+    const throughReal = new THREE.Raycaster(new THREE.Vector3(-4, 1.5, -4), new THREE.Vector3(1, 0, 0));
+    expect(throughReal.intersectObject(wall.occluder, false).length).toBeGreaterThan(0);
+    expect(throughReal.intersectObject(wall.mesh, false)).toHaveLength(0);
+
+    const throughWrongMesh = new THREE.Raycaster(new THREE.Vector3(-0.5, 1.5, -5), new THREE.Vector3(0, 0, 1));
+    expect(throughWrongMesh.intersectObject(wall.mesh, false).length).toBeGreaterThan(0);
+    expect(throughWrongMesh.intersectObject(wall.occluder, false)).toHaveLength(0);
   });
 
   it('test_createWall_northSouthWall_worldBoundsMatchItsEndpoints', () => {

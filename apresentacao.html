@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Feixe · Computação Gráfica · UTFPR</title>
+<link rel="stylesheet" href="apresentacao/deck.css" />
+</head>
+<body>
+<div id="stage">
+
+  <!-- 01 · Capa -->
+  <section class="slide hero">
+    <div class="scene" data-scene="cover-beam"></div>
+    <div class="hero-text">
+      <div class="kicker">Computação Gráfica · UTFPR · Projeto final</div>
+      <div class="hero-title">FEIXE</div>
+      <div class="hero-sub">Um quebra-cabeça de luz, reflexo e cor em primeira pessoa</div>
+      <div class="hero-meta">
+        <span><b>Caio Macedo</b>Integrante</span>
+        <span><b>Gabriel Spacki</b>Integrante</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 · O que é o Feixe -->
+  <section class="slide">
+    <div class="kicker">O jogo</div>
+    <h2>Levar a luz certa ao <em>receptor certo</em></h2>
+    <p class="lead">Cada câmara é um quebra-cabeça: posicionar espelhos, filtros e portais até os
+      receptores acenderem com a cor pedida. Então as portas abrem e a próxima câmara começa.</p>
+    <div class="body">
+      <div class="cards cards-3 fill">
+        <div class="card"><img class="icon" src="apresentacao/icons/emissor.svg" alt="" />
+          <h3>Emissor</h3><p>Dispara um feixe vermelho, verde, azul ou branco.</p></div>
+        <div class="card"><img class="icon" src="apresentacao/icons/espelho.svg" alt="" />
+          <h3>Espelho</h3><p>Desliza num trilho e gira em passos fixos.</p></div>
+        <div class="card"><img class="icon" src="apresentacao/icons/filtro.svg" alt="" />
+          <h3>Filtro</h3><p>Deixa passar só o canal da sua cor.</p></div>
+        <div class="card"><img class="icon" src="apresentacao/icons/receptor.svg" alt="" />
+          <h3>Receptor</h3><p>Pede uma cor; os feixes somam por canal, <span class="nw">R + G = amarelo</span>.</p></div>
+        <div class="card"><img class="icon" src="apresentacao/icons/portal.svg" alt="" />
+          <h3>Portal</h3><p>Leva o feixe e o jogador ao portal ligado, girando a direção.</p></div>
+        <div class="card"><img class="icon" src="apresentacao/icons/porta.svg" alt="" />
+          <h3>Porta</h3><p>Abre quando os receptores ligados a ela estão satisfeitos.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 · Demonstração -->
+  <section class="slide hero">
+    <div class="scene" data-scene="cover-beam"></div>
+    <div class="hero-text">
+      <div class="kicker">Ao vivo</div>
+      <div class="hero-title">Demonstração</div>
+      <div class="hero-sub">Dez câmaras, da primeira reflexão ao prisma</div>
+    </div>
+  </section>
+
+  <!-- 04 · Como o programa funciona -->
+  <section class="slide">
+    <div class="kicker">Arquitetura</div>
+    <h2>Como o programa <em>funciona</em></h2>
+    <div class="body cols-wide-left">
+      <div class="scene" data-scene="pipeline"></div>
+      <ul class="bullets">
+        <li>A cada quadro: ler a entrada, avançar a lógica por <b>dt</b> e desenhar.</li>
+        <li>A lógica é <b>JavaScript puro</b>: feixes, colisão, portas. Testável sem navegador.</li>
+        <li>A apresentação usa <b>Three.js</b>: malhas, shaders próprios, luzes.</li>
+        <li>Cada câmara é um <b>objeto de dados</b>; a cena nasce por código.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 05 · O feixe -->
+  <section class="slide">
+    <div class="kicker">O coração do jogo</div>
+    <h2>O feixe é <em>geometria</em>, não ray tracing</h2>
+    <div class="body cols-wide-right">
+      <div class="stack">
+        <ul class="bullets">
+          <li>Vive no <b>plano XZ</b>: altura fixa, espelhos que só giram em Y.</li>
+          <li>Interseção <b>raio–segmento</b>: o menor <i>t</i> &gt; 0 é onde o feixe bate.</li>
+          <li>Girar o espelho <b class="c-green">θ</b> gira o feixe <b class="c-green">2θ</b>, como na câmara 3.</li>
+          <li>Cor por canal: o receptor soma com <b>OU</b>, o filtro corta com <b>E</b>.</li>
+        </ul>
+        <div class="formula">
+          <math display="block">
+            <mi class="t-beam">𝐫</mi><mo>=</mo><mi class="t-beam">𝐝</mi><mo>−</mo><mn>2</mn><mo stretchy="false">(</mo><mi class="t-beam">𝐝</mi><mo>·</mo><mi class="t-yellow">𝐧</mi><mo stretchy="false">)</mo><mi class="t-yellow">𝐧</mi>
+          </math>
+          <div class="meaning">Tira duas vezes a componente de <b style="color: var(--beam)">d</b> na direção da normal <b style="color: var(--c-yellow)">n</b>: ela troca de sinal, o resto continua.</div>
+        </div>
+      </div>
+      <div class="scene" data-scene="beam-reflect"></div>
+    </div>
+  </section>
+
+  <!-- 06 · Eixo I · Geometria -->
+  <section class="slide" data-axis="I">
+    <div class="kicker">Eixo I · Geometria e espaço</div>
+    <h2>A ordem das transformações <em>importa</em></h2>
+    <div class="body cols-wide-right">
+      <div class="stack">
+        <ul class="bullets">
+          <li><b>T · R · S</b>: escala, gira e só então posiciona.</li>
+          <li>A ordem errada, <b>T · S · R</b>, cisalha a parede em losango.</li>
+          <li><b>Malha por código</b>: os condutos do chão são vértices e triângulos nossos.</li>
+          <li><b>Hierarquia</b>: no espelho, a base desliza e a placa gira.</li>
+        </ul>
+        <div class="formula">
+          <math display="block">
+            <msup><mi>p</mi><mo>′</mo></msup><mo>=</mo><mi class="t-red">T</mi><mo>·</mo><mi class="t-red">R</mi><mo>·</mo><mi class="t-red">S</mi><mo>·</mo><mi>p</mi>
+          </math>
+          <div class="meaning">Lê-se da direita para a esquerda: o ponto é escalado, girado e movido.</div>
+        </div>
+      </div>
+      <div class="scene" data-scene="trs-order"></div>
+    </div>
+  </section>
+
+  <!-- 07 · Eixo I · código -->
+  <section class="slide" data-axis="I">
+    <div class="kicker">Eixo I · No código</div>
+    <h2>As paredes <em>internas</em> usam a nossa matriz</h2>
+    <div class="body cols-wide-right">
+      <ul class="bullets">
+        <li>Matrizes 4×4 escritas à mão: translação, rotação, escala e produto.</li>
+        <li>Coordenadas homogêneas: <b>w = 1</b> deixa a translação caber na 4×4.</li>
+        <li><code>matrixAutoUpdate = false</code>: o Three usa a matriz que montamos.</li>
+        <li>Testes comparam cada função com o Three até 9 casas decimais.</li>
+      </ul>
+      <div class="code-box">
+<pre class="code" data-file="src/core/matrix.js · src/gameplay/wall.js" data-mark="3-4,10,12,14">
+export function composeTRS(
+  [tx, ty, tz], rotationYAngle, [sx, sy, sz]) {
+  return multiply(translation(tx, ty, tz),
+    multiply(rotationY(rotationYAngle), scaling(sx, sy, sz)));
+}
+
+const position = [center.x, height / 2, center.z];
+const size = [drawnLength, drawnHeight,
+  glass ? GLASS_PANE_THICKNESS : thickness];
+const trs = composeTRS(position, rotationY, size);
+…
+mesh.matrixAutoUpdate = false;
+…
+  mesh.matrix.fromArray(order === 'TSR' ? tsr : trs);
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 · Eixo II · Câmera -->
+  <section class="slide" data-axis="II">
+    <div class="kicker">Eixo II · Câmera e projeção</div>
+    <h2>Por que o que está longe <em>fica pequeno</em></h2>
+    <div class="body cols">
+      <div class="stack">
+        <div class="formula">
+          <math display="block" class="tight">
+            <mi>P</mi><mo>=</mo>
+            <mrow><mo>[</mo><mtable>
+              <mtr><mtd><mfrac><mi>f</mi><mi>a</mi></mfrac></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+              <mtr><mtd><mn>0</mn></mtd><mtd><mi>f</mi></mtd><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+              <mtr><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mi>A</mi></mtd><mtd><mi>B</mi></mtd></mtr>
+              <mtr class="t-green"><mtd><mn>0</mn></mtd><mtd><mn>0</mn></mtd><mtd><mo>−</mo><mn>1</mn></mtd><mtd><mn>0</mn></mtd></mtr>
+            </mtable><mo>]</mo></mrow>
+          </math>
+          <div class="meaning"><i>f</i> = 1 / tan(fov/2); <i>a</i> = proporção da tela; <i>A</i> e <i>B</i> levam z de [near, far] a [−1, 1]. A última linha copia a profundidade para <b class="hl">w = −z</b>.</div>
+        </div>
+        <div class="formula">
+          <math display="block">
+            <mtext>NDC</mtext><mo>=</mo><mfrac><mrow><mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>z</mi><mo>)</mo></mrow><mi class="t-green">w</mi></mfrac>
+          </math>
+          <div class="meaning">O dobro da distância dá metade do tamanho. O Three é quem desenha; a mesma matriz foi <b class="hl">montada à mão</b> e conferida com a dele.</div>
+        </div>
+      </div>
+      <div class="scene" data-scene="frustum-w"></div>
+    </div>
+  </section>
+
+  <!-- 09 · Eixo II · Navegação -->
+  <section class="slide" data-axis="II">
+    <div class="kicker">Eixo II · Navegação e interação</div>
+    <h2>Andar, olhar e <em>não atravessar</em> paredes</h2>
+    <div class="body cols">
+      <div class="stack">
+        <ul class="bullets">
+          <li><b>Olhar</b>: yaw e pitch, Euler YXZ, pitch ±89,4°.</li>
+          <li><b>Andar</b>: frente = (−sin ψ, −cos ψ).</li>
+          <li><b>Colisão</b> AABB por eixo: x, depois z, desliza.</li>
+          <li><b>Portal</b>: soma a diferença de orientação ao yaw.</li>
+        </ul>
+        <div class="code-box fit">
+<pre class="code" data-file="src/core/movement.js" data-mark="2-3,7-8">
+const newX = camera.position.x + velocityX * deltaSeconds;
+if (!blockedAt(newX, camera.position.z))
+  camera.position.x = newX;
+else velocityX = 0;
+
+const newZ = camera.position.z + velocityZ * deltaSeconds;
+if (!blockedAt(camera.position.x, newZ))
+  camera.position.z = newZ;
+else velocityZ = 0;
+</pre>
+        </div>
+      </div>
+      <div class="scene" data-scene="nav-collision"></div>
+    </div>
+  </section>
+
+  <!-- 10 · Eixo III · Iluminação e materiais -->
+  <section class="slide" data-axis="III">
+    <div class="kicker">Eixo III · Iluminação e materiais</div>
+    <h2>Um <em>Blinn-Phong</em> escrito por nós</h2>
+    <div class="body cols-wide-left">
+      <div class="stack">
+        <div class="formula wide">
+          <math display="block" class="terms">
+            <mtable>
+              <mtr>
+                <mtd class="r"><mtext>cor</mtext></mtd>
+                <mtd><mo>=</mo></mtd>
+                <mtd class="l"><mi>albedo</mi><mo>·</mo><mo stretchy="false">(</mo><mtext class="t-green">ambiente</mtext><mo>+</mo><mtext class="t-yellow">difuso</mtext><mo stretchy="false">)</mo><mo>+</mo><mtext class="t-blue">especular</mtext></mtd>
+              </mtr>
+              <mtr>
+                <mtd class="r"><mtext class="t-green">ambiente</mtext></mtd>
+                <mtd><mo>=</mo></mtd>
+                <mtd class="l"><msub><mi>k</mi><mi>a</mi></msub><mo>·</mo><msub><mi>I</mi><mi>a</mi></msub><mo>/</mo><mi>π</mi></mtd>
+              </mtr>
+              <mtr>
+                <mtd class="r"><mtext class="t-yellow">difuso</mtext></mtd>
+                <mtd><mo>=</mo></mtd>
+                <mtd class="l"><mo>∑</mo><msub><mi>k</mi><mi>d</mi></msub><mo>·</mo><mi>max</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><mi>N</mi><mo>·</mo><mi>L</mi><mo stretchy="false">)</mo><mo>·</mo><msub><mi>I</mi><mi>ℓ</mi></msub><mo>/</mo><mi>π</mi></mtd>
+              </mtr>
+              <mtr>
+                <mtd class="r"><mtext class="t-blue">especular</mtext></mtd>
+                <mtd><mo>=</mo></mtd>
+                <mtd class="l"><mo>∑</mo><msub><mi>k</mi><mi>s</mi></msub><mo>·</mo><msup><mrow><mi>max</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><mi>N</mi><mo>·</mo><mi>H</mi><mo stretchy="false">)</mo></mrow><mi>n</mi></msup><mo>·</mo><msub><mi>I</mi><mi>ℓ</mi></msub></mtd>
+              </mtr>
+            </mtable>
+          </math>
+          <div class="meaning"><b>H</b> = normalize(<b>L</b> + <b>V</b>) fica entre a luz e o olho: quanto mais perto de <b>N</b>, mais brilho.</div>
+        </div>
+        <ul class="bullets">
+          <li>Shader próprio nas paredes e no piso; cada feixe é uma <b class="nw">luz pontual</b>.</li>
+          <li>Material = k<sub>a</sub>, k<sub>d</sub>, k<sub>s</sub>, n: parede fosca (n 12), piso polido (n 32).</li>
+          <li>Espelho: metal com <b>reflexo planar</b> (a cena vista pela câmera refletida).</li>
+        </ul>
+      </div>
+      <div class="scene" data-scene="blinn-phong"></div>
+    </div>
+  </section>
+
+  <!-- 11 · Eixo III · Sombreamento e texturas -->
+  <section class="slide" data-axis="III">
+    <div class="kicker">Eixo III · Sombreamento e texturas</div>
+    <h2>Por vértice ou <em>por fragmento</em></h2>
+    <div class="body cols-wide-left">
+      <div class="stack">
+        <div class="scene" data-scene="gouraud-phong" style="flex: 1"></div>
+        <ul class="bullets tight">
+          <li>A mesma função de luz roda no vértice ou no pixel: um <code>#define</code> escolhe.</li>
+          <li>Normais: <b>normalMatrix = (M⁻¹)ᵀ</b>, perpendicular mesmo com escala.</li>
+          <li>Texturas desenhadas por código; UV em metros, sem esticar.</li>
+        </ul>
+      </div>
+      <div class="code-box">
+<pre class="code" data-file="src/presentation/phong-material.js" data-mark="1,3-4,13-14">
+vec3 N = normalize( normalMatrix * normal );
+#ifdef PER_VERTEX
+  blinnPhong( mvPosition.xyz, N,
+              vDiffuse, vSpecular );
+#else
+  vViewPosition = mvPosition.xyz;
+  vNormal = N;
+#endif
+…
+#ifdef PER_VERTEX
+  …
+#else
+  blinnPhong( vViewPosition,
+    normalize( vNormal ), diffuse, specular );
+#endif
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · Eixo IV · Animação -->
+  <section class="slide" data-axis="IV">
+    <div class="kicker">Eixo IV · Animação</div>
+    <h2>O mesmo movimento a <em>30 ou 144 FPS</em></h2>
+    <div class="body cols">
+      <div class="stack">
+        <ul class="bullets">
+          <li>Tudo avança por <b>dt</b> em segundos, com teto para não saltar ao trocar de aba.</li>
+          <li><b>damp</b> exponencial: aproximação suave e exata para qualquer dt.</li>
+          <li>Porta: máquina de estados por tempo, reverte no meio sem salto.</li>
+        </ul>
+        <div class="formula">
+          <math display="block" class="damp">
+            <mi>x</mi><mo>←</mo><mi>alvo</mi><mo>+</mo><mo>(</mo><mi>x</mi><mo>−</mo><mi>alvo</mi><mo>)</mo><mo>·</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>λ</mi><mi class="t-yellow">dt</mi></mrow></msup>
+          </math>
+          <math display="block" class="damp sub">
+            <msup><mi>e</mi><mrow><mo>−</mo><mi>λ</mi><msub><mi>dt</mi><mn>1</mn></msub></mrow></msup><mo>·</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>λ</mi><msub><mi>dt</mi><mn>2</mn></msub></mrow></msup><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>λ</mi><mo>(</mo><msub><mi>dt</mi><mn>1</mn></msub><mo>+</mo><msub><mi>dt</mi><mn>2</mn></msub><mo>)</mo></mrow></msup>
+          </math>
+          <div class="meaning">Dois quadros curtos dão o mesmo que um longo. Já <code>x += (alvo − x) · 0,1</code> por quadro corre mais a 144 FPS.</div>
+        </div>
+      </div>
+      <div class="scene" data-scene="damp-race"></div>
+    </div>
+  </section>
+
+  <!-- 13 · Qualidade -->
+  <section class="slide">
+    <div class="kicker">Qualidade</div>
+    <h2>Como sabemos que <em>funciona</em></h2>
+    <div class="body" style="grid-template-rows: auto auto; align-content: center; gap: 44px">
+      <div class="cards cards-4 stat">
+        <div class="card"><div class="big-number" data-count="349">349</div><p>testes unitários</p></div>
+        <div class="card red"><div class="big-number">0</div><p>modelos 3D importados</p></div>
+        <div class="card green"><div class="big-number">10</div><p>câmaras com solução testada</p></div>
+        <div class="card blue"><div class="big-number">9</div><p>casas decimais de acordo com o Three</p></div>
+      </div>
+      <ul class="bullets">
+        <li>Cada matriz feita à mão é comparada com a do Three.js em teste unitário.</li>
+        <li>Cada câmara declara sua solução; um teste prova que ela abre a porta.</li>
+        <li>Partida completa automática num navegador real (Playwright).</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 14 · Conclusão -->
+  <section class="slide">
+    <div class="kicker">Conclusão</div>
+    <h2>A matemática da disciplina <em>é a mecânica</em> do jogo</h2>
+    <div class="body" style="grid-template-rows: 1fr auto; gap: 30px">
+      <div class="cards cards-4 axes">
+        <div class="card red"><h3>Geometria</h3>
+          <div class="own"><span class="tag">Nosso</span><p>T·R·S das paredes internas montada à mão; condutos como malha por código.</p></div>
+          <div class="theirs"><span class="tag">Do Three</span><p>Grafo de cena e a matriz dos demais objetos.</p></div></div>
+        <div class="card green"><h3>Visualização</h3>
+          <div class="own"><span class="tag">Nosso</span><p>Matriz P e divisão por w refeitas e conferidas; navegação, colisão e portais.</p></div>
+          <div class="theirs"><span class="tag">Do Three</span><p>A câmera que desenha a cena.</p></div></div>
+        <div class="card blue"><h3>Renderização</h3>
+          <div class="own"><span class="tag">Nosso</span><p>Blinn-Phong por vértice ou fragmento; texturas procedurais.</p></div>
+          <div class="theirs"><span class="tag">Do Three</span><p>Reflexo planar do espelho e a rasterização.</p></div></div>
+        <div class="card yellow"><h3>Animação</h3>
+          <div class="own"><span class="tag">Nosso</span><p>Tudo por dt, damp exato para qualquer FPS, porta reversível sem salto.</p></div>
+          <div class="theirs"><span class="tag">Do Three</span><p>O laço de quadros e o relógio.</p></div></div>
+      </div>
+      <p class="lead" style="margin-top: 0">O feixe é geometria, a luz é shader e o movimento é tempo:
+        cada eixo do curso virou uma regra que o jogador sente.</p>
+    </div>
+  </section>
+
+  <!-- 15 · Perguntas -->
+  <section class="slide hero">
+    <div class="scene" data-scene="cover-beam"></div>
+    <div class="hero-text">
+      <div class="kicker">Obrigado</div>
+      <div class="hero-title">Perguntas</div>
+    </div>
+  </section>
+
+  <div id="progress"><i></i></div>
+</div>
+<script type="module" src="apresentacao/deck.js"></script>
+</body>
+</html>

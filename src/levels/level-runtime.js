@@ -1,6 +1,6 @@
 import { createLaserSystem } from '../gameplay/laser-system.js';
 import { instantiateLevel, disposeLevel } from './level-loader.js';
-import { getLevels, loadSavedLevelIndex, saveLevelIndex, resetProgress, nextAfterExit } from './level-manager.js';
+import { getLevels, loadSavedLevelIndex, saveLevelIndex, saveReachedLevelIndex, resetProgress, nextAfterExit } from './level-manager.js';
 import { events } from '../core/events.js';
 import { isPlayerAtExit } from './exit-trigger.js';
 import { isPlayerAtPortal, computePortalLanding } from './portal-crossing.js';
@@ -78,6 +78,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
     complete = false;
     pendingExit = null;
     saveLevelIndex(currentIndex);
+    saveReachedLevelIndex(currentIndex); // also covers ?debug&level=N (loadLevel)
     onLevelLoaded({ index: currentIndex, count: levels.length, data: levels[currentIndex], level: currentLevel });
     events.emit('level:enter', { index: currentIndex, count: levels.length, data: levels[currentIndex] });
   }
@@ -90,8 +91,10 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
   }
 
   // Finish what an exit started: next level, or the end of the game.
+  // Ignored if a reset/new-game already cancelled the pending exit.
   function advance() {
-    const next = pendingExit ?? nextAfterExit(currentIndex, levels.length);
+    if (!pendingExit) return;
+    const next = pendingExit;
     pendingExit = null;
     if (next.complete) {
       complete = true;

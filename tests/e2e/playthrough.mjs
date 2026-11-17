@@ -163,6 +163,21 @@ try {
   // still be re-aimable through the glass.
   check((await aimAt(0.45, 1.0, Math.PI, true))?.startsWith('espelho m1'), 'mirror is selectable through the closed glass door');
 
+  console.log('wall order demo (T)');
+  await g.load(2); // L3: no interior walls
+  await page.keyboard.press('KeyT');
+  check(await g.until(() => document.querySelector('.toast').textContent.includes('sem paredes internas')), 'T on L3 explains there are no interior walls');
+  await g.load(9); // L10: east-west wall only (R = I)
+  await page.keyboard.press('KeyT');
+  check(await g.until(() => document.querySelector('.toast').textContent.includes('R = I')), 'T on L10 explains R = I changes nothing');
+  await g.load(5); // L6: north-south wall
+  await page.keyboard.press('KeyT');
+  check(await g.until(() => document.querySelector('.toast').textContent.includes('T·S·R (ordem errada)')), 'T on L6 switches walls to T·S·R');
+  check((await aimAt(-1.0, -1.6, Math.PI / 2, false)) === null, 'in T·S·R, aiming is still blocked by the real wall');
+  check((await aimAt(-2.6, -4.0, Math.PI, true))?.startsWith('espelho m3'), 'in T·S·R, aiming passes through the displaced visual wall');
+  await page.keyboard.press('KeyT');
+  check(await g.until(() => document.querySelector('.toast').textContent.includes('T·R·S (ordem certa)')), 'and T again restores T·R·S');
+
   console.log('door reversal (level 2)');
   await g.load(1);
   await g.applySolution();

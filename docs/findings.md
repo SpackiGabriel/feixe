@@ -403,3 +403,15 @@ counted on "started/finished" events must also reset on `level:enter`:
 disposing a level (R, or leaving through an exit still lifting) drops its
 moving doors without ever emitting the "finished" event, so the count never
 returns to zero.
+
+## 2026-11-17 — `python -m http.server` lets the browser run stale modules
+
+Python's server sends `Last-Modified` but no `Cache-Control`, so Chrome
+caches ES modules heuristically and serves them without asking. After
+editing several files, the page loaded a fresh `main.js` next to a cached
+old `level-manager.js` that lacked a newly imported export: the import
+failed and the game never started, with nothing wrong on disk. `npm start`
+(`scripts/start-server.mjs`) now sends `Cache-Control: no-cache` (every
+file revalidates; unchanged ones are a 304). Entries cached before the fix
+still need one hard reload (Ctrl+Shift+R). Bind it dual-stack: calling
+`http.server.test(..., bind='')` listened on a link-local IPv6 address only.

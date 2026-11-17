@@ -5,6 +5,8 @@ import { createPhongMaterial, PHONG } from '../presentation/phong-material.js';
 
 const WALL_HEIGHT = 3;
 const WALL_THICKNESS = 0.2;
+const WALL_TILE_SIZE = 1.5;
+const CEILING_TILE_SIZE = 1.25;
 const FOG_COLOR = 0x0a0c0d;
 
 let wallMaterial = null;
@@ -64,12 +66,12 @@ function createRoom() {
   // Unlit: it's nearly black anyway, and it fills a third of the screen
   // (a lit material here cost ~15% of the frame in software WebGL).
   const ceilingMaterial = new THREE.MeshBasicMaterial({ color: 0x5c5c5c, map: ceilingTexture() });
-  const ceiling = new THREE.Mesh(tileUvs(new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE), ROOM_SIZE, ROOM_SIZE, 1.25), ceilingMaterial);
+  const ceiling = new THREE.Mesh(tileUvs(new THREE.PlaneGeometry(ROOM_SIZE, ROOM_SIZE), ROOM_SIZE, ROOM_SIZE, CEILING_TILE_SIZE), ceilingMaterial);
   ceiling.rotation.x = Math.PI / 2;
   ceiling.position.y = WALL_HEIGHT;
   room.add(ceiling);
 
-  const wallGeometry = tileUvs(new THREE.PlaneGeometry(ROOM_SIZE, WALL_HEIGHT), ROOM_SIZE, WALL_HEIGHT, 1.5, WALL_HEIGHT);
+  const wallGeometry = tileUvs(new THREE.PlaneGeometry(ROOM_SIZE, WALL_HEIGHT), ROOM_SIZE, WALL_HEIGHT, WALL_TILE_SIZE, WALL_HEIGHT);
   const half = ROOM_SIZE / 2;
   const material = getWallMaterial();
   const placements = [

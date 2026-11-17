@@ -52,8 +52,9 @@ export function createReceiver({ position, rotationY = 0, colorName }) {
 
   // Charge ring on both faces (a receiver can be hit from either side).
   const ringMaterial = new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0, toneMapped: false, side: THREE.DoubleSide });
+  const initialRingGeometry = new THREE.RingGeometry(0.47, 0.52, 48, 1, Math.PI / 2, 0.0001);
   const rings = [0.03, -0.03].map((z) => {
-    const r = new THREE.Mesh(new THREE.RingGeometry(0.47, 0.52, 48, 1, Math.PI / 2, 0.0001), ringMaterial);
+    const r = new THREE.Mesh(initialRingGeometry, ringMaterial);
     r.position.z = z;
     mesh.add(r);
     return r;
@@ -94,11 +95,9 @@ export function createReceiver({ position, rotationY = 0, colorName }) {
     const arc = Math.round(fraction * 48);
     if (arc === lastRingArc) return;
     lastRingArc = arc;
+    rings[0].geometry.dispose();
     const geometry = new THREE.RingGeometry(0.47, 0.52, 48, 1, Math.PI / 2, Math.max(0.0001, fraction * Math.PI * 2));
-    for (const r of rings) {
-      r.geometry.dispose();
-      r.geometry = geometry;
-    }
+    for (const r of rings) r.geometry = geometry;
   }
 
   function update(deltaSeconds) {

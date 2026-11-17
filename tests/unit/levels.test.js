@@ -142,7 +142,7 @@ describe.each(LEVELS_UNDER_TEST.map((data) => [data.id, data]))('%s', (_id, data
     const occluders = collectAimOccluders([], loaded.level);
     expect(occluders).not.toContain(null);
     (data.walls ?? []).forEach((w, i) => {
-      expect(occluders.includes(loaded.level.walls[i].mesh)).toBe(w.style !== 'glass');
+      expect(occluders.includes(loaded.level.walls[i].occluder ?? 'glass')).toBe(w.style !== 'glass');
     });
     data.doors.forEach((d, i) => {
       expect(occluders.includes(loaded.level.doors[i].occluder ?? 'glass')).toBe(d.style !== 'glass');

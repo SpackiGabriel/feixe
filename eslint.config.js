@@ -5,7 +5,7 @@ export default [
   { ignores: ['node_modules/', 'prototypes/', 'vendor/'] },
   js.configs.recommended,
   {
-    files: ['src/**/*.js', 'gallery/**/*.js', 'assets/viewer/**/*.js'],
+    files: ['src/**/*.js', 'gallery/**/*.js', 'assets/viewer/**/*.js', 'apresentacao/**/*.js'],
     languageOptions: { globals: globals.browser },
   },
   {

@@ -113,6 +113,7 @@ export function createPortalPair({ id, a, b }, pairIndex = 0) {
 
   // Beam glow on both ends, set every frame a beam enters either side.
   const glow = { level: 0, target: 0, color: new THREE.Color() };
+  const views = [viewA, viewB];
   function markBeam(color) {
     glow.target = 1;
     glow.color.setHex(colorToHex(color));
@@ -120,7 +121,7 @@ export function createPortalPair({ id, a, b }, pairIndex = 0) {
   function update(deltaSeconds) {
     glow.level = damp(glow.level, glow.target, glow.target ? 18 : 8, deltaSeconds);
     glow.target = 0; // must be re-marked next frame to stay lit
-    for (const view of [viewA, viewB]) {
+    for (const view of views) {
       view.material.uniforms.uBeam.value = glow.level;
       view.material.uniforms.uBeamColor.value.copy(glow.color);
     }
