@@ -38,6 +38,24 @@ export function saveLevelIndex(index, storage = globalThis.localStorage) {
   storage?.setItem(STORAGE_KEY, String(index));
 }
 
+// The furthest level ever entered on this machine: the menu's "Selecionar
+// câmara" lists levels 0..this. Never below the saved current level, so
+// progress saved before this key existed still counts. Not cleared by
+// "Novo jogo" (resetProgress) — what was reached stays reachable.
+const REACHED_KEY = 'feixe.reachedLevelIndex';
+
+export function loadReachedLevelIndex(levelCount, storage = globalThis.localStorage) {
+  const raw = storage?.getItem(REACHED_KEY);
+  const reached = clampLevelIndex(raw != null ? parseInt(raw, 10) : 0, levelCount);
+  return Math.max(reached, loadSavedLevelIndex(levelCount, storage));
+}
+
+export function saveReachedLevelIndex(index, storage = globalThis.localStorage) {
+  const previous = parseInt(storage?.getItem(REACHED_KEY) ?? '', 10);
+  const best = Number.isInteger(previous) ? Math.max(previous, index) : index;
+  storage?.setItem(REACHED_KEY, String(best));
+}
+
 // "Novo jogo" and finishing the last level both start the next session at level 1.
 export function resetProgress(storage = globalThis.localStorage) {
   storage?.removeItem(STORAGE_KEY);

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   clampLevelIndex, loadSavedLevelIndex, saveLevelIndex, resetProgress, nextAfterExit, getLevels,
+  loadReachedLevelIndex, saveReachedLevelIndex,
 } from '../../src/levels/level-manager.js';
 import { createLevelRuntime } from '../../src/levels/level-runtime.js';
 import { createScene } from '../../src/core/scene.js';
@@ -79,6 +80,38 @@ describe('resetProgress', () => {
     saveLevelIndex(6, storage);
     resetProgress(storage);
     expect(loadSavedLevelIndex(10, storage)).toBe(0);
+  });
+});
+
+describe('loadReachedLevelIndex / saveReachedLevelIndex', () => {
+  it('test_loadReachedLevelIndex_emptyStorage_returnsZero', () => {
+    expect(loadReachedLevelIndex(10, createFakeStorage())).toBe(0);
+  });
+
+  it('test_saveReachedLevelIndex_lowerAfterHigher_keepsMaximum', () => {
+    const storage = createFakeStorage();
+    saveReachedLevelIndex(6, storage);
+    saveReachedLevelIndex(2, storage);
+    expect(loadReachedLevelIndex(10, storage)).toBe(6);
+  });
+
+  it('test_loadReachedLevelIndex_onlyOldCurrentLevelSaved_countsAsReached', () => {
+    const storage = createFakeStorage();
+    saveLevelIndex(4, storage);
+    expect(loadReachedLevelIndex(10, storage)).toBe(4);
+  });
+
+  it('test_loadReachedLevelIndex_beyondLastLevel_clampsToLastIndex', () => {
+    const storage = createFakeStorage({ 'feixe.reachedLevelIndex': '42' });
+    expect(loadReachedLevelIndex(10, storage)).toBe(9);
+  });
+
+  it('test_resetProgress_afterReachingLevelSeven_keepsReached', () => {
+    const storage = createFakeStorage();
+    saveLevelIndex(6, storage);
+    saveReachedLevelIndex(6, storage);
+    resetProgress(storage);
+    expect(loadReachedLevelIndex(10, storage)).toBe(6);
   });
 });
 

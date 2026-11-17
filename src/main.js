@@ -10,7 +10,7 @@ import { createInteraction } from './core/interaction.js';
 import { createManipulation } from './core/manipulation.js';
 import { events } from './core/events.js';
 import { createLevelRuntime } from './levels/level-runtime.js';
-import { loadSavedLevelIndex, getLevels } from './levels/level-manager.js';
+import { loadSavedLevelIndex, loadReachedLevelIndex, getLevels } from './levels/level-manager.js';
 import { connectSfx, sfx, isMuted, setMuted } from './presentation/sfx.js';
 import { createCameraFx } from './presentation/camera-fx.js';
 import { setEnvMap } from './presentation/env-map.js';
@@ -92,6 +92,9 @@ const menu = createMenu(uiRoot, {
   getState: () => ({
     hasProgress: (levelRuntime?.getCurrentIndex() ?? 0) > 0,
     levelLabel: levelLabel(),
+    currentIndex: levelRuntime?.getCurrentIndex() ?? loadSavedLevelIndex(getLevels().length),
+    reachedIndex: loadReachedLevelIndex(getLevels().length),
+    levelName: (index) => getLevels()[index].name,
     quality,
     muted: isMuted(),
     sensitivity,
@@ -104,6 +107,10 @@ const menu = createMenu(uiRoot, {
   },
   onRestart: () => {
     transitions.blink(() => levelRuntime.restart());
+    requestLock();
+  },
+  onSelectLevel: (index) => {
+    transitions.blink(() => levelRuntime.loadLevel(index));
     requestLock();
   },
   onToggleQuality: () => {
