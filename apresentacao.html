@@ -72,7 +72,154 @@
     </div>
   </section>
 
-  <!-- 05 · O feixe -->
+  <!-- 05 · Tecnologias -->
+  <section class="slide">
+    <div class="kicker">Engenharia · Tecnologias</div>
+    <h2>Roda no navegador, <em>sem build</em></h2>
+    <div class="body cols-wide-right">
+      <ul class="bullets">
+        <li><b>Three.js r186</b> (WebGL) copiado em <code>vendor/</code>: roda sem internet.</li>
+        <li><b>ES modules + import map</b>: o navegador lê o código como foi escrito.</li>
+        <li>Shaders, texturas e sons gerados por código: <b>zero arquivos de mídia</b>.</li>
+        <li><b>Node só nas ferramentas</b>: Vitest, Playwright, ESLint.</li>
+      </ul>
+      <div class="scene" data-scene="boot-sequence"></div>
+    </div>
+  </section>
+
+  <!-- 06 · Camadas e módulos -->
+  <section class="slide">
+    <div class="kicker">Engenharia · Módulos</div>
+    <h2>48 módulos, <em>uma responsabilidade</em> cada</h2>
+    <div class="body cols-wide-left">
+      <div class="scene" data-scene="module-graph"></div>
+      <ul class="bullets">
+        <li><b>main</b> só liga as peças: cria, assina eventos, roda o laço.</li>
+        <li><b>core</b>: entrada, câmera, matrizes.</li>
+        <li><b>gameplay</b>: uma fábrica por peça e a lógica do feixe.</li>
+        <li><b>levels</b>: dados das câmaras e carregamento.</li>
+        <li><b>presentation</b>: luz, som, animação. <b>ui</b>: menu e HUD.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 07 · Engenharia · Lógica pura e eventos -->
+  <section class="slide">
+    <div class="kicker">Engenharia · Lógica e eventos</div>
+    <h2>A lógica não sabe que <em>existe 3D</em></h2>
+    <div class="body cols">
+      <div class="stack">
+        <ul class="bullets">
+          <li><b>24 de 48</b> módulos sem Three: testes rápidos.</li>
+          <li>A lógica só <b>emite</b> o que aconteceu.</li>
+          <li>Som e câmera <b>assinam</b>, sem ser chamados.</li>
+        </ul>
+        <div class="code-box fit">
+<pre class="code" data-file="src/core/events.js" data-mark="5-6,9-10">
+export function createEvents() {
+  const listeners = new Map(); // name -> Set&lt;fn&gt;
+  return {
+    on(name, fn) {
+      if (!listeners.has(name)) listeners.set(name, new Set());
+      listeners.get(name).add(fn);
+      return () => listeners.get(name).delete(fn);
+    },
+    emit(name, payload) {
+      for (const fn of listeners.get(name) ?? []) fn(payload);
+    },
+    …
+  };
+}
+</pre>
+        </div>
+      </div>
+      <div class="scene" data-scene="event-bus"></div>
+    </div>
+  </section>
+
+  <!-- 08 · Engenharia · Câmara = dados -->
+  <section class="slide">
+    <div class="kicker">Engenharia · Dados da câmara</div>
+    <h2>Cada câmara é um <em>arquivo de dados</em></h2>
+    <div class="body cols-wide-right">
+      <div class="stack">
+        <ul class="bullets">
+          <li>O <b>level-loader</b> monta a cena uma vez.</li>
+          <li>Cada câmara declara a sua <b>solution</b>.</li>
+          <li>Um teste prova que ela abre a porta.</li>
+        </ul>
+        <div class="code-box">
+<pre class="code" data-file="src/levels/data/level-3.js" data-mark="6,9,11">
+export const level3 = {
+  …
+  mirrors: [
+    {
+      …
+      rotationStepDegrees: 15,
+    },
+  ],
+  emitters: [{ id: 'e1', … }],
+  …
+  solution: { mirrors: { m1: … } },
+};
+</pre>
+        </div>
+      </div>
+      <div class="scene" data-scene="level-load"></div>
+    </div>
+  </section>
+
+  <!-- 09 · Um quadro por dentro -->
+  <section class="slide">
+    <div class="kicker">Engenharia · Ordem de execução</div>
+    <h2>Um quadro, <em>passo a passo</em></h2>
+    <div class="body cols">
+      <div class="stack">
+        <ul class="bullets tight">
+          <li><b>dt ≤ 0,1 s</b>: evita saltos ao trocar de aba.</li>
+          <li><b>Movimento e mira</b> atualizam antes da lógica.</li>
+          <li><b>Feixes</b> traçam antes das <b>portas</b> no quadro.</li>
+        </ul>
+        <div class="code-box">
+<pre class="code" data-file="src/levels/level-runtime.js" data-mark="3,7-12">
+function update(deltaSeconds, camera) {
+  …
+  laserSystem.update(deltaSeconds);
+  for (const receiver of currentLevel.receivers)
+    receiver.update(deltaSeconds);
+  …
+  for (let i = 0; i &lt; currentLevel.doors.length; i++) {
+    const door = currentLevel.doors[i];
+    door.update(deltaSeconds);
+    levelColliders[doorColliderStart + i] =
+      door.getCollider();
+  }
+  …
+}
+</pre>
+        </div>
+      </div>
+      <div class="scene" data-scene="frame-order"></div>
+    </div>
+  </section>
+
+  <!-- 10 · Processo de engenharia -->
+  <section class="slide">
+    <div class="kicker">Engenharia · Processo</div>
+    <h2>Decisões escritas, <em>verificação automática</em></h2>
+    <div class="body cols-wide-right">
+      <ul class="bullets">
+        <li><b>ADRs</b> (<code>docs/decisions/</code>): decisões registradas com contexto e alternativas.</li>
+        <li><b>0001</b>: import map offline em <code>vendor/</code>, sem bundler (antes CDN).</li>
+        <li><b>0004</b> e <b>0010</b>: lógica pura sem Three; shader e matrizes próprios.</li>
+        <li><b>Descobertas</b> (<code>findings.md</code>): armadilhas reais evitadas nos próximos ajustes.</li>
+        <li><b>CI</b> (<code>ci.yml</code>): a cada push, <code>lint</code> → unitários → e2e no Chromium.</li>
+      </ul>
+      <div class="scene" data-scene="ci-pipeline"></div>
+    </div>
+  </section>
+
+  <!-- 11 · O feixe -->
   <section class="slide">
     <div class="kicker">O coração do jogo</div>
     <h2>O feixe é <em>geometria</em>, não ray tracing</h2>
@@ -95,7 +242,7 @@
     </div>
   </section>
 
-  <!-- 06 · Eixo I · Geometria -->
+  <!-- 12 · Eixo I · Geometria -->
   <section class="slide" data-axis="I">
     <div class="kicker">Eixo I · Geometria e espaço</div>
     <h2>A ordem das transformações <em>importa</em></h2>
@@ -118,7 +265,7 @@
     </div>
   </section>
 
-  <!-- 07 · Eixo I · código -->
+  <!-- 13 · Eixo I · código -->
   <section class="slide" data-axis="I">
     <div class="kicker">Eixo I · No código</div>
     <h2>As paredes <em>internas</em> usam a nossa matriz</h2>
@@ -150,7 +297,7 @@ mesh.matrixAutoUpdate = false;
     </div>
   </section>
 
-  <!-- 08 · Eixo II · Câmera -->
+  <!-- 14 · Eixo II · Câmera -->
   <section class="slide" data-axis="II">
     <div class="kicker">Eixo II · Câmera e projeção</div>
     <h2>Por que o que está longe <em>fica pequeno</em></h2>
@@ -179,7 +326,7 @@ mesh.matrixAutoUpdate = false;
     </div>
   </section>
 
-  <!-- 09 · Eixo II · Navegação -->
+  <!-- 15 · Eixo II · Navegação -->
   <section class="slide" data-axis="II">
     <div class="kicker">Eixo II · Navegação e interação</div>
     <h2>Andar, olhar e <em>não atravessar</em> paredes</h2>
@@ -209,7 +356,7 @@ else velocityZ = 0;
     </div>
   </section>
 
-  <!-- 10 · Eixo III · Iluminação e materiais -->
+  <!-- 16 · Eixo III · Iluminação e materiais -->
   <section class="slide" data-axis="III">
     <div class="kicker">Eixo III · Iluminação e materiais</div>
     <h2>Um <em>Blinn-Phong</em> escrito por nós</h2>
@@ -252,7 +399,7 @@ else velocityZ = 0;
     </div>
   </section>
 
-  <!-- 11 · Eixo III · Sombreamento e texturas -->
+  <!-- 17 · Eixo III · Sombreamento e texturas -->
   <section class="slide" data-axis="III">
     <div class="kicker">Eixo III · Sombreamento e texturas</div>
     <h2>Por vértice ou <em>por fragmento</em></h2>
@@ -287,7 +434,7 @@ vec3 N = normalize( normalMatrix * normal );
     </div>
   </section>
 
-  <!-- 12 · Eixo IV · Animação -->
+  <!-- 18 · Eixo IV · Animação -->
   <section class="slide" data-axis="IV">
     <div class="kicker">Eixo IV · Animação</div>
     <h2>O mesmo movimento a <em>30 ou 144 FPS</em></h2>
@@ -312,7 +459,7 @@ vec3 N = normalize( normalMatrix * normal );
     </div>
   </section>
 
-  <!-- 13 · Qualidade -->
+  <!-- 19 · Qualidade -->
   <section class="slide">
     <div class="kicker">Qualidade</div>
     <h2>Como sabemos que <em>funciona</em></h2>
@@ -331,7 +478,7 @@ vec3 N = normalize( normalMatrix * normal );
     </div>
   </section>
 
-  <!-- 14 · Conclusão -->
+  <!-- 20 · Conclusão -->
   <section class="slide">
     <div class="kicker">Conclusão</div>
     <h2>A matemática da disciplina <em>é a mecânica</em> do jogo</h2>
@@ -355,7 +502,7 @@ vec3 N = normalize( normalMatrix * normal );
     </div>
   </section>
 
-  <!-- 15 · Perguntas -->
+  <!-- 21 · Perguntas -->
   <section class="slide hero">
     <div class="scene" data-scene="cover-beam"></div>
     <div class="hero-text">

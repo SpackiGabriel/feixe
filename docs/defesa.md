@@ -1,4 +1,4 @@
-# Guia de defesa — Feixe (apresentação de 20 min, 18/11/2026)
+# Guia de defesa — Feixe (apresentação de ~27 min, 18/11/2026)
 
 Base: o enunciado da disciplina (Seção 3: dez requisitos em quatro eixos;
 Seção 5: nota = 0,70 × artefato + 0,30 × defesa, cada requisito de 0 a 10).
@@ -36,7 +36,7 @@ Deixar o editor aberto nos arquivos citados para a arguição.
 
 ---
 
-## 1. Roteiro (20 min)
+## 1. Roteiro (~27 min)
 
 | Tempo | Slide | O que dizer / mostrar | Onde neste guia |
 |---|---|---|---|
@@ -44,17 +44,23 @@ Deixar o editor aberto nos arquivos citados para a arguição.
 | 0:30–1:30 | **02** O que é o Feixe | As seis peças; o objetivo de cada câmara (cada porta abre quando os receptores ligados a ela estão satisfeitos; o emissor pode ser branco) | — |
 | 1:30–5:00 | **03** Demonstração | Trocar para a aba do jogo. **L3** (girar o espelho: o feixe gira o dobro) → **L5** (cores somam onde chegam: o receptor pede vermelho + azul) → **L7** (filtro deixa passar uma cor) → **L8** (portal leva o feixe) → **L10** se sobrar tempo. Voltar aos slides | §3 perguntas 3–6, 18, 19 |
 | 5:00–6:00 | **04** Como funciona | Laço por quadro; lógica 2D em JS puro (testável) × apresentação em Three.js; câmara = dados, montada uma vez | §5 |
-| 6:00–7:15 | **05** O feixe | "No L3 vocês viram θ ⇒ 2θ": a fórmula r = d − 2(d·n)n; interseção raio–segmento; cor OU/E | §3 perguntas 3–6 |
-| 7:15–8:30 | **06** Eixo I | T·R·S × T·S·R (animação), malha dos condutos, hierarquia do espelho | §I.1, §I.2, §I.3 |
-| 8:30–9:15 | **07** Eixo I · código | `composeTRS` e a parede com a matriz nossa. *Opcional:* tecla `T` no L6 | §I.1 |
-| 9:15–10:30 | **08** Eixo II · câmera | Matriz P, w = −z, divisão por w (animação). *Opcional:* painel de debug "à mão = Three" andando para trás | §II.1 |
-| 10:30–11:30 | **09** Eixo II · navegação | Euler YXZ, colisão por eixo (desliza), portal soma θ ao yaw | §II.2 |
-| 11:30–13:00 | **10** Eixo III · luz e materiais | Blinn-Phong termo a termo; ka/kd/ks/n; luz pontual por feixe; espelho PBR + reflexo planar | §III.1, §III.3 |
-| 13:00–14:30 | **11** Eixo III · sombreamento | Vértice × fragmento (animação), `#define PER_VERTEX`, normalMatrix, texturas por código. *Opcional:* tecla `L` no L10 | §III.2, §III.4 |
-| 14:30–15:45 | **12** Eixo IV · animação | dt, `damp` e a identidade da exponencial; corrida 30 × 144 FPS | §IV |
-| 15:45–16:30 | **13** Qualidade | Testes, matrizes conferidas com o Three, solução de cada câmara testada, e2e (sem "60 FPS": não há medição) | §5 |
-| 16:30–17:15 | **14** Conclusão | Os quatro eixos: o que é nosso e o que é do Three (a câmera que desenha, o reflexo planar e o laço são do Three) | §6 |
-| 17:15–20:00 | **15** Perguntas | Arguição e alterações ao vivo | §3, §4 |
+| 6:00–7:10 | **05** Tecnologias | A inicialização real (animação): `index.html` → import map → `vendor/three` → `main.js` → módulos por pasta → WebGL → laço. Sem build, sem mídia importada; Node só nas ferramentas | §5.1 |
+| 7:10–8:20 | **06** Módulos | O grafo real de dependências entre as pastas (espessura = nº de imports); azul importa Three, verde é JS puro; o papel de cada pasta | §5.2 |
+| 8:20–9:30 | **07** Lógica e eventos | 24 de 48 módulos sem Three (ADR 0004); a lógica emite, som e câmera assinam (`events.js`) | §5.3 |
+| 9:30–10:40 | **08** Câmara = dados | O `level-3.js` carregado peça por peça (`instantiateLevel`); `solution` declarada; um teste prova que ela abre a porta | §5.4 |
+| 10:40–11:50 | **09** Um quadro por dentro | A ordem real de `update()`: feixes antes das portas, porque são eles que acendem os receptores | §5 (ordem do laço) |
+| 11:50–13:00 | **10** Processo | ADRs (0001, 0004, 0010), `findings.md`, CI a cada push: lint → unitários → e2e no Chromium | §5.5 |
+| 13:00–14:15 | **11** O feixe | "No L3 vocês viram θ ⇒ 2θ": a fórmula r = d − 2(d·n)n; interseção raio–segmento; cor OU/E | §3 perguntas 3–6 |
+| 14:15–15:30 | **12** Eixo I | T·R·S × T·S·R (animação), malha dos condutos, hierarquia do espelho | §I.1, §I.2, §I.3 |
+| 15:30–16:15 | **13** Eixo I · código | `composeTRS` e a parede com a matriz nossa. *Opcional:* tecla `T` no L6 | §I.1 |
+| 16:15–17:30 | **14** Eixo II · câmera | Matriz P, w = −z, divisão por w (animação). *Opcional:* painel de debug "à mão = Three" andando para trás | §II.1 |
+| 17:30–18:30 | **15** Eixo II · navegação | Euler YXZ, colisão por eixo (desliza), portal soma θ ao yaw | §II.2 |
+| 18:30–20:00 | **16** Eixo III · luz e materiais | Blinn-Phong termo a termo; ka/kd/ks/n; luz pontual por feixe; espelho PBR + reflexo planar | §III.1, §III.3 |
+| 20:00–21:30 | **17** Eixo III · sombreamento | Vértice × fragmento (animação), `#define PER_VERTEX`, normalMatrix, texturas por código. *Opcional:* tecla `L` no L10 | §III.2, §III.4 |
+| 21:30–22:45 | **18** Eixo IV · animação | dt, `damp` e a identidade da exponencial; corrida 30 × 144 FPS | §IV |
+| 22:45–23:30 | **19** Qualidade | Testes, matrizes conferidas com o Three, solução de cada câmara testada, e2e (sem "60 FPS": não há medição) | §5 |
+| 23:30–24:15 | **20** Conclusão | Os quatro eixos: o que é nosso e o que é do Three (a câmera que desenha, o reflexo planar e o laço são do Three) | §6 |
+| 24:15–27:00 | **21** Perguntas | Arguição e alterações ao vivo | §3, §4 |
 
 Os 10 requisitos têm o **mesmo peso** na nota. Dica de ritmo: **uma
 fórmula dita por requisito**, sem ler código linha a linha — o trecho no
@@ -266,7 +272,7 @@ albedo = cor × textura;  Ia = ambiente + hemisférica(N)
   (1 − metalness 0,05)/π) — conferido por screenshots antes/depois. O
   especular é outro modelo (Blinn-Phong de livro, sem normalização) e
   não tenta imitar o GGX antigo; nas paredes ele é fraco de propósito.
-- **Os números da animação do slide 10** (cena didática, em corte 2D): o
+- **Os números da animação do slide 16** (cena didática, em corte 2D): o
   "ambiente 0,18" é um valor **ilustrativo** (a barra mostra ka·Ia/π
   constante, só para ter a parcela ao lado das outras); o especular usa
   **n = 32**, o expoente do **piso** (a parede usa n = 12); a luz oscila
@@ -383,7 +389,7 @@ um salto enorme depois de trocar de aba). Tudo recebe dt:
   dois quadros curtos dão exatamente o mesmo resultado que um longo. O
   erro comum, `x += (alvo − x) · 0,1` por quadro (um "lerp" de fator
   fixo), anda mais rápido a 144 FPS que a 30 FPS.
-- **Os números da animação do slide 12** (a cena é didática, não é uma
+- **Os números da animação do slide 18** (a cena é didática, não é uma
   medição do jogo): usa **λ = 4**, ilustrativo (o jogo usa outras taxas:
   14 na aceleração e 18 na desaceleração do jogador, em `movement.js`).
   O tempo de "99 %" do damp é **ln(100)/λ = 4,605/4 ≈ 1,15 s**, o mesmo a
@@ -557,7 +563,7 @@ Pelo console (com `?debug`), sem recarregar:
 
 ---
 
-## 5. Arquitetura e testes (slides 04 e 13)
+## 5. Arquitetura, engenharia e testes (slides 04–10 e 19)
 
 **Ordem do laço por quadro** (`animate` em `src/main.js`, chamada pelo
 `renderer.setAnimationLoop`), nesta ordem:
@@ -583,7 +589,9 @@ Pelo console (com `?debug`), sem recarregar:
 `laser-system`, `door-logic`, `colors`, `aabb`, `rotation`), `levels/`
 (`level-runtime`, `level-manager`, `portal-crossing`, `exit-trigger`) e
 parte de `presentation/` (`motion`, `door-motion`, `quality`,
-`camera-fx`). Eles rodam no Node, sem navegador nem WebGL, e é por isso
+`camera-fx`, `sfx`, `env-map`) e de `ui/` (`menu`, `transitions`): 24 no
+total; os outros 24, incluindo o `main.js`, importam o Three.
+Os 24 sem Three rodam no Node, sem navegador nem WebGL, e é por isso
 que os testes são rápidos. O que importa o Three é a apresentação:
 `gameplay/` dos objetos visíveis (`mirror`, `wall`, `door`, `emitter`,
 `laser-beam`…), `presentation/` dos shaders e materiais
@@ -591,6 +599,84 @@ que os testes são rápidos. O que importa o Three é a apresentação:
 renderizador e cena, `levels/level-loader` e `ui/hud`. Cada nível é um
 objeto de dados em `src/levels/data/`; `level-loader` o transforma em
 cena **uma vez**, ao carregar.
+
+### 5.1 Tecnologias (slide 05)
+
+- **Sem build.** `index.html` declara um import map (`"three"` →
+  `./vendor/three/three.module.js`) e carrega `src/main.js` como
+  `<script type="module">`: o navegador lê os módulos ES como estão escritos,
+  sem bundler. O Three.js r186 fica copiado em `vendor/three/`, por isso o jogo
+  roda sem internet (a ADR 0001 nasceu com CDN e foi trocada pela cópia local).
+- **Nenhum arquivo de mídia.** Não há `.png`, `.mp3` ou `.glb` carregado em
+  `src/`: as malhas são primitivas do Three ou `BufferGeometry` nossa, as
+  texturas são desenhadas em Canvas 2D (`textures.js`), os sons são sintetizados
+  com Web Audio (`sfx.js`, `AudioContext` criado no primeiro gesto) e os
+  shaders são GLSL próprios (`phong-material.js`, `laser-beam.js`,
+  `conduits.js`, `portal.js`).
+- **Node só nas ferramentas.** `package.json` tem só dependências de
+  desenvolvimento: Vitest (testes), playwright-core (e2e no Chromium), ESLint e
+  o `three` do npm para os testes no Node. `npm start` sobe um servidor
+  estático na porta 8000 (`scripts/start-server.mjs`: um `http.server` do
+  Python com `Cache-Control: no-cache`, porque sem ele o navegador guardava
+  módulos ES antigos e o jogo quebrava depois de uma edição; ver
+  `docs/findings.md`).
+- **Ordem da inicialização:** `index.html` → import map → `main.js` importa os
+  módulos → `createRenderer` (`WebGLRenderer`, canvas no `body`) → `main.js`
+  remove o aviso `#boot` → `renderer.setAnimationLoop(animate)`.
+
+### 5.2 Módulos e camadas (slide 06)
+
+48 módulos fora de `levels/data/`: `main.js` + core 10, gameplay 18,
+levels 5, presentation 11, ui 3 (e mais 12 arquivos de dados das câmaras).
+Responsabilidades: **core** = entrada, câmera, olhar/andar, mira, matrizes;
+**gameplay** = uma fábrica por peça (`createMirror`, `createEmitter`…) mais a
+lógica do feixe; **levels** = dados, carregamento, execução da câmara;
+**presentation** = luz, som, animação e "sensação"; **ui** = menu, HUD e
+transições. `main.js` (346 linhas) só cria, conecta (assina eventos) e roda o
+laço. As setas do grafo do slide são as contagens reais de `import` entre
+pastas (ex.: gameplay → presentation 11, levels → gameplay 11,
+gameplay → core 8). O grafo deixa de fora uma única aresta: `core/scene.js`
+importa as constantes da sala de `levels/data/constants.js` (dado, não
+módulo de código). Se perguntarem: há dependência de volta entre gameplay,
+core e presentation (não é uma pilha estrita); o que o projeto garante é a
+separação lógica pura × Three (§5.3), não camadas rígidas.
+
+### 5.3 Lógica pura e eventos (slide 07)
+
+- **24 dos 48 módulos não importam Three** (ADR 0004): a lista está no
+  parágrafo "Lógica pura × apresentação" acima. Rodam no Node, e os testes são
+  rápidos (~1 s).
+- **Barramento de eventos** (`src/core/events.js`, `createEvents`: `on` guarda
+  a função num `Map` de `Set`s; `emit` chama quem assinou; sem assinante, não
+  faz nada). A lógica só emite o que aconteceu, por exemplo `receiver:on`
+  (`receiver.js`) e `door:moving`/`door:settled` (`door.js`); quem assina é a
+  apresentação: `sfx.js` (som de travar, motor da porta) e `main.js`
+  (`cameraFx.doorMoving`: a câmera treme). O emissor não conhece o assinante:
+  trocar o som não mexe no quebra-cabeça, e os testes rodam sem áudio.
+
+### 5.4 Uma câmara é um arquivo de dados (slide 08)
+
+Cada câmara é um objeto em `src/levels/data/level-N.js` (espelhos, emissores,
+receptores, portas, paredes… e `solution`); `level-template.js` documenta
+todos os campos. `instantiateLevel(data, scene, interactiveObjects)`
+(`level-loader.js`) chama uma fábrica por peça e monta a cena **uma vez**;
+`disposeLevel` a desmonta ao sair. A `solution` declarada é aplicada pelo
+`levels.test.js`, que prova que a câmara começa fechada e que a solução abre a
+porta de saída. `npm run analyze N` (ferramenta de projeto, fora do `npm test`)
+percorre as configurações possíveis de uma câmara e diz quais abrem a saída,
+por quais rotas do feixe.
+
+### 5.5 Processo (slide 10)
+
+- **ADRs** em `docs/decisions/` (10): uma decisão importante por arquivo, com
+  contexto e alternativas. As que mais explicam a arquitetura: 0001 (import
+  map, sem bundler; hoje com o Three em `vendor/`), 0004 (lógica pura sem
+  Three, para testar no Node) e 0010 (shader Blinn-Phong e matrizes próprios,
+  não voltar aos prontos).
+- **`docs/findings.md`**: descobertas e armadilhas, uma linha datada cada.
+- **CI** (`.github/workflows/ci.yml`), a cada push e pull request:
+  `npm ci` → `npm run lint` → `npm test` → instala o Chromium →
+  `npm run e2e` (a partida completa das dez câmaras).
 
 **O que os testes cobrem** (`npm test`, Vitest, ~1 s; **349** na última
 contagem, em `tests/unit/`):
@@ -629,7 +715,7 @@ pedido externo (funciona offline). `tests/e2e/deck-check.mjs` faz o
 mesmo tipo de verificação nos slides (nenhum código rola, sem erro de
 console).
 
-**Os números do slide 13:** 349 testes unitários (conferir com
+**Os números do slide 19:** 349 testes unitários (conferir com
 `npm test` no dia: o número sobe quando entram testes novos); 0 modelos
 3D importados (tudo é `BufferGeometry` e textura gerados por código);
 10 câmaras com solução testada (`levels.test.js`); 9 casas decimais
@@ -640,7 +726,7 @@ o que sustenta a meta).
 
 ---
 
-## 6. O que é nosso e o que é do Three (slide 14)
+## 6. O que é nosso e o que é do Three (slide 20)
 
 Por eixo, o que escrevemos e o que o Three faz por nós (os dois lados da
 resposta de §2):
@@ -671,7 +757,7 @@ resposta de §2):
 - [ ] `npm start` na máquina da apresentação (precisa de Node e Python);
       testar offline.
 - [ ] Abrir `http://localhost:8000/apresentacao.html` em tela cheia (`F`) no
-      projetor e passar os 15 slides: animações rodando, nenhum código
+      projetor e passar os 21 slides: animações rodando, nenhum código
       cortado (`node tests/e2e/deck-check.mjs` confere isso sozinho).
 - [ ] **Liberar as 10 câmaras no navegador da apresentação**: abrir
       `http://localhost:8000/?debug&level=10` uma vez (o seletor só lista as
