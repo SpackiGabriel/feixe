@@ -200,7 +200,7 @@ chamber numerals, spawns that frame the mechanism.
 | RF07 doors AND/OR, nested `{any}`, `forbidIds`, animated reversible motion | `src/gameplay/door.js`, `presentation/door-{motion,view}.js`, `level-loader.js` |
 | RF08 declarative levels incl. interior `walls` (solid/glass) | `src/levels/data/*.js`, `level-loader.js` |
 | RF09 10 levels, restart (`R`), progression, ending | `src/levels/{level-manager,level-runtime}.js`, `ui/{menu,transitions}.js` |
-| RF10 / NFR feedback, color symbols, HUD | `src/ui/hud.js`, `presentation/conduits.js`, `src/gameplay/{textures,colors}.js` |
+| RF10 / NFR feedback, color symbols, HUD | `src/ui/hud.js`, `presentation/conduits.js`, `src/presentation/textures.js`, `src/gameplay/colors.js` |
 | §9 portals (beam + player) | `src/gameplay/portal.js`, `src/levels/portal-crossing.js` |
 | NFR persistence | `level-manager.js` (`localStorage`, reset on finish / Novo jogo) |
 | Enunciado §3 I/II hand-written matrices: T·R·S, view, perspective, divide by w (key T and the ?debug readout) | `src/core/matrix.js` (tests vs Three in `tests/unit/matrix.test.js`); interior walls use `composeTRS` directly (`wall.js`) |
@@ -248,7 +248,7 @@ Visual identity and asset pipeline are being specified, not built:
 `assets/README.md`. A grey-box evaluation page lives in `gallery/` (reuses the
 real factories; `npm start` → `/gallery/`); first-pass screenshots in
 `design/visual/evidence/`. The game now has procedural textures, a
-baseline symbol mapping (`src/gameplay/{textures,colors}.js`, swappable in
+baseline symbol mapping (`src/presentation/textures.js`, `src/gameplay/colors.js`, swappable in
 one table) and the presentation rules in `docs/presentation.md` (which
 apply design-system COL-01/02: portals, switch, doors and traps are now
 neutral). It loads no GLB.

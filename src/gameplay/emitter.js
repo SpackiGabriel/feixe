@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { COLOR_NAMES } from './colors.js';
 import { colorToHex } from './laser.js';
 import { createSteppedAngle } from './rotation.js';
-import { symbolFaceTexture } from './textures.js';
+import { symbolFaceTexture } from '../presentation/textures.js';
 import { events } from '../core/events.js';
 import { createDial, createManipulable } from '../presentation/affordances.js';
 

@@ -4,7 +4,7 @@ import { events } from '../core/events.js';
 import { createRailState, createManipulable } from '../presentation/affordances.js';
 import { COLOR_NAMES } from './colors.js';
 import { colorToHex } from './laser.js';
-import { symbolFaceTexture } from './textures.js';
+import { symbolFaceTexture } from '../presentation/textures.js';
 
 export const PANEL_WIDTH = 0.8;
 const PANEL_HEIGHT = 0.8;

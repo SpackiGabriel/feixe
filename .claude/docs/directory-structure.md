@@ -18,14 +18,15 @@
 │   │                            #   matrix.js (hand-written T·R·S, view, perspective, divide by w)
 │   ├── presentation/            # game feel (docs/presentation.md): motion/timing, door motion+view,
 │   │                            #   conduits, affordances, camera fx, sfx (audio), quality, env map,
-│   │                            #   mirror-reflection.js (planar Reflector), phong-material.js
+│   │                            #   mirror-reflection.js (planar Reflector), textures.js (procedural
+│   │                            #   canvas textures), phong-material.js
 │   │                            #   (own Blinn-Phong shader: walls + floor)
 │   ├── ui/                      # hud.js (crosshair, brackets, prompts), menu.js (menu + ending),
 │   │                            #   transitions.js (shutter, intro), ui.css
 │   ├── gameplay/                # one factory per object (mirror, emitter, receiver, door,
 │   │                            #   switch, filter, blocker, wall, portal, rail) + pure logic
 │   │                            #   (laser.js, door-logic.js, aabb.js, colors.js, rotation.js)
-│   │                            #   + laser-system.js, laser-beam.js, textures.js (procedural)
+│   │                            #   + laser-system.js, laser-beam.js
 │   └── levels/
 │       ├── data/level-N.js      # declarative level data (spec §10) — one file per level
 │       ├── data/level-template.js   # every level field, commented — copy to start a level

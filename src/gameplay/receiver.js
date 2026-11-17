@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { COLOR_NAMES } from './colors.js';
 import { composeReceiverColor, isReceiverSatisfied, colorToHex } from './laser.js';
 import { segmentFromCenter } from './aabb.js';
-import { symbolFaceTexture } from './textures.js';
+import { symbolFaceTexture } from '../presentation/textures.js';
 import { events } from '../core/events.js';
 import { CHAIN } from '../presentation/conduits.js';
 import { clamp01, damp, easeOutCubic } from '../presentation/motion.js';

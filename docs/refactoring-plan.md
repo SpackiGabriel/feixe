@@ -77,8 +77,10 @@ undocumented (see A4).
 ### Actual dependency directions
 - `gameplay → presentation` is common: objects own their meshes and use
   presentation helpers.
-- `presentation → gameplay` happens only through `gameplay/textures.js`,
-  which is presentation code living in the wrong folder (A7).
+- `presentation → gameplay` happened only through `gameplay/textures.js`,
+  which was presentation code living in the wrong folder (A7, done). Now
+  the only such import is `presentation/textures.js` →
+  `gameplay/colors.js`, the pure colour/symbol vocabulary.
 - There are no file-level cycles.
 
 ---
@@ -256,7 +258,8 @@ Legend: **Pri** H/M/L · **Cx** (complexity) S/M/L · **Phase** 1 = safe before 
   - It is the **only** reason `presentation/` imports from `gameplay/`.
 - **Proposal:** `git mv` it to `src/presentation/textures.js` and update the
   imports. This turns an unstated layering into a true, one-sentence rule:
-  *presentation never imports gameplay*.
+  *presentation imports nothing from gameplay except the pure colour
+  vocabulary (`colors.js`)*.
 - **Risk:** low (`modules.test.js` catches broken paths).
 - **Defence note:** `defesa.md` cites `textures.js:13,140`; update the path.
 

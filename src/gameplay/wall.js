@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { rotatedRectAABB } from './aabb.js';
-import { tileUvs } from './textures.js';
+import { tileUvs } from '../presentation/textures.js';
 import { composeTRS, composeTSR } from '../core/matrix.js';
 
 const DEFAULT_HEIGHT = 3;

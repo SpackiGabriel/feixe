@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { dialTexture } from '../gameplay/textures.js';
+import { dialTexture } from './textures.js';
 import { damp } from './motion.js';
 
 // "What can I do with this?" shown in the world, not in a menu

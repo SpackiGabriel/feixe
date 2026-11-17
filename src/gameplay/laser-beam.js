@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { colorToHex } from './laser.js';
-import { flareTexture } from './textures.js';
+import { flareTexture } from '../presentation/textures.js';
 
 const MAX_PIECES = 32; // generous bound: MAX_REFLECTIONS bounces + filters/portals + the last leg
 const CORE_RADIUS = 0.014;
