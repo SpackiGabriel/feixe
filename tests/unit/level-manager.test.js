@@ -188,4 +188,15 @@ describe('createLevelRuntime', () => {
     expect(runtime.getCurrentIndex()).toBe(0);
     expect(runtime.isComplete()).toBe(false);
   });
+
+  // Regression: load() clamped by hand, so a non-integer index (e.g. a bad
+  // ?level= value reaching loadLevel) indexed levels[NaN] and crashed.
+  it('test_loadLevel_nonInteger_clampsToZero', () => {
+    const { scene, wallSegments, occluders } = createScene();
+    const runtime = createLevelRuntime({ scene, wallSegments, interactiveObjects: [], roomOccluders: occluders });
+    runtime.loadLevel(NaN);
+    expect(runtime.getCurrentIndex()).toBe(0);
+    runtime.loadLevel(99);
+    expect(runtime.getCurrentIndex()).toBe(getLevels().length - 1);
+  });
 });

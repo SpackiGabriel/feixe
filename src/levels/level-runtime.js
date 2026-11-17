@@ -1,6 +1,6 @@
 import { createLaserSystem } from '../gameplay/laser-system.js';
 import { instantiateLevel, disposeLevel } from './level-loader.js';
-import { getLevels, loadSavedLevelIndex, saveLevelIndex, saveReachedLevelIndex, resetProgress, nextAfterExit } from './level-manager.js';
+import { getLevels, clampLevelIndex, loadSavedLevelIndex, saveLevelIndex, saveReachedLevelIndex, resetProgress, nextAfterExit } from './level-manager.js';
 import { events } from '../core/events.js';
 import { isPlayerAtExit } from './exit-trigger.js';
 import { isPlayerAtPortal, computePortalLanding } from './portal-crossing.js';
@@ -65,7 +65,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
 
   function load(index) {
     teardown();
-    currentIndex = Math.max(0, Math.min(index, levels.length - 1));
+    currentIndex = clampLevelIndex(index, levels.length);
     currentLevel = instantiateLevel(levels[currentIndex], scene, interactiveObjects);
     laserSystem = createLaserSystem({ scene, wallSegments, ...currentLevel });
     levelColliders = [...currentLevel.blockers, ...currentLevel.walls].map((o) => o.collider);
@@ -111,12 +111,20 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
     load(currentIndex);
   }
 
+  // One frame of the live level. The order is the contract: the laser
+  // decides which receivers are lit, and doors read that afterwards.
   function update(deltaSeconds, camera) {
     if (complete) return;
     stats.seconds += deltaSeconds;
+    tickLevel(deltaSeconds);
+    if (checkExit(camera)) return; // the level is about to change
+    checkPortals(camera);
+  }
+
+  function tickLevel(deltaSeconds) {
     laserSystem.update(deltaSeconds); // must run before doors, since it updates receivers' active state
     for (const receiver of currentLevel.receivers) receiver.update(deltaSeconds);
-    advancePortalClock(deltaSeconds); // shared by every portal surface (was never called before)
+    advancePortalClock(deltaSeconds); // one clock for every portal surface, so both ends of a pair shimmer in sync
     for (const portal of currentLevel.portals) portal.update(deltaSeconds); // after the laser marked beams
     for (const device of devices) device.update(deltaSeconds);
     for (const blocker of currentLevel.blockers) blocker.update(deltaSeconds);
@@ -126,28 +134,31 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
       door.update(deltaSeconds);
       levelColliders[doorColliderStart + i] = door.getCollider();
     }
+  }
 
+  // Walking into the open exit (RF09). Returns true when it triggered.
+  function checkExit(camera) {
     const exitDoor = currentLevel.exitDoor;
-    if (
-      !exitTriggered &&
-      exitDoor &&
-      isPlayerAtExit({
-        doorOpen: exitDoor.isPassable(), // the visible panel, not just the unlock
-        doorX: exitDoor.position.x,
-        doorZ: exitDoor.position.z,
-        playerX: camera.position.x,
-        playerZ: camera.position.z,
-        radius: EXIT_TRIGGER_RADIUS,
-      })
-    ) {
-      exitTriggered = true;
-      events.emit('level:exit', { index: currentIndex });
-      pendingExit = nextAfterExit(currentIndex, levels.length);
-      if (onExit) onExit(pendingExit);
-      else advance();
-      return;
-    }
+    if (exitTriggered || !exitDoor) return false;
+    const atExit = isPlayerAtExit({
+      doorOpen: exitDoor.isPassable(), // the visible panel, not just the unlock
+      doorX: exitDoor.position.x,
+      doorZ: exitDoor.position.z,
+      playerX: camera.position.x,
+      playerZ: camera.position.z,
+      radius: EXIT_TRIGGER_RADIUS,
+    });
+    if (!atExit) return false;
+    exitTriggered = true;
+    events.emit('level:exit', { index: currentIndex });
+    pendingExit = nextAfterExit(currentIndex, levels.length);
+    if (onExit) onExit(pendingExit);
+    else advance();
+    return true;
+  }
 
+  // Walking through a portal doorway moves the player to the linked one.
+  function checkPortals(camera) {
     for (const portal of currentLevel.portals) {
       const atPortal = isPlayerAtPortal({
         playerX: camera.position.x,
@@ -176,7 +187,7 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
         camera.rotation.y = landing.yaw;
         portalCooldownId = portal.linked.id; // suppress re-trigger at the landing portal until the player leaves
         events.emit('portal:player', { portal });
-        break; // at most one teleport per frame
+        return; // at most one teleport per frame
       }
     }
   }
