@@ -7,9 +7,10 @@ const _raycaster = new THREE.Raycaster();
 const _origin = new THREE.Vector3();
 const _direction = new THREE.Vector3();
 
-// Default hover feedback: tint the object gray. Objects whose material
-// already carries meaning through emissive color (e.g. an emitter's laser
-// color) provide their own `userData.setHovered` instead of using this.
+// Hover feedback. Every gameplay object brings its own `userData.setHovered`
+// (createManipulable in presentation/affordances.js, or switch.js), since
+// their emissive colour carries meaning; the gray tint is the fallback for
+// a plain mesh (ADR 0002, amendment).
 function setHoverState(object, isHovered) {
   if (!object) return;
   if (typeof object.userData.setHovered === 'function') {
@@ -21,7 +22,8 @@ function setHoverState(object, isHovered) {
 
 // "Aim and select" model (spec §4): a ray from the camera center picks the
 // nearest interactive object under the crosshair. `interactiveObjects` is
-// populated by later systems (mirrors, emitters); it starts empty here.
+// the whole definition of "selectable": level-loader.js fills it (and
+// leaves out devices with no degree of freedom); it starts empty here.
 //
 // Runs before renderer.render() each frame, so both the camera and any
 // interactive object moved this frame (e.g. a dragged mirror) would

@@ -67,8 +67,8 @@ The shape grew as levels were built; this is what the code reads today.
 - **Selectability is the `interactiveObjects` array, not a flag.**
   `interaction.js` raycasts only that array, which `level-loader.js` fills
   (and gates: a mirror with no degree of freedom, or an emitter that can't
-  rotate, is never pushed). The `userData.interactive = true` that the
-  factories still write is not read anywhere.
+  rotate, is never pushed). The original `userData.interactive = true`
+  flag was never read and has been removed.
 - **`userData.controller`** (driven by `manipulation.js`):
   `positionEnabled`, `rotationEnabled`, `applyPositionDelta(delta)`,
   `applyRotationDelta(delta)`, plus optional

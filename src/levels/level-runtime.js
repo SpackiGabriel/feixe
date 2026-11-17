@@ -188,7 +188,6 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
     restart,
     startNewGame,
     advance,
-    getStats: () => stats,
     isExiting: () => pendingExit !== null,
     loadLevel: load,
     getCurrentIndex: () => currentIndex,

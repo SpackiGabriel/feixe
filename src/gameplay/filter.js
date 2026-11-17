@@ -75,7 +75,6 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
     applyPosition();
   }
 
-  plate.userData.interactive = true;
   plate.userData.controller = {
     positionEnabled: true,
     rotationEnabled: false,

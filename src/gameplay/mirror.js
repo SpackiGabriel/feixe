@@ -107,7 +107,6 @@ export function createMirror({
     manipulable?.rotated(plate.rotation.y);
   }
 
-  plate.userData.interactive = true;
   plate.userData.controller = { positionEnabled, rotationEnabled, rotationStep: angle.step, railAxis: railAxis(railStart, railEnd), applyPositionDelta, applyRotationDelta };
   plate.userData.prompt = promptFor(positionEnabled, rotationEnabled);
   manipulable = createManipulable({
@@ -126,7 +125,7 @@ export function createMirror({
 }
 
 // Short Portuguese hint shown under the crosshair while aiming (src/ui/hud.js).
-export function promptFor(positionEnabled, rotationEnabled) {
+function promptFor(positionEnabled, rotationEnabled) {
   if (positionEnabled && rotationEnabled) return 'Clique: mover e girar';
   if (positionEnabled) return 'Clique: mover';
   if (rotationEnabled) return 'Clique: girar';

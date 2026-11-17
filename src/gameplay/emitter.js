@@ -87,7 +87,6 @@ export function createEmitter({ position, colorName, initialRotationY = 0, rotat
     manipulable?.rotated(mesh.rotation.y);
   }
 
-  mesh.userData.interactive = true;
   mesh.userData.controller = {
     positionEnabled: false,
     rotationEnabled,

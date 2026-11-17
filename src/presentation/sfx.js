@@ -129,7 +129,6 @@ export const sfx = {
     tone(495, 0.7, { type: 'triangle', gain: 0.035, delay: 0.16 });
   },
   levelComplete: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, { gain: 0.06, delay: i * 0.08 })),
-  shutter: () => noise(0.12, { frequency: 900, endFrequency: 300, q: 1.5, gain: 0.08 }),
   ending: () => {
     tone(55, 6, { type: 'sawtooth', gain: 0.05, attack: 2, endFrequency: 110 });
     tone(82.5, 6, { type: 'sawtooth', gain: 0.03, attack: 3, endFrequency: 165 });

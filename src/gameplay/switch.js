@@ -63,7 +63,6 @@ export function createSwitch({ position, rotationY = 0 }) {
     events.emit('switch:toggle', { active });
   }
 
-  button.userData.interactive = true;
   button.userData.activate = activate;
   button.userData.prompt = 'Clique: ativar';
   // Hovering must not clobber the active/inactive color (interaction.js's

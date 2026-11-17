@@ -15,9 +15,6 @@ export function createEvents() {
     emit(name, payload) {
       for (const fn of listeners.get(name) ?? []) fn(payload);
     },
-    clear() {
-      listeners.clear();
-    },
   };
 }
 
@@ -35,11 +32,10 @@ export function createEvents() {
 //   door:moving / door:settled   door.js            { door, opening }
 //   portal:player                level-runtime.js   { portal }
 //   grab / release               manipulation.js    { controller }
-//   press                        manipulation.js    {}  (one-shot activate)
 //   rotate:tick / rail:limit     affordances.js     {}
 //   level:enter                  level-runtime.js   { index, count, data }
 //   level:exit                   level-runtime.js   { index }
 //   game:complete                level-runtime.js   { stats }
-// door:lock, trap:off and press currently have no listener; they're emitted
-// for symmetry with their counterparts, which do.
+// door:lock and trap:off currently have no listener; they're emitted for
+// symmetry with door:unlock and trap:on, which do.
 export const events = createEvents();

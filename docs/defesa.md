@@ -131,7 +131,7 @@ no L10 o aviso na tela explica por quê.
 
 **Nível honesto:** avançado. Composição à mão nas paredes, rotação à mão
 no traçado do feixe (`laser.js`) e uso explícito de `matrixWorld` para
-levar pontos locais ao mundo (`mirror.js:140-148`). Os demais objetos
+levar pontos locais ao mundo (`mirror.js:139-147`). Os demais objetos
 (espelhos, portas) usam o `compose` do Three — mesma matemática.
 
 ### I.2 Modelagem 3D (malhas; topologia vs. geometria)
@@ -165,7 +165,7 @@ O pedestal é filho da base: desliza mas não gira. Porta: `root` →
 **Matemática:** M_mundo(filho) = M_mundo(pai) · M_local(filho). Para a
 placa: M = T(posição no trilho) · R_y(θ). O traçado do feixe usa isso
 diretamente: as pontas da placa (±0,5 m em x local) são levadas ao mundo
-por `applyMatrix4(plate.matrixWorld)` (`mirror.js:141-142`).
+por `applyMatrix4(plate.matrixWorld)` (`mirror.js:140-141`).
 
 **Demonstração:** deslizar um espelho já girado — a placa mantém o
 ângulo e acompanha a base, porque herda a translação do pai.
@@ -223,9 +223,9 @@ matemática está implementada e verificada à mão, e é mostrada ao vivo.
 - Colisão: AABB do jogador contra AABBs das paredes/portas, **por eixo
   separado** (`movement.js:72-78`): tenta mover em x, depois em z — por
   isso o jogador desliza ao longo da parede em vez de parar.
-- Mirar/selecionar: raio do centro da câmera (`interaction.js:43`); o
+- Mirar/selecionar: raio do centro da câmera (`interaction.js:45`); o
   Three testa raio–triângulo; depois testamos se há
-  parede/porta entre a câmera e o alvo (`interaction.js:49`).
+  parede/porta entre a câmera e o alvo (`interaction.js:51`).
 - Portal: atravessar leva o jogador ao portal ligado e soma a diferença de
   orientação ao yaw (`portal-crossing.js:30-35`). É a mesma rotação que o
   feixe recebe com `rotateXZ`: girar a frente (−sin y, −cos y) por θ dá
@@ -378,7 +378,7 @@ um salto enorme depois de trocar de aba). Tudo recebe dt:
 - `movement.js`: posição += velocidade · dt (integração de Euler: a
   velocidade é exata por `damp`, a posição é independente de FPS em
   regime constante, com erro pequeno só na rampa de ~0,07 s).
-- `motion.js:27`, `damp`: x ← alvo + (x − alvo)·e^(−λ·dt). É
+- `motion.js:26`, `damp`: x ← alvo + (x − alvo)·e^(−λ·dt). É
   independente de FPS porque e^(−λ·dt1)·e^(−λ·dt2) = e^(−λ·(dt1+dt2)):
   dois quadros curtos dão exatamente o mesmo resultado que um longo. O
   erro comum, `x += (alvo − x) · 0,1` por quadro (um "lerp" de fator
