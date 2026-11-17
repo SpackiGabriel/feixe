@@ -59,3 +59,30 @@ implicit (no TypeScript/interface to enforce it); a mismatched shape fails
 silently at the call site (e.g. `controller.applyPositionDelta` being
 `undefined`). Acceptable for this project's size — if it becomes a
 recurring source of bugs, revisit with a runtime shape-check.
+
+## Amendment (2026-11-17): the contract as it actually stands
+
+The shape grew as levels were built; this is what the code reads today.
+
+- **Selectability is the `interactiveObjects` array, not a flag.**
+  `interaction.js` raycasts only that array, which `level-loader.js` fills
+  (and gates: a mirror with no degree of freedom, or an emitter that can't
+  rotate, is never pushed). The original `userData.interactive = true`
+  flag was never read and has been removed.
+- **`userData.controller`** (driven by `manipulation.js`):
+  `positionEnabled`, `rotationEnabled`, `applyPositionDelta(delta)`,
+  `applyRotationDelta(delta)`, plus optional
+  - `railAxis` — `{ x, z, length }` of the rail, so a drag slides along the
+    rail as seen from the camera (`mouseDeltaToManipulation`);
+  - `rotationStep` — radians per Q/E press (`keyRotationStep`);
+  - `setGrabbed(isGrabbed)` — grab feedback, installed by
+    `createManipulable` (`presentation/affordances.js`).
+- **`userData.activate()`** — unchanged: one-shot objects (the switch).
+- **`userData.setHovered(isHovered)`** — every gameplay object now has one
+  (`createManipulable` installs it for mirror, emitter and filter; the
+  switch writes its own). `interaction.js`'s gray-tint default remains as
+  the fallback for a plain mesh, but no game object uses it.
+- **`userData.prompt`** — HUD hint text while aimed (`main.js` → `hud.js`).
+- **`userData.debugInfo()`** — `?debug` readout line, set by the loader.
+
+All of it remains duck typing; the decision above is unchanged.

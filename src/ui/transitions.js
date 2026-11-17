@@ -71,11 +71,6 @@ export function createTransitions(root) {
     clearWhiteout() {
       whiteout.classList.remove('on');
     },
-    openNow() {
-      token++;
-      whiteout.classList.remove('on');
-      shutter.classList.remove('closed');
-    },
     // Level title: number, then the name typed in, then fade.
     showIntro(index, count, name) {
       introNum.textContent = `NÍVEL ${String(index + 1).padStart(2, '0')} / ${String(count).padStart(2, '0')}`;

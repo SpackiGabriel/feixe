@@ -66,7 +66,7 @@ rules or change them here.
 | Beam core/halo/flares/endpoint light | `gameplay/laser-beam.js` |
 | Sounds (named cues) + drone | `presentation/sfx.js` |
 | Camera effects | `presentation/camera-fx.js` |
-| Room, lights, fog, lamps, numeral | `core/scene.js`, textures in `gameplay/textures.js` |
+| Room, lights, fog, lamps, numeral | `core/scene.js`, textures in `presentation/textures.js` |
 | Walls and floor shading (own Blinn-Phong, key `L` vertex/fragment) | `presentation/phong-material.js` |
 | Mirror reflections (planar Reflector, menu "Reflexos") | `presentation/mirror-reflection.js` |
 | Quality (pixel budget, reflections) | `presentation/quality.js` |

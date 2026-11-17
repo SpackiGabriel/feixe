@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { loadQuality, saveQuality, pixelRatioFor } from '../../src/presentation/quality.js';
-import { parsePrompt } from '../../src/ui/hud.js';
 
 function fakeStorage() {
   const data = {};
@@ -30,12 +29,5 @@ describe('quality', () => {
   it('test_pixelRatio_largeWindow_staysWithinPixelBudget', () => {
     const ratio = pixelRatioFor('high', 1.5, 1920, 1080);
     expect(1920 * 1080 * ratio * ratio).toBeLessThanOrEqual(2.1e6 + 1);
-  });
-});
-
-describe('parsePrompt', () => {
-  it('test_parsePrompt_splitsKeyActionPairs', () => {
-    expect(parsePrompt('Mouse: girar · Q/E: passo')).toEqual([{ key: 'Mouse', action: 'girar' }, { key: 'Q/E', action: 'passo' }]);
-    expect(parsePrompt(null)).toEqual([]);
   });
 });

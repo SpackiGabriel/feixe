@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { railAxis, createRailMesh } from './rail.js';
+import { railAxis, createRailMesh, slideAlongRail, writePlateSegment } from './rail.js';
 import { createSteppedAngle } from './rotation.js';
 import { events } from '../core/events.js';
 import { getEnvMap } from '../presentation/env-map.js';
@@ -15,9 +15,6 @@ const HOVER_EMISSIVE = 0x34424a;
 
 const steelMaterial = new THREE.MeshStandardMaterial({ color: 0x3b4146, metalness: 0.7, roughness: 0.38 });
 steelMaterial.userData.shared = true;
-
-const _localA = new THREE.Vector3();
-const _localB = new THREE.Vector3();
 
 // A mirror is a base/pivot node (parent, moves along the rail) with a
 // reflective plate as its child (rotates around the pivot) — spec §5's
@@ -94,10 +91,9 @@ export function createMirror({
 
   function applyPositionDelta(delta) {
     if (!positionEnabled) return;
-    const wasAtEnd = t === 0 || t === 1;
-    const wanted = t + delta;
-    t = THREE.MathUtils.clamp(wanted, 0, 1);
-    if (wanted !== t && !wasAtEnd) manipulable?.hitLimit(); // once, on arriving at an end
+    const step = slideAlongRail(t, delta);
+    t = step.t;
+    if (step.hitLimit) manipulable?.hitLimit();
     applyPosition();
   }
 
@@ -107,7 +103,6 @@ export function createMirror({
     manipulable?.rotated(plate.rotation.y);
   }
 
-  plate.userData.interactive = true;
   plate.userData.controller = { positionEnabled, rotationEnabled, rotationStep: angle.step, railAxis: railAxis(railStart, railEnd), applyPositionDelta, applyRotationDelta };
   plate.userData.prompt = promptFor(positionEnabled, rotationEnabled);
   manipulable = createManipulable({
@@ -126,7 +121,7 @@ export function createMirror({
 }
 
 // Short Portuguese hint shown under the crosshair while aiming (src/ui/hud.js).
-export function promptFor(positionEnabled, rotationEnabled) {
+function promptFor(positionEnabled, rotationEnabled) {
   if (positionEnabled && rotationEnabled) return 'Clique: mover e girar';
   if (positionEnabled) return 'Clique: mover';
   if (rotationEnabled) return 'Clique: girar';
@@ -134,15 +129,7 @@ export function promptFor(positionEnabled, rotationEnabled) {
 }
 
 // World-space XZ segment of the plate's reflective face, for the laser
-// tracer (src/gameplay/laser.js). Writes into `out` in place — called
-// every frame, so it must not allocate. Requires the plate's matrixWorld
-// to already be up to date (caller's responsibility).
+// tracer (src/gameplay/laser.js) — see rail.js writePlateSegment.
 export function getReflectiveSegment(mirror, out) {
-  _localA.set(-PLATE_WIDTH / 2, 0, 0).applyMatrix4(mirror.plate.matrixWorld);
-  _localB.set(PLATE_WIDTH / 2, 0, 0).applyMatrix4(mirror.plate.matrixWorld);
-  out.a.x = _localA.x;
-  out.a.z = _localA.z;
-  out.b.x = _localB.x;
-  out.b.z = _localB.z;
-  return out;
+  return writePlateSegment(mirror.plate, PLATE_WIDTH, out);
 }

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ROOM_SIZE } from '../levels/data/constants.js';
-import { floorTexture, wallTexture, ceilingTexture, stencilTexture, glassTexture, flareTexture, tileUvs } from '../gameplay/textures.js';
+import { floorTexture, wallTexture, ceilingTexture, stencilTexture, glassTexture, flareTexture, tileUvs } from '../presentation/textures.js';
 import { createPhongMaterial, PHONG } from '../presentation/phong-material.js';
 
 const WALL_HEIGHT = 3;

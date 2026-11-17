@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { COLOR_NAMES } from './colors.js';
 import { composeReceiverColor, isReceiverSatisfied, colorToHex } from './laser.js';
 import { segmentFromCenter } from './aabb.js';
-import { symbolFaceTexture } from './textures.js';
+import { symbolFaceTexture } from '../presentation/textures.js';
 import { events } from '../core/events.js';
 import { CHAIN } from '../presentation/conduits.js';
 import { clamp01, damp, easeOutCubic } from '../presentation/motion.js';
@@ -16,6 +16,9 @@ const LOCK_FLASH = 2.2; // extra emissive right at lock, decays
 const LOCK_DECAY = 3; // per second
 const LOCK_SCALE = 0.12;
 const REJECT_HZ = 2; // ACC-02: ≤ 2 Hz
+const RING_INNER = 0.47; // charge ring radii (m), just outside the panel
+const RING_OUTER = 0.52;
+const RING_SEGMENTS = 48; // also the number of arc steps the charge animates through
 
 const housingMaterial = new THREE.MeshStandardMaterial({ color: 0x2e3236, roughness: 0.6, metalness: 0.5 });
 housingMaterial.userData.shared = true;
@@ -52,7 +55,7 @@ export function createReceiver({ position, rotationY = 0, colorName }) {
 
   // Charge ring on both faces (a receiver can be hit from either side).
   const ringMaterial = new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0, toneMapped: false, side: THREE.DoubleSide });
-  const initialRingGeometry = new THREE.RingGeometry(0.47, 0.52, 48, 1, Math.PI / 2, 0.0001);
+  const initialRingGeometry = new THREE.RingGeometry(RING_INNER, RING_OUTER, RING_SEGMENTS, 1, Math.PI / 2, 0.0001);
   const rings = [0.03, -0.03].map((z) => {
     const r = new THREE.Mesh(initialRingGeometry, ringMaterial);
     r.position.z = z;
@@ -92,11 +95,11 @@ export function createReceiver({ position, rotationY = 0, colorName }) {
   }
 
   function setRingArc(fraction) {
-    const arc = Math.round(fraction * 48);
+    const arc = Math.round(fraction * RING_SEGMENTS);
     if (arc === lastRingArc) return;
     lastRingArc = arc;
     rings[0].geometry.dispose();
-    const geometry = new THREE.RingGeometry(0.47, 0.52, 48, 1, Math.PI / 2, Math.max(0.0001, fraction * Math.PI * 2));
+    const geometry = new THREE.RingGeometry(RING_INNER, RING_OUTER, RING_SEGMENTS, 1, Math.PI / 2, Math.max(0.0001, fraction * Math.PI * 2));
     for (const r of rings) r.geometry = geometry;
   }
 

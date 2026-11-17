@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { COLOR_NAMES } from './colors.js';
 import { colorToHex } from './laser.js';
 import { createSteppedAngle } from './rotation.js';
-import { symbolFaceTexture } from './textures.js';
+import { symbolFaceTexture } from '../presentation/textures.js';
 import { events } from '../core/events.js';
 import { createDial, createManipulable } from '../presentation/affordances.js';
 
@@ -39,7 +39,7 @@ export function createEmitter({ position, colorName, initialRotationY = 0, rotat
   geometry.rotateX(Math.PI / 2);
 
   // Barrel: dark steel, its color shows only at the muzzle and the badge.
-  const material = new THREE.MeshStandardMaterial({ color: 0x2e3133, roughness: 0.45, metalness: 0.65, emissive: color.hex, emissiveIntensity: 0.04 });
+  const material = new THREE.MeshStandardMaterial({ color: 0x2e3133, roughness: 0.45, metalness: 0.65, emissive: color.hex, emissiveIntensity: BASE_EMISSIVE_INTENSITY });
 
   const mesh = new THREE.Mesh(geometry, material);
   mesh.position.copy(position);
@@ -87,7 +87,6 @@ export function createEmitter({ position, colorName, initialRotationY = 0, rotat
     manipulable?.rotated(mesh.rotation.y);
   }
 
-  mesh.userData.interactive = true;
   mesh.userData.controller = {
     positionEnabled: false,
     rotationEnabled,

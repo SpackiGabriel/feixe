@@ -76,11 +76,15 @@ export function createHud(root) {
     xh.className = `xh ${next}`;
   }
 
+  function hideBrackets() {
+    if (bracketsShown) brackets.classList.remove('visible');
+    bracketsShown = false;
+  }
+
   // Projects the aimed object's bounding box to the screen and frames it.
   function placeBrackets(object, camera, grabbing) {
     if (!object) {
-      if (bracketsShown) brackets.classList.remove('visible');
-      bracketsShown = false;
+      hideBrackets();
       return;
     }
     _box.setFromObject(object);
@@ -96,7 +100,10 @@ export function createHud(root) {
       minY = Math.min(minY, _corner.y);
       maxY = Math.max(maxY, _corner.y);
     }
-    if (minX === Infinity) return;
+    if (minX === Infinity) {
+      hideBrackets(); // held object entirely behind the player (walked past it)
+      return;
+    }
     const w = window.innerWidth;
     const h = window.innerHeight;
     const pad = 10;

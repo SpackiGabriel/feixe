@@ -11,8 +11,7 @@ const ACTIVE_EMISSIVE_INTENSITY = 1.1;
 const HOVER_INTENSITY_BOOST = 0.35;
 // Neutral warm lamp (COL-02): state reads as dark vs lit and as the button
 // physically pressed in, not as a green/orange hue.
-const INACTIVE_COLOR = 0xffd9a8;
-const ACTIVE_COLOR = 0xffd9a8;
+const LAMP_COLOR = 0xffd9a8; // same hue on and off; only brightness changes
 const PRESS_DEPTH = 0.045;
 
 // Level 1's laser-free interactive object (spec §11, "Primeiros passos"):
@@ -33,7 +32,7 @@ export function createSwitch({ position, rotationY = 0 }) {
 
   const buttonMaterial = new THREE.MeshStandardMaterial({
     color: 0x222222,
-    emissive: INACTIVE_COLOR,
+    emissive: LAMP_COLOR,
     emissiveIntensity: INACTIVE_EMISSIVE_INTENSITY,
   });
   const button = new THREE.Mesh(
@@ -47,7 +46,6 @@ export function createSwitch({ position, rotationY = 0 }) {
   let hovered = false;
 
   function refreshVisual() {
-    buttonMaterial.emissive.setHex(active ? ACTIVE_COLOR : INACTIVE_COLOR);
     buttonMaterial.emissiveIntensity =
       (active ? ACTIVE_EMISSIVE_INTENSITY : INACTIVE_EMISSIVE_INTENSITY) +
       (hovered ? HOVER_INTENSITY_BOOST : 0);
@@ -63,7 +61,6 @@ export function createSwitch({ position, rotationY = 0 }) {
     events.emit('switch:toggle', { active });
   }
 
-  button.userData.interactive = true;
   button.userData.activate = activate;
   button.userData.prompt = 'Clique: ativar';
   // Hovering must not clobber the active/inactive color (interaction.js's

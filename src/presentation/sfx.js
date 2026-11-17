@@ -1,3 +1,5 @@
+import { browserStorage, readKey, writeKey } from '../core/storage.js';
+
 // Procedural sound cues (no audio files). Each cue is named after what
 // happened, and connectSfx() maps game events (src/core/events.js) to
 // cues — so a future recorded sound replaces one function here and
@@ -19,11 +21,7 @@ let motor = null;
 let motorUsers = 0;
 
 function readMuted() {
-  try {
-    return globalThis.localStorage?.getItem(MUTE_KEY) === '1';
-  } catch {
-    return false;
-  }
+  return readKey(browserStorage(), MUTE_KEY) === '1';
 }
 
 function audio() {
@@ -131,7 +129,6 @@ export const sfx = {
     tone(495, 0.7, { type: 'triangle', gain: 0.035, delay: 0.16 });
   },
   levelComplete: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.3, { gain: 0.06, delay: i * 0.08 })),
-  shutter: () => noise(0.12, { frequency: 900, endFrequency: 300, q: 1.5, gain: 0.08 }),
   ending: () => {
     tone(55, 6, { type: 'sawtooth', gain: 0.05, attack: 2, endFrequency: 110 });
     tone(82.5, 6, { type: 'sawtooth', gain: 0.03, attack: 3, endFrequency: 165 });
@@ -233,11 +230,7 @@ export function isMuted() {
 
 export function setMuted(value) {
   muted = value;
-  try {
-    globalThis.localStorage?.setItem(MUTE_KEY, value ? '1' : '0');
-  } catch {
-    // storage unavailable (private mode) — mute still applies this session
-  }
+  writeKey(browserStorage(), MUTE_KEY, value ? '1' : '0');
   if (master && ctx) master.gain.setTargetAtTime(value ? 0 : 0.9, ctx.currentTime, 0.05);
 }
 

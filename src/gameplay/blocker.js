@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { rotatedRectAABB, segmentFromCenter } from './aabb.js';
 import { isBlockerHit } from './door-logic.js';
-import { hazardTexture, concreteTexture, tileUvs } from './textures.js';
+import { hazardTexture, concreteTexture, tileUvs } from '../presentation/textures.js';
 import { events } from '../core/events.js';
 import { damp } from '../presentation/motion.js';
 

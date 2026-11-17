@@ -415,3 +415,19 @@ failed and the game never started, with nothing wrong on disk. `npm start`
 file revalidates; unchanged ones are a 304). Entries cached before the fix
 still need one hard reload (Ctrl+Shift+R). Bind it dual-stack: calling
 `http.server.test(..., bind='')` listened on a link-local IPv6 address only.
+
+## 2026-11-17 — A `try` doesn't cover a default parameter, and `x ?` doesn't cover the TDZ
+
+Source: the codebase review (`docs/refactoring-plan.md`, A1/A2).
+
+`function load(storage = globalThis.localStorage) { try { … } catch {} }`
+looks fully guarded, but the default is evaluated *before* the body, so
+when the browser blocks site data the `SecurityError` from reading
+`localStorage` escapes the `try`. `core/storage.js` (`browserStorage()`)
+now does the read inside its own try/catch; use it as the default.
+
+Same family: in `main.js`, `levelRuntime ? … : fallback` before the
+`const levelRuntime` line can never reach the fallback. Reading a `const`
+before its declaration throws (temporal dead zone) instead of yielding
+`undefined`. Construction is now linear; only lazy getters called from the
+frame loop read objects defined later.

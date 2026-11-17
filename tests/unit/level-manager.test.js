@@ -17,6 +17,26 @@ function createFakeStorage(initial = {}) {
   };
 }
 
+// Blocked site data or private mode: storage access throws. Before
+// core/storage.js, loadSavedLevelIndex threw here and the game didn't boot.
+describe('level persistence with failing storage', () => {
+  const failing = () => {
+    const fail = () => { throw new Error('SecurityError'); };
+    return { getItem: fail, setItem: fail, removeItem: fail };
+  };
+
+  it('test_loadSavedLevelIndex_throwingStorage_returnsZero', () => {
+    expect(loadSavedLevelIndex(10, failing())).toBe(0);
+    expect(loadReachedLevelIndex(10, failing())).toBe(0);
+  });
+
+  it('test_saveAndReset_throwingStorage_doNotThrow', () => {
+    expect(() => saveLevelIndex(3, failing())).not.toThrow();
+    expect(() => saveReachedLevelIndex(3, failing())).not.toThrow();
+    expect(() => resetProgress(failing())).not.toThrow();
+  });
+});
+
 describe('clampLevelIndex', () => {
   it('test_clampLevelIndex_withinRange_returnsUnchanged', () => {
     expect(clampLevelIndex(2, 5)).toBe(2);
@@ -167,5 +187,16 @@ describe('createLevelRuntime', () => {
     runtime.advance();
     expect(runtime.getCurrentIndex()).toBe(0);
     expect(runtime.isComplete()).toBe(false);
+  });
+
+  // Regression: load() clamped by hand, so a non-integer index (e.g. a bad
+  // ?level= value reaching loadLevel) indexed levels[NaN] and crashed.
+  it('test_loadLevel_nonInteger_clampsToZero', () => {
+    const { scene, wallSegments, occluders } = createScene();
+    const runtime = createLevelRuntime({ scene, wallSegments, interactiveObjects: [], roomOccluders: occluders });
+    runtime.loadLevel(NaN);
+    expect(runtime.getCurrentIndex()).toBe(0);
+    runtime.loadLevel(99);
+    expect(runtime.getCurrentIndex()).toBe(getLevels().length - 1);
   });
 });

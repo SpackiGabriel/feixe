@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { symbolsFor } from './colors.js';
+import { symbolsFor } from '../gameplay/colors.js';
 
 // Procedural 2D textures (spec §13 III "Texturas": floor, walls, receiver
 // and door panels) drawn on a canvas at runtime — no image files, in line
