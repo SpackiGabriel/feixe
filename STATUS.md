@@ -29,14 +29,37 @@ sound fine. Second playtest of the L8/L9 fixes: fine.
 shader (key `L`), hand-written matrices (key `T` in `?debug`, w/NDC
 readout), defence guide `docs/defesa.md`. A three-reviewer Orca review
 (requirements, code health, completeness) was applied the same day.
+
+**Presentation redesign (2026-11-16/17)**: `apresentacao.html` rewritten
+from scratch (spec `docs/superpowers/specs/2026-11-16-apresentacao-design.md`):
+15 slides "do jogo à matemática" (demo slide-interval, 4 axes, quality,
+conclusion, questions), nothing for the presenter on screen, MathML
+formulas, code that never scrolls, nine automatic SVG scenes in
+`apresentacao/scenes/` (shared `_kit.js`). Checked by
+`node tests/e2e/deck-check.mjs` (code fit, console errors, offline;
+`--shots` saves every slide). `docs/defesa.md` stays the full guide;
+its roadmap now follows the 15 slides. Level select added to the game
+menu (item "Câmara", only levels already reached —
+`loadReachedLevelIndex`/`saveReachedLevelIndex` in `level-manager.js`,
+not cleared by "Novo jogo"; `?debug&level=10` unlocks all). Reviewed in
+a gauntlet loop (critic Fable rounds 1–3, Opus round 4; Sonnet builder):
+round 4 verdict SATISFEITO (2026-11-17).
+
 Next:
 
-1. Rehearse with `docs/defesa.md` (script, the three demos, questions).
-2. Run the checklist in `docs/defesa.md` §6 on the presentation machine.
+1. Rehearse with `docs/defesa.md` (script, the demo L3 → L5 → L7 → L8, questions).
+2. Run the checklist in `docs/defesa.md` §6 on the presentation machine
+   (unlock all levels once with `?debug&level=10`).
 3. After the defence, optional visual track: final assets can replace
    device meshes without touching logic (`docs/presentation.md`).
 
 ## Verified (evidence from this checkpoint)
+
+- **Level select** (2026-11-17): 5 unit tests in `level-manager.test.js`
+  (max kept, old progress counts, clamp, "Novo jogo" keeps it); driven in
+  Chromium (`?debug&level=4` → menu lists up to 04, ←← → 02, Enter loads
+  it, reached stays 04, no page errors). `npm test` 349 pass; `npm run e2e`
+  all pass; `npm run lint` clean (now also covers `apresentacao/`).
 
 - **Orca review fixes** (2026-11-16): door-motor hum no longer sticks after
   `R` or an exit mid-move (`sfx.js` `motorReset` on `level:enter`, test
@@ -46,8 +69,13 @@ Next:
   surfaces animate (the shared clock was never advanced; e2e check);
   switching quality low → high builds the metal env map (e2e check);
   `?debug` doesn't walk while the menu is open; aim occluders assembled by
-  a tested `collectAimOccluders`; `npm run analyze` CLI test. `npm test`
-  341 pass; `npm run e2e` all pass (twice in a row).
+  a tested `collectAimOccluders`; `npm run analyze` CLI test; `T` in
+  `?debug` keeps aim occlusion on the real `T·R·S` wall (`wall.js`) and
+  explains in the toast when a level has no rotated walls (L3/L10);
+  choosing "Novo jogo" during the final whiteout cancels the pending
+  `advance()` (`level-runtime.js`, `transitions.js`); small per-frame
+  allocations and inline constants cleaned up (`main.js`, `portal.js`,
+  `receiver.js`, `scene.js`). `npm test` 344 pass; `npm run e2e` all pass.
 - **CI on GitHub runs lint + test + e2e** and is green on `main` (first
   verified 2026-11-16, run 43933601020).
 - **Course-brief work** (2026-11-16): `src/core/matrix.js` (T·R·S, view,

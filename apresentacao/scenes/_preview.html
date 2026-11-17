@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>Prévia de cena</title>
+<link rel="stylesheet" href="../deck.css" />
+<style>
+  html, body { overflow: auto; user-select: auto; }
+  body { padding: 24px; display: flex; flex-direction: column; gap: 16px; align-items: flex-start; }
+  #host { width: 800px; height: 450px; }
+  nav { display: flex; gap: 12px; font: 14px var(--mono); color: var(--paper-dim); }
+  nav button { font: inherit; padding: 4px 10px; background: var(--panel); color: var(--paper); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <nav><span id="name"></span><button id="toggle">parar</button></nav>
+  <div id="host" class="scene"></div>
+  <script type="module">
+    // Uso: /apresentacao/scenes/_preview.html?scene=beam-reflect[&w=800&h=450]
+    const params = new URLSearchParams(location.search);
+    const name = params.get('scene') || 'beam-reflect';
+    const host = document.getElementById('host');
+    host.style.width = `${params.get('w') || 800}px`;
+    host.style.height = `${params.get('h') || 450}px`;
+    document.getElementById('name').textContent = name;
+    const { default: mount } = await import(`./${name}.js`);
+    const scene = mount(host);
+    scene.start();
+    let running = true;
+    document.getElementById('toggle').onclick = (e) => {
+      running = !running;
+      running ? scene.start() : scene.stop();
+      e.target.textContent = running ? 'parar' : 'iniciar';
+    };
+  </script>
+</body>
+</html>

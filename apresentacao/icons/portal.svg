@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="#d9d4c7" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Soleira e placa superior de par (sem texto) -->
+  <rect x="27" y="5" width="10" height="5" rx="1" />
+  <line x1="12" y1="57" x2="52" y2="57" />
+  <!-- Moldura alta pesada -->
+  <rect x="16" y="10" width="32" height="47" rx="2" />
+  <rect x="20" y="14" width="24" height="39" rx="1" />
+  <!-- Padrão de interferência concêntrico e feixe atravessando (#fff1d6) -->
+  <ellipse cx="32" cy="33.5" rx="8.5" ry="14.5" stroke="#fff1d6" stroke-width="1.5" stroke-opacity="0.45" />
+  <ellipse cx="32" cy="33.5" rx="4.5" ry="8" stroke="#fff1d6" stroke-width="1.75" />
+  <circle cx="32" cy="33.5" r="2" fill="#fff1d6" stroke="none" />
+</svg>
