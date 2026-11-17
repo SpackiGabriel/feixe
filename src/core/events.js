@@ -21,16 +21,25 @@ export function createEvents() {
   };
 }
 
-// The game's one bus. Event names in use:
-//   receiver:on / receiver:off        { receiver }
-//   switch:toggle                     { sw, active }
-//   trap:on / trap:off                { blocker }
-//   door:unlock / door:lock           { door }
-//   door:moving / door:settled        { door, opening }
-//   portal:player                     { portal }
-//   grab / release                    { controller }
-//   rotate:tick / rail:limit          { controller }
-//   level:enter                       { index, count, data }
-//   level:exit                        { index }
-//   game:complete                     {}
+// The game's one bus. It is for fan-out *feedback* (sound, camera, flashes):
+// listeners run in subscription order with no guarantees between them.
+// Steps that must happen in order and exactly once (spawn the player,
+// close the shutter before the next level loads) use level-runtime.js's
+// callbacks instead (onLevelLoaded / onExit / onGameComplete).
+//
+// Event names in use (emitter → payload):
+//   receiver:on / receiver:off   receiver.js        { receiver }
+//   switch:toggle                switch.js          { active }
+//   trap:on / trap:off           blocker.js         { blocker }
+//   door:unlock / door:lock      door.js            { door }
+//   door:moving / door:settled   door.js            { door, opening }
+//   portal:player                level-runtime.js   { portal }
+//   grab / release               manipulation.js    { controller }
+//   press                        manipulation.js    {}  (one-shot activate)
+//   rotate:tick / rail:limit     affordances.js     {}
+//   level:enter                  level-runtime.js   { index, count, data }
+//   level:exit                   level-runtime.js   { index }
+//   game:complete                level-runtime.js   { stats }
+// door:lock, trap:off and press currently have no listener; they're emitted
+// for symmetry with their counterparts, which do.
 export const events = createEvents();

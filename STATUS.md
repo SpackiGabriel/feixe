@@ -52,6 +52,9 @@ Next:
    (unlock all levels once with `?debug&level=10`).
 3. After the defence, optional visual track: final assets can replace
    device meshes without touching logic (`docs/presentation.md`).
+4. Codebase review and refactoring plan (2026-11-17; Phase 1 done,
+   Phase 2 **planned, not implemented**): `docs/refactoring-plan.md`. Phase 1 is doc/test-only and
+   safe before the defence; Phase 2 shifts lines cited in `docs/defesa.md`.
 
 ## Verified (evidence from this checkpoint)
 
