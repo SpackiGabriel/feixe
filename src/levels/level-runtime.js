@@ -90,8 +90,10 @@ export function createLevelRuntime({ scene, wallSegments, interactiveObjects, ro
   }
 
   // Finish what an exit started: next level, or the end of the game.
+  // Ignored if a reset/new-game already cancelled the pending exit.
   function advance() {
-    const next = pendingExit ?? nextAfterExit(currentIndex, levels.length);
+    if (!pendingExit) return;
+    const next = pendingExit;
     pendingExit = null;
     if (next.complete) {
       complete = true;

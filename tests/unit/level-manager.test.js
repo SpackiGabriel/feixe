@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { clampLevelIndex, loadSavedLevelIndex, saveLevelIndex, resetProgress, nextAfterExit, getLevels } from '../../src/levels/level-manager.js';
+import {
+  clampLevelIndex, loadSavedLevelIndex, saveLevelIndex, resetProgress, nextAfterExit, getLevels,
+} from '../../src/levels/level-manager.js';
+import { createLevelRuntime } from '../../src/levels/level-runtime.js';
+import { createScene } from '../../src/core/scene.js';
+import { applySolution } from '../support/apply-solution.js';
 
 function createFakeStorage(initial = {}) {
   const data = { ...initial };
@@ -93,5 +98,41 @@ describe('getLevels', () => {
       expect(level.id).toMatch(/^level-\d+$/);
       expect(typeof level.name).toBe('string');
     }
+  });
+});
+
+describe('createLevelRuntime', () => {
+  // Regression: starting a new game during the final level's 1.1 s whiteout
+  // resets currentIndex to 0; when the whiteout callback later fires
+  // advance(), it must not load level 2.
+  it('test_createLevelRuntime_startNewGameDuringPendingExit_staysOnLevel1WhenAdvanceRuns', () => {
+    const { scene, wallSegments, occluders } = createScene();
+    const pending = [];
+    const runtime = createLevelRuntime({
+      scene,
+      wallSegments,
+      interactiveObjects: [],
+      roomOccluders: occluders,
+      onExit: (next) => pending.push(next),
+    });
+
+    const levels = getLevels();
+    const lastIndex = levels.length - 1;
+    runtime.loadLevel(lastIndex);
+    applySolution(levels[lastIndex], runtime.getCurrentLevel(), levels[lastIndex].solution);
+    const door = runtime.getCurrentLevel().exitDoor.position;
+    const camera = { position: { x: door.x, y: 1.6, z: door.z }, rotation: { y: 0 } };
+
+    for (let i = 0; i < 20 && !runtime.isExiting(); i++) runtime.update(0.1, camera);
+    expect(runtime.isExiting()).toBe(true);
+    expect(pending).toEqual([{ complete: true, index: 0 }]);
+
+    runtime.startNewGame();
+    expect(runtime.getCurrentIndex()).toBe(0);
+    expect(runtime.isExiting()).toBe(false);
+
+    runtime.advance();
+    expect(runtime.getCurrentIndex()).toBe(0);
+    expect(runtime.isComplete()).toBe(false);
   });
 });

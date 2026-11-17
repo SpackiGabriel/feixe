@@ -22,6 +22,11 @@ import { createHud, manipulationHint } from './ui/hud.js';
 import { createMenu } from './ui/menu.js';
 import { createTransitions } from './ui/transitions.js';
 
+const FOV_STEP_DEGREES = 5;
+const ENDING_WHITEOUT_SECONDS = 1.1;
+const ENDING_FADE_MS = 1500;
+const MAX_FRAME_DELTA = 0.1;
+
 const params = new URLSearchParams(location.search);
 const debugMode = params.has('debug');
 let quality = loadQuality();
@@ -154,7 +159,7 @@ const levelRuntime = createLevelRuntime({
   // Walking into an open exit: shutter closes, next chamber loads behind
   // it, shutter opens. The last exit fades to white into the ending.
   onExit: (next) => {
-    if (next.complete) transitions.whiteout(1.1).then(() => levelRuntime.advance());
+    if (next.complete) transitions.whiteout(ENDING_WHITEOUT_SECONDS, () => levelRuntime.advance());
     else transitions.cut(() => levelRuntime.advance());
   },
   onGameComplete: (stats) => {
@@ -165,7 +170,7 @@ const levelRuntime = createLevelRuntime({
       levelRuntime.startNewGame();
       requestLock();
     });
-    setTimeout(() => transitions.clearWhiteout(), 1500);
+    setTimeout(() => transitions.clearWhiteout(), ENDING_FADE_MS);
   },
 });
 
@@ -182,8 +187,8 @@ const fovStep = (delta) => () => {
   cameraFx.setBaseFov(clampFov(cameraFx.getBaseFov() + delta));
   hud.showToast(`Campo de visão ${cameraFx.getBaseFov()}°`);
 };
-for (const code of ['Equal', 'NumpadAdd']) input.onKeyDown(code, fovStep(5));
-for (const code of ['Minus', 'NumpadSubtract']) input.onKeyDown(code, fovStep(-5));
+for (const code of ['Equal', 'NumpadAdd']) input.onKeyDown(code, fovStep(FOV_STEP_DEGREES));
+for (const code of ['Minus', 'NumpadSubtract']) input.onKeyDown(code, fovStep(-FOV_STEP_DEGREES));
 // Enunciado §3 III: per-vertex (Gouraud) vs per-fragment (Phong) shading
 // of our Blinn-Phong walls and floor, switched live.
 input.onKeyDown('KeyL', () => {
@@ -224,8 +229,13 @@ if (debugMode) {
     cameraFx, // FOV from the console: cameraFx.setBaseFov(100) (it rewrites camera.fov every frame)
     wallOrder: (order) => {
       wallOrder = order === 'TSR' ? 'TSR' : 'TRS';
-      for (const wall of levelRuntime.getCurrentLevel().walls) wall.setOrder(wallOrder);
-      return wallOrder === 'TSR' ? 'T·S·R (ordem errada)' : 'T·R·S (ordem certa)';
+      const walls = levelRuntime.getCurrentLevel().walls;
+      let anyChanged = false;
+      for (const wall of walls) if (wall.setOrder(wallOrder)) anyChanged = true;
+      const label = wallOrder === 'TSR' ? 'T·S·R (ordem errada)' : 'T·R·S (ordem certa)';
+      if (walls.length === 0) return `${label} — sem paredes internas neste nível (use L2 ou L6)`;
+      if (!anyChanged) return `${label} — aqui R = I, nada muda (use L2 ou L6)`;
+      return label;
     },
     phong: { materials: getPhongMaterials, setShadingMode, getShadingMode },
   };
@@ -241,17 +251,26 @@ if (debugMode) {
 // (core/matrix.js: P · V · p, then divide by w) next to Three's own
 // Vector3.project, so the defence can show they agree and what w is.
 const _aimedPosition = new THREE.Vector3();
+const _projected = new THREE.Vector3();
+const _eye = [0, 0, 0];
+const _target = [0, 0, 0];
+const fmt3 = (v) => v.toFixed(3);
 function projectionLines(object) {
   object.getWorldPosition(_aimedPosition);
   camera.updateMatrixWorld();
+  _eye[0] = camera.position.x;
+  _eye[1] = camera.position.y;
+  _eye[2] = camera.position.z;
+  _target[0] = _aimedPosition.x;
+  _target[1] = _aimedPosition.y;
+  _target[2] = _aimedPosition.z;
   const projection = perspective(camera.fov, camera.aspect, camera.near, camera.far);
-  const view = viewMatrix(camera.position.toArray(), camera.rotation.x, camera.rotation.y, camera.rotation.z);
-  const { w, ndc } = projectPoint(projection, view, _aimedPosition.toArray());
-  const three = _aimedPosition.clone().project(camera);
-  const f = (v) => v.toFixed(3);
+  const view = viewMatrix(_eye, camera.rotation.x, camera.rotation.y, camera.rotation.z);
+  const { w, ndc } = projectPoint(projection, view, _target);
+  const three = _projected.copy(_aimedPosition).project(camera);
   return [
-    `à mão: w=${w.toFixed(2)}  ndc=(${f(ndc[0])}, ${f(ndc[1])}, ${f(ndc[2])})`,
-    `Three: ndc=(${f(three.x)}, ${f(three.y)}, ${f(three.z)})`,
+    `à mão: w=${w.toFixed(2)}  ndc=(${fmt3(ndc[0])}, ${fmt3(ndc[1])}, ${fmt3(ndc[2])})`,
+    `Three: ndc=(${fmt3(three.x)}, ${fmt3(three.y)}, ${fmt3(three.z)})`,
   ];
 }
 
@@ -292,7 +311,7 @@ let lastHovered = null;
 
 function animate(timestamp) {
   timer.update(timestamp);
-  const deltaSeconds = Math.min(timer.getDelta(), 0.1);
+  const deltaSeconds = Math.min(timer.getDelta(), MAX_FRAME_DELTA);
   // ?debug walks without pointer lock (for e2e and the defence), but not
   // while the menu is open: W/S also move its cursor.
   if (input.isLocked() || (debugMode && !menu.isVisible())) movement.update(deltaSeconds);

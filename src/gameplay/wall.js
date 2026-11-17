@@ -61,13 +61,28 @@ export function createWall({ from, to, height = DEFAULT_HEIGHT, thickness = DEFA
   // Three to use this matrix as is.
   const position = [center.x, height / 2, center.z];
   const size = [drawnLength, drawnHeight, glass ? GLASS_PANE_THICKNESS : thickness];
+  const trs = composeTRS(position, rotationY, size);
+  const tsr = composeTSR(position, rotationY, size);
+  const changesWithOrder = tsr.some((v, i) => Math.abs(v - trs[i]) > 1e-6);
+
   mesh.matrixAutoUpdate = false;
   function setOrder(order) {
-    const m = order === 'TSR' ? composeTSR(position, rotationY, size) : composeTRS(position, rotationY, size);
-    mesh.matrix.fromArray(m);
+    mesh.matrix.fromArray(order === 'TSR' ? tsr : trs);
     mesh.matrixWorldNeedsUpdate = true;
+    return changesWithOrder;
   }
   setOrder('TRS');
+
+  // Aiming stays locked to the real wall (T·R·S) even when the visual
+  // mesh is flipped to T·S·R for the defence demo, so a dedicated fixed
+  // occluder holds the T·R·S transform for solid walls.
+  let occluder = null;
+  if (!glass) {
+    occluder = new THREE.Mesh(UNIT_BOX);
+    occluder.matrixAutoUpdate = false;
+    occluder.matrix.fromArray(trs);
+    occluder.matrixWorld.fromArray(trs);
+  }
 
   // A glass wall absorbs beams and blocks the player exactly like a solid
   // one, but doesn't block aiming: what you can see through, you can aim
@@ -75,6 +90,6 @@ export function createWall({ from, to, height = DEFAULT_HEIGHT, thickness = DEFA
   const segment = { type: 'wall', a, b, style };
   const collider = rotatedRectAABB(center, rotationY, length, thickness);
   // setOrder('TSR') is the defence demo of the wrong order (visual only:
-  // beams and collision keep using the level data).
-  return { mesh, segment, collider, occluder: style === 'glass' ? null : mesh, setOrder };
+  // beams, collision and aiming keep using the real wall).
+  return { mesh, segment, collider, occluder, setOrder };
 }

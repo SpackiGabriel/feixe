@@ -39,6 +39,7 @@ export function createTransitions(root) {
   // then open it again.
   async function cut(between, closeSeconds = TEMPO.act, holdSeconds = 0.08) {
     const mine = ++token;
+    whiteout.classList.remove('on');
     shutter.classList.add('closed');
     await wait(reducedMotion ? 0.05 : closeSeconds);
     if (mine !== token) return;
@@ -58,16 +59,21 @@ export function createTransitions(root) {
       flash.classList.add('on');
       requestAnimationFrame(() => requestAnimationFrame(() => flash.classList.remove('on')));
     },
-    // Before the ending: fade the world to white.
-    async whiteout(seconds = 1) {
+    // Before the ending: fade the world to white, then run `after` unless
+    // another transition (e.g. Novo jogo) cancelled it.
+    async whiteout(seconds = 1, after = () => {}) {
+      const mine = ++token;
       whiteout.classList.add('on');
       await wait(reducedMotion ? 0.2 : seconds);
+      if (mine !== token) return;
+      after();
     },
     clearWhiteout() {
       whiteout.classList.remove('on');
     },
     openNow() {
       token++;
+      whiteout.classList.remove('on');
       shutter.classList.remove('closed');
     },
     // Level title: number, then the name typed in, then fade.
