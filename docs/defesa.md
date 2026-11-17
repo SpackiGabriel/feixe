@@ -74,9 +74,9 @@ vocês precisa conseguir responder sozinho a qualquer item deste guia.
 
 ### I.1 Coordenadas 3D e transformações (T, R, S, ordem canônica)
 
-**Onde:** espelho no trilho = translação (`mirror.js:89`,
+**Onde:** espelho no trilho = translação (`mirror.js:86`,
 `base.position.lerpVectors(railStart, railEnd, t)` — interpolação linear
-P = (1−t)·A + t·B); giro = rotação em Y (`mirror.js:106`); paredes =
+P = (1−t)·A + t·B); giro = rotação em Y (`mirror.js:102`); paredes =
 caixa unitária com a matriz **T·R·S composta à mão** a partir do nível
 (`wall.js:62-74` + `core/matrix.js`); feixe =
 cilindro unitário escalado em Z pelo comprimento de cada trecho
@@ -131,7 +131,8 @@ no L10 o aviso na tela explica por quê.
 
 **Nível honesto:** avançado. Composição à mão nas paredes, rotação à mão
 no traçado do feixe (`laser.js`) e uso explícito de `matrixWorld` para
-levar pontos locais ao mundo (`mirror.js:139-147`). Os demais objetos
+levar pontos locais ao mundo (`rail.js:68-76`, `writePlateSegment`,
+usado pelo espelho e pelo filtro). Os demais objetos
 (espelhos, portas) usam o `compose` do Three — mesma matemática.
 
 ### I.2 Modelagem 3D (malhas; topologia vs. geometria)
@@ -158,14 +159,14 @@ Cylinder, Plane); os condutos são malha própria. Mostrar os condutos.
 ### I.3 Modelagem hierárquica (grafo de cena)
 
 **Onde:** espelho = `base` (Group, pai: desliza no trilho) → `plate`
-(filho: gira) → grampos e superfícies de reflexo (netos) (`mirror.js:36-75`).
+(filho: gira) → grampos e superfícies de reflexo (netos) (`mirror.js:33-72`).
 O pedestal é filho da base: desliza mas não gira. Porta: `root` →
 `panel` (sobe) (`door-view.js`).
 
 **Matemática:** M_mundo(filho) = M_mundo(pai) · M_local(filho). Para a
 placa: M = T(posição no trilho) · R_y(θ). O traçado do feixe usa isso
 diretamente: as pontas da placa (±0,5 m em x local) são levadas ao mundo
-por `applyMatrix4(plate.matrixWorld)` (`mirror.js:140-141`).
+por `applyMatrix4(plate.matrixWorld)` (`rail.js:69-70`).
 
 **Demonstração:** deslizar um espelho já girado — a placa mantém o
 ângulo e acompanha a base, porque herda a translação do pai.
@@ -330,7 +331,7 @@ da posição na tela); suave usa a normal interpolada dos vértices.
 
 ### III.3 Materiais
 
-**Onde:** espelho = metal liso (`mirror.js:52-61`: metalness 1,
+**Onde:** espelho = metal liso (`mirror.js:49-58`: metalness 1,
 roughness 0,07, mapa de ambiente); aço dos pedestais (metalness 0,7,
 roughness 0,38); paredes foscas; núcleo do feixe `MeshBasicMaterial`
 (sem iluminação: é ele que emite); receptores e lâmpadas emissivos.
@@ -533,13 +534,13 @@ Ensaiar cada uma: **dizer o efeito antes**, salvar e recarregar
 | Luz do feixe mais forte/alcance | `laser-beam.js:9-10` | mancha maior/mais clara onde o feixe bate |
 | Sala mais clara | `scene.js:126-132` intensidades | atenção: `setAtmosphere` (`scene.js:175`) **sobrescreve** hemisférica e ambiente a cada nível — mudar lá |
 | Neblina | `setAtmosphere`: `scene.fog.density` (não a linha 165, que é sobrescrita) | FogExp2: fator = 1 − e^(−(densidade·d)²) |
-| Espelho fosco | primeiro **desligar Reflexos no menu** (com eles ligados, o reflexo real cobre ~88% da área da placa (94% por lado) e o `roughness` só muda a moldura); depois `mirror.js:52-61` `roughness` ↑, Qualidade alta | reflexo do ambiente borrado |
+| Espelho fosco | primeiro **desligar Reflexos no menu** (com eles ligados, o reflexo real cobre ~88% da área da placa (94% por lado) e o `roughness` só muda a moldura); depois `mirror.js:49-58` `roughness` ↑, Qualidade alta | reflexo do ambiente borrado |
 | Passo de giro | só no dado do nível: `rotationStepDegrees` (ex. `level-9.js`). **Não** use `KEY_ROTATE_STEP` (`manipulation.js:5`): todo espelho dos 10 níveis define o próprio passo, então mudá-lo não tem efeito | 15° no espelho = 30° no feixe |
 | Mais reflexões | `laser.js:8` `MAX_REFLECTIONS` | só muda o limite de quiques por feixe |
 | Porta mais lenta | `door-motion.js` `DOOR_TIMING.rise` | segundos; continua reversível |
 | Ladrilho da parede | `wall.js:38-39` `GLASS_TILE` 2,5 / `SOLID_TILE` 1,5 | maior = ladrilhos maiores |
 | Malha gerada por código (I.2) | `conduits.js:11` `WIDTH` (0,07 m) | as faixas do chão ficam mais largas: muda só a geometria (posições); topologia (índices, 2 triângulos por perna) igual |
-| Hierarquia (I.3) | `mirror.js:63`: colocar `plate.position.y = 0.3` logo abaixo | a placa sobe 0,3 m em relação à base e continua acompanhando o trilho e girando: o filho herda a transformação do pai (o feixe usa a placa via `matrixWorld`, então continua certo na lógica 2D) |
+| Hierarquia (I.3) | `mirror.js:60`: colocar `plate.position.y = 0.3` logo abaixo | a placa sobe 0,3 m em relação à base e continua acompanhando o trilho e girando: o filho herda a transformação do pai (o feixe usa a placa via `matrixWorld`, então continua certo na lógica 2D) |
 | Trocar a ordem das transformações | tecla `T` (com `?debug`) ou `__feixe.wallOrder('TSR')`; no código, `wall.js` chama `composeTSR` em vez de `composeTRS` | a 90°: parede fica leste-oeste, como se não girasse; a 45°: cisalhada, planta em losango (§I.1) |
 | Desligar o sombreamento suave | material PBR (ex. pedestais, `mirror.js:16`): `flatShading: true` | facetas visíveis em superfícies curvas |
 | Sombreamento por vértice | tecla `L` (ou `__feixe.phong.setShadingMode('vertex')`) | mancha de luz do feixe some no meio das paredes |

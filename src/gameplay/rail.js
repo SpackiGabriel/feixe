@@ -43,3 +43,34 @@ export function railAxis(start, end) {
   if (length < 1e-6) return { x: 1, z: 0, length: 1 };
   return { x: dx / length, z: dz / length, length };
 }
+
+// Pure: one drag step along a rail, t ∈ [0, 1] (0 = start, 1 = end).
+// `hitLimit` is true only on the step that *arrives* at an end, so the
+// end-stop bump and sound fire once, not on every frame the player keeps
+// pushing against it.
+export function slideAlongRail(t, delta) {
+  const wasAtEnd = t === 0 || t === 1;
+  const wanted = t + delta;
+  const next = Math.min(1, Math.max(0, wanted));
+  return { t: next, hitLimit: wanted !== next && !wasAtEnd };
+}
+
+const _localA = new THREE.Vector3();
+const _localB = new THREE.Vector3();
+
+// World-space XZ segment of a rail device's plate (mirror, filter), for
+// the laser tracer: the plate's two edge points, ±width/2 on its local x
+// axis, taken to the world by its matrixWorld — which already includes
+// the parent's slide along the rail and the plate's own rotation
+// (M_world(plate) = M_world(base) · M_local(plate)). Writes into `out` in
+// place — called every frame, so it must not allocate. The caller must
+// have brought matrixWorld up to date (laser-system.js does).
+export function writePlateSegment(plate, width, out) {
+  _localA.set(-width / 2, 0, 0).applyMatrix4(plate.matrixWorld);
+  _localB.set(width / 2, 0, 0).applyMatrix4(plate.matrixWorld);
+  out.a.x = _localA.x;
+  out.a.z = _localA.z;
+  out.b.x = _localB.x;
+  out.b.z = _localB.z;
+  return out;
+}

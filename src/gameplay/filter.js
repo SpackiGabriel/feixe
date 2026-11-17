@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { railAxis, createRailMesh } from './rail.js';
+import { railAxis, createRailMesh, slideAlongRail, writePlateSegment } from './rail.js';
 import { events } from '../core/events.js';
 import { createRailState, createManipulable } from '../presentation/affordances.js';
 import { COLOR_NAMES } from './colors.js';
@@ -12,9 +12,6 @@ const PANEL_THICKNESS = 0.05;
 
 const steelMaterial = new THREE.MeshStandardMaterial({ color: 0x3b4146, metalness: 0.7, roughness: 0.38 });
 steelMaterial.userData.shared = true;
-
-const _localA = new THREE.Vector3();
-const _localB = new THREE.Vector3();
 
 // Spec §11 level 7 ("Filtro"): a subtractive filter the player slides
 // along a rail into a white beam's path to isolate one primary (RF04's
@@ -68,10 +65,9 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
 
   let manipulable = null;
   function applyPositionDelta(delta) {
-    const wasAtEnd = t === 0 || t === 1;
-    const wanted = t + delta;
-    t = THREE.MathUtils.clamp(wanted, 0, 1);
-    if (wanted !== t && !wasAtEnd) manipulable?.hitLimit();
+    const step = slideAlongRail(t, delta);
+    t = step.t;
+    if (step.hitLimit) manipulable?.hitLimit();
     applyPosition();
   }
 
@@ -94,17 +90,9 @@ export function createFilter({ railStart, railEnd, initialT = 0.5, rotationY = 0
   return { base, plate, extras: railMesh ? [railMesh] : [], getT: () => t, primary, applyPositionDelta, update: manipulable.update };
 }
 
-// World-space XZ segment of the filter's plate, for the laser tracer —
-// same matrixWorld-based approach as mirror.js's getReflectiveSegment,
-// even though a filter's rotation never changes at runtime, so both
-// gameplay objects stay consistent. Writes into `out` in place — called
-// every frame, so it must not allocate.
+// World-space XZ segment of the filter's plate, for the laser tracer — the
+// same matrixWorld-based extraction as a mirror's (rail.js
+// writePlateSegment), even though a filter never rotates at runtime.
 export function getFilterSegment(filter, out) {
-  _localA.set(-PANEL_WIDTH / 2, 0, 0).applyMatrix4(filter.plate.matrixWorld);
-  _localB.set(PANEL_WIDTH / 2, 0, 0).applyMatrix4(filter.plate.matrixWorld);
-  out.a.x = _localA.x;
-  out.a.z = _localA.z;
-  out.b.x = _localB.x;
-  out.b.z = _localB.z;
-  return out;
+  return writePlateSegment(filter.plate, PANEL_WIDTH, out);
 }
