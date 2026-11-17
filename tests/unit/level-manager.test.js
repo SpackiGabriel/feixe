@@ -17,6 +17,26 @@ function createFakeStorage(initial = {}) {
   };
 }
 
+// Blocked site data or private mode: storage access throws. Before
+// core/storage.js, loadSavedLevelIndex threw here and the game didn't boot.
+describe('level persistence with failing storage', () => {
+  const failing = () => {
+    const fail = () => { throw new Error('SecurityError'); };
+    return { getItem: fail, setItem: fail, removeItem: fail };
+  };
+
+  it('test_loadSavedLevelIndex_throwingStorage_returnsZero', () => {
+    expect(loadSavedLevelIndex(10, failing())).toBe(0);
+    expect(loadReachedLevelIndex(10, failing())).toBe(0);
+  });
+
+  it('test_saveAndReset_throwingStorage_doNotThrow', () => {
+    expect(() => saveLevelIndex(3, failing())).not.toThrow();
+    expect(() => saveReachedLevelIndex(3, failing())).not.toThrow();
+    expect(() => resetProgress(failing())).not.toThrow();
+  });
+});
+
 describe('clampLevelIndex', () => {
   it('test_clampLevelIndex_withinRange_returnsUnchanged', () => {
     expect(clampLevelIndex(2, 5)).toBe(2);

@@ -8,6 +8,7 @@ import { level7 } from './data/level-7.js';
 import { level8 } from './data/level-8.js';
 import { level9 } from './data/level-9.js';
 import { level10 } from './data/level-10.js';
+import { browserStorage, readKey, writeKey, removeKey } from '../core/storage.js';
 
 // The fixed sequence (RF09). To add or reorder a level, edit this list.
 const LEVELS = [level1, level2, level3, level4, level5, level6, level7, level8, level9, level10];
@@ -20,7 +21,8 @@ const STORAGE_KEY = 'feixe.currentLevelIndex';
 
 // Pure — no Three.js, and storage is injectable — so this is unit
 // testable without a real browser storage API (test-standards.md: mock
-// external dependencies).
+// external dependencies). Access goes through core/storage.js, so blocked
+// or missing storage means "start at level 1", never a crash at boot.
 export function clampLevelIndex(index, levelCount) {
   if (!Number.isInteger(index) || levelCount <= 0) return 0;
   return Math.max(0, Math.min(index, levelCount - 1));
@@ -28,14 +30,14 @@ export function clampLevelIndex(index, levelCount) {
 
 // Spec NFR "Persistência mínima": the player's current level persists
 // locally between sessions.
-export function loadSavedLevelIndex(levelCount, storage = globalThis.localStorage) {
-  const raw = storage?.getItem(STORAGE_KEY);
+export function loadSavedLevelIndex(levelCount, storage = browserStorage()) {
+  const raw = readKey(storage, STORAGE_KEY);
   const parsed = raw != null ? parseInt(raw, 10) : 0;
   return clampLevelIndex(parsed, levelCount);
 }
 
-export function saveLevelIndex(index, storage = globalThis.localStorage) {
-  storage?.setItem(STORAGE_KEY, String(index));
+export function saveLevelIndex(index, storage = browserStorage()) {
+  writeKey(storage, STORAGE_KEY, String(index));
 }
 
 // The furthest level ever entered on this machine: the menu's "Selecionar
@@ -44,21 +46,21 @@ export function saveLevelIndex(index, storage = globalThis.localStorage) {
 // "Novo jogo" (resetProgress) — what was reached stays reachable.
 const REACHED_KEY = 'feixe.reachedLevelIndex';
 
-export function loadReachedLevelIndex(levelCount, storage = globalThis.localStorage) {
-  const raw = storage?.getItem(REACHED_KEY);
+export function loadReachedLevelIndex(levelCount, storage = browserStorage()) {
+  const raw = readKey(storage, REACHED_KEY);
   const reached = clampLevelIndex(raw != null ? parseInt(raw, 10) : 0, levelCount);
   return Math.max(reached, loadSavedLevelIndex(levelCount, storage));
 }
 
-export function saveReachedLevelIndex(index, storage = globalThis.localStorage) {
-  const previous = parseInt(storage?.getItem(REACHED_KEY) ?? '', 10);
+export function saveReachedLevelIndex(index, storage = browserStorage()) {
+  const previous = parseInt(readKey(storage, REACHED_KEY) ?? '', 10);
   const best = Number.isInteger(previous) ? Math.max(previous, index) : index;
-  storage?.setItem(REACHED_KEY, String(best));
+  writeKey(storage, REACHED_KEY, String(best));
 }
 
 // "Novo jogo" and finishing the last level both start the next session at level 1.
-export function resetProgress(storage = globalThis.localStorage) {
-  storage?.removeItem(STORAGE_KEY);
+export function resetProgress(storage = browserStorage()) {
+  removeKey(storage, STORAGE_KEY);
 }
 
 // Pure: what walking through level `index`'s exit leads to (RF09). After the

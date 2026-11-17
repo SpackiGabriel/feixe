@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Reflector } from '../../vendor/three/addons/Reflector.js';
+import { browserStorage, readKey, writeKey } from '../core/storage.js';
 
 // Real planar mirror reflections (menu "Reflexos", on by default). Each face of a
 // mirror plate gets a Three.js Reflector: before the main render, the
@@ -61,20 +62,12 @@ export function setReflectionQuality(quality, scene = null) {
 // objects), and the plate's env-mapped metal shows instead.
 const SETTING_KEY = 'feixe.reflections';
 
-export function loadReflectionsOn(storage = globalThis.localStorage) {
-  try {
-    return storage?.getItem(SETTING_KEY) !== 'off';
-  } catch {
-    return true;
-  }
+export function loadReflectionsOn(storage = browserStorage()) {
+  return readKey(storage, SETTING_KEY) !== 'off';
 }
 
-export function saveReflectionsOn(on, storage = globalThis.localStorage) {
-  try {
-    storage?.setItem(SETTING_KEY, on ? 'on' : 'off');
-  } catch {
-    // private mode: applies for this session only
-  }
+export function saveReflectionsOn(on, storage = browserStorage()) {
+  writeKey(storage, SETTING_KEY, on ? 'on' : 'off');
 }
 
 export function showReflections(camera, on) {

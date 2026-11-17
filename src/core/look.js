@@ -1,3 +1,5 @@
+import { browserStorage, readKey, writeKey } from './storage.js';
+
 const MOUSE_SENSITIVITY = 0.0025; // radians per pixel at 1.0×
 const PITCH_LIMIT = Math.PI / 2 - 0.01; // clamp just short of straight up/down (spec §4)
 
@@ -6,21 +8,13 @@ const PITCH_LIMIT = Math.PI / 2 - 0.01; // clamp just short of straight up/down 
 export const SENSITIVITY_STEPS = [0.25, 0.4, 0.55, 0.7, 0.85, 1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 const SENSITIVITY_KEY = 'feixe.sensitivity';
 
-export function loadSensitivity(storage = globalThis.localStorage) {
-  try {
-    const value = Number(storage?.getItem(SENSITIVITY_KEY));
-    return SENSITIVITY_STEPS.includes(value) ? value : 1;
-  } catch {
-    return 1;
-  }
+export function loadSensitivity(storage = browserStorage()) {
+  const value = Number(readKey(storage, SENSITIVITY_KEY));
+  return SENSITIVITY_STEPS.includes(value) ? value : 1;
 }
 
-export function saveSensitivity(value, storage = globalThis.localStorage) {
-  try {
-    storage?.setItem(SENSITIVITY_KEY, String(value));
-  } catch {
-    // private mode: applies for this session only
-  }
+export function saveSensitivity(value, storage = browserStorage()) {
+  writeKey(storage, SENSITIVITY_KEY, String(value));
 }
 
 // Next step up (+1) or down (-1), clamped at the ends.

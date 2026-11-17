@@ -1,3 +1,5 @@
+import { browserStorage, readKey, writeKey } from '../core/storage.js';
+
 // Graphics quality: 'high' (env-mapped metal, up to 1.5× pixel ratio,
 // sharper mirror reflections) or 'low' (no env map, 1× pixels, coarser
 // mirror reflections — mirror-reflection.js REFLECTION_QUALITY) for a
@@ -6,21 +8,13 @@
 const KEY = 'feixe.quality';
 const VALUES = ['high', 'low'];
 
-export function loadQuality(storage = globalThis.localStorage) {
-  try {
-    const value = storage?.getItem(KEY);
-    return VALUES.includes(value) ? value : 'high';
-  } catch {
-    return 'high';
-  }
+export function loadQuality(storage = browserStorage()) {
+  const value = readKey(storage, KEY);
+  return VALUES.includes(value) ? value : 'high';
 }
 
-export function saveQuality(value, storage = globalThis.localStorage) {
-  try {
-    storage?.setItem(KEY, value);
-  } catch {
-    // private mode: the setting still applies for this session
-  }
+export function saveQuality(value, storage = browserStorage()) {
+  writeKey(storage, KEY, value);
 }
 
 // Caps rendering by a pixel budget, not just a ratio: fill rate is what

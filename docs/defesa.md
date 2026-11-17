@@ -215,7 +215,7 @@ matemática está implementada e verificada à mão, e é mostrada ao vivo.
 ### II.2 Navegação
 
 **Onde (lógica própria):**
-- Olhar: `look.js:49` — yaw e pitch acumulados do mouse, Euler na ordem
+- Olhar: `look.js:43` — yaw e pitch acumulados do mouse, Euler na ordem
   `'YXZ'` (gira em Y do mundo, depois inclina em X local; sem rolagem);
   pitch limitado a ±(π/2 − 0,01 rad) ≈ ±89,4°.
 - Andar: `movement.js:42` — frente = (−sin yaw, −cos yaw), direita =
