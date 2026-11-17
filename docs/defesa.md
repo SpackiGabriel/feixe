@@ -207,7 +207,7 @@ interativo, o painel mostra `à mão: w=… ndc=(…)` e, embaixo,
 `Three: ndc=(…)` — os mesmos números. Andar para trás e ver **w
 crescer** (w = profundidade à frente da câmera) e o ndc encolher para o
 centro; `+`/`−` muda o FOV e o ndc muda junto (f na matriz).
-Código: `main.js:265` (`projectionLines`).
+Código: `debug.js:57` (`projectionLines`).
 
 **Nível honesto:** a câmera que renderiza é a do Three; a mesma
 matemática está implementada e verificada à mão, e é mostrada ao vivo.
@@ -373,7 +373,7 @@ mipmaps (filtro trilinear) e anisotropia 4.
 
 ### IV. Animação independente de FPS
 
-**Onde:** `main.js:321` — `deltaSeconds = min(dt, MAX_FRAME_DELTA)` (o teto evita
+**Onde:** `main.js:256` — `deltaSeconds = min(dt, MAX_FRAME_DELTA)` (o teto evita
 um salto enorme depois de trocar de aba). Tudo recebe dt:
 - `movement.js`: posição += velocidade · dt (integração de Euler: a
   velocidade é exata por `damp`, a posição é independente de FPS em
@@ -571,7 +571,8 @@ Pelo console (com `?debug`), sem recarregar:
    `laserSystem.update` (traça todos os feixes e marca receptores e
    portais) → receptores → relógio dos portais → portais → dispositivos
    (espelhos, emissores) → bloqueadores → condutos → portas (cada uma
-   observa os seus receptores) → saída do nível e travessia de portal.
+   observa os seus receptores) → saída do nível e travessia de portal
+   (no código: `tickLevel` → `checkExit` → `checkPortals`).
    A ordem importa: os feixes vêm antes das portas porque são eles que
    dizem quais receptores estão acesos.
 5. `hud.update`, `transitions.update` — interface e transição entre níveis.
