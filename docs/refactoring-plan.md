@@ -4,6 +4,38 @@
 > nothing here is implemented yet. Code remains authoritative for current
 > state (see `CLAUDE.md`).
 
+## Outcome (2026-11-17) — Phase 1 and Phase 2 implemented
+
+The owner chose to do both phases before the defence. Every step was one
+commit; after each: `npm run lint` clean, `npm test` green (349 → 363
+tests), `npm run e2e` green for the steps touching runtime/`main.js`/rail
+devices, and every `file:line` in `docs/defesa.md` re-checked against the
+code (a script compares each cited block with its new position).
+
+| Item | Status | Commit |
+|---|---|---|
+| A4 event catalog, A5 ADR 0002 amendment, B1 tests, B2 `motion.js` header | done | `6dba8b4` |
+| A7 `textures.js` → `presentation/` | done | `08fad5d` |
+| A1 `core/storage.js` (+ regression tests) | done | `76dc8f0` |
+| A5 code part, B3 dead exports, `press` event | done | `e523b01` |
+| B4 constants, B5 names, B6 `level-manager` header | done | `c29101a` |
+| A8 `level-runtime` split + `clampLevelIndex` (+ regression test) | done | `6e93180` |
+| A2 linear `main.js` order, A3 `src/debug.js` | done | `50db00b` |
+| A6 `slideAlongRail` / `writePlateSegment` in `rail.js` (+ tests) | done | `cf756c9` |
+| B8 HUD brackets behind the player | done (verified in Chromium) | `7dcf84f` |
+| B8 menu typing timers | **rejected**: stale timers write only into detached nodes of the previous ending; nothing visible | — |
+| B7 `buildDoor` in the loader | **skipped**: a nested function in the same closure only relocates code | — |
+| B9 shared steel material | **skipped**: `defesa.md`'s live demo edits `mirror.js:16` alone; sharing it would change filters too | — |
+
+Corrections to the plan found while implementing:
+- After A7, `presentation/textures.js` still imports `gameplay/colors.js`
+  (the pure colour/symbol vocabulary). The accurate rule is "presentation
+  imports nothing from gameplay except `colors.js`".
+- `interaction.js` is also cited in `defesa.md`; it was re-synced too.
+
+The line numbers in the findings below are **as of the review**
+(commit `5f8dc23`), not the current code.
+
 ## Context
 
 The owner defends Feixe tomorrow (2026-11-18) and wants a codebase they can

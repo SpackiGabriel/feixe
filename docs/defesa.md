@@ -581,7 +581,7 @@ Pelo console (com `?debug`), sem recarregar:
 
 **Lógica pura × apresentação.** Os módulos que **não importam o Three**
 (`import … from 'three'`) são a lógica: `core/` (`matrix`, `movement`,
-`look`, `input`, `events`, `manipulation`), `gameplay/` (`laser`,
+`look`, `input`, `events`, `manipulation`, `storage`), `gameplay/` (`laser`,
 `laser-system`, `door-logic`, `colors`, `aabb`, `rotation`), `levels/`
 (`level-runtime`, `level-manager`, `portal-crossing`, `exit-trigger`) e
 parte de `presentation/` (`motion`, `door-motion`, `quality`,
@@ -589,12 +589,12 @@ parte de `presentation/` (`motion`, `door-motion`, `quality`,
 que os testes são rápidos. O que importa o Three é a apresentação:
 `gameplay/` dos objetos visíveis (`mirror`, `wall`, `door`, `emitter`,
 `laser-beam`…), `presentation/` dos shaders e materiais
-(`phong-material`, `conduits`, `mirror-reflection`), `core/` de câmera,
+(`phong-material`, `conduits`, `mirror-reflection`, `textures`), `core/` de câmera,
 renderizador e cena, `levels/level-loader` e `ui/hud`. Cada nível é um
 objeto de dados em `src/levels/data/`; `level-loader` o transforma em
 cena **uma vez**, ao carregar.
 
-**O que os testes cobrem** (`npm test`, Vitest, ~1 s; **349** na última
+**O que os testes cobrem** (`npm test`, Vitest, ~1 s; **363** na última
 contagem, em `tests/unit/`):
 
 - **Matemática e lógica:** `matrix.test.js` compara cada matriz nossa com a
@@ -608,7 +608,10 @@ contagem, em `tests/unit/`):
   `phong-material.test.js` (coeficientes viram uniforms, o define
   `PER_VERTEX` recompila); `conduits.test.js` (a rota dos condutos);
   `wall.test.js` (parede = caixa unitária escalada, ordem errada
-  reversível); `mirror-reflection.test.js`; `quality.test.js`.
+  reversível); `mirror-reflection.test.js`; `quality.test.js`;
+  `events.test.js` (o barramento de eventos); `hud.test.js` (texto das dicas);
+  `storage.test.js` e `level-manager.test.js` (progresso salvo, inclusive
+  com o armazenamento bloqueado pelo navegador: o jogo inicia mesmo assim).
 - **Os dez níveis:** `levels.test.js` monta cada nível de verdade (objetos
   e sistema de feixes, sem renderizador), confere que começa **sem
   solução** (porta fechada) e que a `solution` declarada nele **abre a
@@ -618,7 +621,8 @@ contagem, em `tests/unit/`):
   Three em `vendor/` = a do npm).
 
 **O que os testes não cobrem** (dizer com franqueza se perguntarem): o
-desenho em si (shaders no GPU, a aparência) e o `main.js`. Isso fica por
+desenho em si (shaders no GPU, a aparência), o `main.js` e o painel do
+`debug.js`. Isso fica por
 conta do teste de ponta a ponta e do jogo.
 
 **Ponta a ponta** (`npm run e2e`, `tests/e2e/playthrough.mjs`): Chromium
@@ -631,7 +635,7 @@ pedido externo (funciona offline). `tests/e2e/deck-check.mjs` faz o
 mesmo tipo de verificação nos slides (nenhum código rola, sem erro de
 console).
 
-**Os números do slide 13:** 349 testes unitários (conferir com
+**Os números do slide 13:** 363 testes unitários (conferir com
 `npm test` no dia: o número sobe quando entram testes novos); 0 modelos
 3D importados (tudo é `BufferGeometry` e textura gerados por código);
 10 câmaras com solução testada (`levels.test.js`); 9 casas decimais

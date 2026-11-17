@@ -13,8 +13,10 @@
 ├── .github/workflows/ci.yml     # CI: lint + unit tests + e2e on every push
 ├── src/
 │   ├── main.js                  # Wiring + animation loop
+│   ├── debug.js                 # ?debug only: window.__feixe, F3 readout (w/NDC), T demo, &level=N
 │   ├── core/                    # renderer, scene (room), camera, input, look, movement,
 │   │                            #   interaction (aim raycast), manipulation (drag/rotate), events,
+│   │                            #   storage.js (localStorage access that never throws),
 │   │                            #   matrix.js (hand-written T·R·S, view, perspective, divide by w)
 │   ├── presentation/            # game feel (docs/presentation.md): motion/timing, door motion+view,
 │   │                            #   conduits, affordances, camera fx, sfx (audio), quality, env map,

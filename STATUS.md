@@ -52,9 +52,9 @@ Next:
    (unlock all levels once with `?debug&level=10`).
 3. After the defence, optional visual track: final assets can replace
    device meshes without touching logic (`docs/presentation.md`).
-4. Codebase review and refactoring plan (2026-11-17; Phase 1 done,
-   Phase 2 **planned, not implemented**): `docs/refactoring-plan.md`. Phase 1 is doc/test-only and
-   safe before the defence; Phase 2 shifts lines cited in `docs/defesa.md`.
+4. Codebase review and refactoring (2026-11-17, **done**, both phases):
+   `docs/refactoring-plan.md` (findings, what changed per commit, what was
+   kept and why). `defesa.md` citations re-synced; slide 13 says 363 tests.
 
 ## Verified (evidence from this checkpoint)
 
@@ -203,7 +203,7 @@ chamber numerals, spawns that frame the mechanism.
 | RF10 / NFR feedback, color symbols, HUD | `src/ui/hud.js`, `presentation/conduits.js`, `src/presentation/textures.js`, `src/gameplay/colors.js` |
 | §9 portals (beam + player) | `src/gameplay/portal.js`, `src/levels/portal-crossing.js` |
 | NFR persistence | `level-manager.js` (`localStorage`, reset on finish / Novo jogo) |
-| Enunciado §3 I/II hand-written matrices: T·R·S, view, perspective, divide by w (key T and the ?debug readout) | `src/core/matrix.js` (tests vs Three in `tests/unit/matrix.test.js`); interior walls use `composeTRS` directly (`wall.js`) |
+| Enunciado §3 I/II hand-written matrices: T·R·S, view, perspective, divide by w (key T and the ?debug readout) | `src/core/matrix.js` (tests vs Three in `tests/unit/matrix.test.js`); interior walls use `composeTRS` directly (`wall.js`); readout and T demo in `src/debug.js` |
 | §13 I scale on base meshes from level data | interior walls: one unit-box base mesh scaled by (length, height, thickness) from `walls` inside the hand-composed T·R·S matrix (`composeTRS`, not `mesh.scale`; `src/gameplay/wall.js`); also beam segments (`laser-beam.js`) |
 | Enunciado §3 III empirical lighting (Blinn-Phong, ka/kd/ks), per-vertex vs per-fragment (key L) | `src/presentation/phong-material.js` (walls, interior walls, floor); defence guide `docs/defesa.md` |
 | §13 III lighting/materials/textures | `core/scene.js`, `textures.js`, env-mapped metal (`presentation/env-map.js`) |
