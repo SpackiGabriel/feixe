@@ -238,7 +238,7 @@ function buildLineup() {
 
   // Door on the back wall (toggle with O) and a portal pair on the side walls.
   const doorState = { isActive: () => settings.doorOpen };
-  const door = createDoor({ position: v3(0, 1.5, -(ROOM_HALF - 0.1)), rotationY: Math.PI, rule: 'AND', receivers: [doorState] });
+  const door = createDoor({ position: v3(0, 1.5, -(ROOM_HALF - 0.1)), rotationY: Math.PI, rule: 'AND', inputs: [doorState] });
   add(door.mesh); parts.doors.push(door);
   const portals = createPortalPair({ id: 'g', a: { position: [-(ROOM_HALF - 0.1), BEAM_HEIGHT, 0.8], rotationY: -Math.PI / 2 }, b: { position: [ROOM_HALF - 0.1, BEAM_HEIGHT, 0.8], rotationY: Math.PI / 2 } });
   for (const p of portals) { add(p.mesh); parts.portals.push(p); }

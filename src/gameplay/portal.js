@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { segmentFromCenter } from './aabb.js';
-import { numeralTexture } from './textures.js';
+import { numeralTexture } from '../presentation/textures.js';
 import { colorToHex } from './laser.js';
 import { damp } from '../presentation/motion.js';
 

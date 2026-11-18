@@ -80,9 +80,9 @@ vocês precisa conseguir responder sozinho a qualquer item deste guia.
 
 ### I.1 Coordenadas 3D e transformações (T, R, S, ordem canônica)
 
-**Onde:** espelho no trilho = translação (`mirror.js:89`,
+**Onde:** espelho no trilho = translação (`mirror.js:86`,
 `base.position.lerpVectors(railStart, railEnd, t)` — interpolação linear
-P = (1−t)·A + t·B); giro = rotação em Y (`mirror.js:106`); paredes =
+P = (1−t)·A + t·B); giro = rotação em Y (`mirror.js:102`); paredes =
 caixa unitária com a matriz **T·R·S composta à mão** a partir do nível
 (`wall.js:62-74` + `core/matrix.js`); feixe =
 cilindro unitário escalado em Z pelo comprimento de cada trecho
@@ -137,7 +137,8 @@ no L10 o aviso na tela explica por quê.
 
 **Nível honesto:** avançado. Composição à mão nas paredes, rotação à mão
 no traçado do feixe (`laser.js`) e uso explícito de `matrixWorld` para
-levar pontos locais ao mundo (`mirror.js:140-148`). Os demais objetos
+levar pontos locais ao mundo (`rail.js:68-76`, `writePlateSegment`,
+usado pelo espelho e pelo filtro). Os demais objetos
 (espelhos, portas) usam o `compose` do Three — mesma matemática.
 
 ### I.2 Modelagem 3D (malhas; topologia vs. geometria)
@@ -164,14 +165,14 @@ Cylinder, Plane); os condutos são malha própria. Mostrar os condutos.
 ### I.3 Modelagem hierárquica (grafo de cena)
 
 **Onde:** espelho = `base` (Group, pai: desliza no trilho) → `plate`
-(filho: gira) → grampos e superfícies de reflexo (netos) (`mirror.js:36-75`).
+(filho: gira) → grampos e superfícies de reflexo (netos) (`mirror.js:33-72`).
 O pedestal é filho da base: desliza mas não gira. Porta: `root` →
 `panel` (sobe) (`door-view.js`).
 
 **Matemática:** M_mundo(filho) = M_mundo(pai) · M_local(filho). Para a
 placa: M = T(posição no trilho) · R_y(θ). O traçado do feixe usa isso
 diretamente: as pontas da placa (±0,5 m em x local) são levadas ao mundo
-por `applyMatrix4(plate.matrixWorld)` (`mirror.js:141-142`).
+por `applyMatrix4(plate.matrixWorld)` (`rail.js:69-70`).
 
 **Demonstração:** deslizar um espelho já girado — a placa mantém o
 ângulo e acompanha a base, porque herda a translação do pai.
@@ -213,7 +214,7 @@ interativo, o painel mostra `à mão: w=… ndc=(…)` e, embaixo,
 `Three: ndc=(…)` — os mesmos números. Andar para trás e ver **w
 crescer** (w = profundidade à frente da câmera) e o ndc encolher para o
 centro; `+`/`−` muda o FOV e o ndc muda junto (f na matriz).
-Código: `main.js:265` (`projectionLines`).
+Código: `debug.js:57` (`projectionLines`).
 
 **Nível honesto:** a câmera que renderiza é a do Three; a mesma
 matemática está implementada e verificada à mão, e é mostrada ao vivo.
@@ -221,7 +222,7 @@ matemática está implementada e verificada à mão, e é mostrada ao vivo.
 ### II.2 Navegação
 
 **Onde (lógica própria):**
-- Olhar: `look.js:49` — yaw e pitch acumulados do mouse, Euler na ordem
+- Olhar: `look.js:43` — yaw e pitch acumulados do mouse, Euler na ordem
   `'YXZ'` (gira em Y do mundo, depois inclina em X local; sem rolagem);
   pitch limitado a ±(π/2 − 0,01 rad) ≈ ±89,4°.
 - Andar: `movement.js:42` — frente = (−sin yaw, −cos yaw), direita =
@@ -229,9 +230,9 @@ matemática está implementada e verificada à mão, e é mostrada ao vivo.
 - Colisão: AABB do jogador contra AABBs das paredes/portas, **por eixo
   separado** (`movement.js:72-78`): tenta mover em x, depois em z — por
   isso o jogador desliza ao longo da parede em vez de parar.
-- Mirar/selecionar: raio do centro da câmera (`interaction.js:43`); o
+- Mirar/selecionar: raio do centro da câmera (`interaction.js:45`); o
   Three testa raio–triângulo; depois testamos se há
-  parede/porta entre a câmera e o alvo (`interaction.js:49`).
+  parede/porta entre a câmera e o alvo (`interaction.js:51`).
 - Portal: atravessar leva o jogador ao portal ligado e soma a diferença de
   orientação ao yaw (`portal-crossing.js:30-35`). É a mesma rotação que o
   feixe recebe com `rotateXZ`: girar a frente (−sin y, −cos y) por θ dá
@@ -336,7 +337,7 @@ da posição na tela); suave usa a normal interpolada dos vértices.
 
 ### III.3 Materiais
 
-**Onde:** espelho = metal liso (`mirror.js:52-61`: metalness 1,
+**Onde:** espelho = metal liso (`mirror.js:49-58`: metalness 1,
 roughness 0,07, mapa de ambiente); aço dos pedestais (metalness 0,7,
 roughness 0,38); paredes foscas; núcleo do feixe `MeshBasicMaterial`
 (sem iluminação: é ele que emite); receptores e lâmpadas emissivos.
@@ -379,12 +380,12 @@ mipmaps (filtro trilinear) e anisotropia 4.
 
 ### IV. Animação independente de FPS
 
-**Onde:** `main.js:321` — `deltaSeconds = min(dt, MAX_FRAME_DELTA)` (o teto evita
+**Onde:** `main.js:256` — `deltaSeconds = min(dt, MAX_FRAME_DELTA)` (o teto evita
 um salto enorme depois de trocar de aba). Tudo recebe dt:
 - `movement.js`: posição += velocidade · dt (integração de Euler: a
   velocidade é exata por `damp`, a posição é independente de FPS em
   regime constante, com erro pequeno só na rampa de ~0,07 s).
-- `motion.js:27`, `damp`: x ← alvo + (x − alvo)·e^(−λ·dt). É
+- `motion.js:26`, `damp`: x ← alvo + (x − alvo)·e^(−λ·dt). É
   independente de FPS porque e^(−λ·dt1)·e^(−λ·dt2) = e^(−λ·(dt1+dt2)):
   dois quadros curtos dão exatamente o mesmo resultado que um longo. O
   erro comum, `x += (alvo − x) · 0,1` por quadro (um "lerp" de fator
@@ -539,13 +540,13 @@ Ensaiar cada uma: **dizer o efeito antes**, salvar e recarregar
 | Luz do feixe mais forte/alcance | `laser-beam.js:9-10` | mancha maior/mais clara onde o feixe bate |
 | Sala mais clara | `scene.js:126-132` intensidades | atenção: `setAtmosphere` (`scene.js:175`) **sobrescreve** hemisférica e ambiente a cada nível — mudar lá |
 | Neblina | `setAtmosphere`: `scene.fog.density` (não a linha 165, que é sobrescrita) | FogExp2: fator = 1 − e^(−(densidade·d)²) |
-| Espelho fosco | primeiro **desligar Reflexos no menu** (com eles ligados, o reflexo real cobre ~88% da área da placa (94% por lado) e o `roughness` só muda a moldura); depois `mirror.js:52-61` `roughness` ↑, Qualidade alta | reflexo do ambiente borrado |
+| Espelho fosco | primeiro **desligar Reflexos no menu** (com eles ligados, o reflexo real cobre ~88% da área da placa (94% por lado) e o `roughness` só muda a moldura); depois `mirror.js:49-58` `roughness` ↑, Qualidade alta | reflexo do ambiente borrado |
 | Passo de giro | só no dado do nível: `rotationStepDegrees` (ex. `level-9.js`). **Não** use `KEY_ROTATE_STEP` (`manipulation.js:5`): todo espelho dos 10 níveis define o próprio passo, então mudá-lo não tem efeito | 15° no espelho = 30° no feixe |
 | Mais reflexões | `laser.js:8` `MAX_REFLECTIONS` | só muda o limite de quiques por feixe |
 | Porta mais lenta | `door-motion.js` `DOOR_TIMING.rise` | segundos; continua reversível |
 | Ladrilho da parede | `wall.js:38-39` `GLASS_TILE` 2,5 / `SOLID_TILE` 1,5 | maior = ladrilhos maiores |
 | Malha gerada por código (I.2) | `conduits.js:11` `WIDTH` (0,07 m) | as faixas do chão ficam mais largas: muda só a geometria (posições); topologia (índices, 2 triângulos por perna) igual |
-| Hierarquia (I.3) | `mirror.js:63`: colocar `plate.position.y = 0.3` logo abaixo | a placa sobe 0,3 m em relação à base e continua acompanhando o trilho e girando: o filho herda a transformação do pai (o feixe usa a placa via `matrixWorld`, então continua certo na lógica 2D) |
+| Hierarquia (I.3) | `mirror.js:60`: colocar `plate.position.y = 0.3` logo abaixo | a placa sobe 0,3 m em relação à base e continua acompanhando o trilho e girando: o filho herda a transformação do pai (o feixe usa a placa via `matrixWorld`, então continua certo na lógica 2D) |
 | Trocar a ordem das transformações | tecla `T` (com `?debug`) ou `__feixe.wallOrder('TSR')`; no código, `wall.js` chama `composeTSR` em vez de `composeTRS` | a 90°: parede fica leste-oeste, como se não girasse; a 45°: cisalhada, planta em losango (§I.1) |
 | Desligar o sombreamento suave | material PBR (ex. pedestais, `mirror.js:16`): `flatShading: true` | facetas visíveis em superfícies curvas |
 | Sombreamento por vértice | tecla `L` (ou `__feixe.phong.setShadingMode('vertex')`) | mancha de luz do feixe some no meio das paredes |
@@ -577,7 +578,8 @@ Pelo console (com `?debug`), sem recarregar:
    `laserSystem.update` (traça todos os feixes e marca receptores e
    portais) → receptores → relógio dos portais → portais → dispositivos
    (espelhos, emissores) → bloqueadores → condutos → portas (cada uma
-   observa os seus receptores) → saída do nível e travessia de portal.
+   observa os seus receptores) → saída do nível e travessia de portal
+   (no código: `tickLevel` → `checkExit` → `checkPortals`).
    A ordem importa: os feixes vêm antes das portas porque são eles que
    dizem quais receptores estão acesos.
 5. `hud.update`, `transitions.update` — interface e transição entre níveis.
@@ -585,7 +587,7 @@ Pelo console (com `?debug`), sem recarregar:
 
 **Lógica pura × apresentação.** Os módulos que **não importam o Three**
 (`import … from 'three'`) são a lógica: `core/` (`matrix`, `movement`,
-`look`, `input`, `events`, `manipulation`), `gameplay/` (`laser`,
+`look`, `input`, `events`, `manipulation`, `storage`), `gameplay/` (`laser`,
 `laser-system`, `door-logic`, `colors`, `aabb`, `rotation`), `levels/`
 (`level-runtime`, `level-manager`, `portal-crossing`, `exit-trigger`) e
 parte de `presentation/` (`motion`, `door-motion`, `quality`,
@@ -595,7 +597,7 @@ Os 24 sem Three rodam no Node, sem navegador nem WebGL, e é por isso
 que os testes são rápidos. O que importa o Three é a apresentação:
 `gameplay/` dos objetos visíveis (`mirror`, `wall`, `door`, `emitter`,
 `laser-beam`…), `presentation/` dos shaders e materiais
-(`phong-material`, `conduits`, `mirror-reflection`), `core/` de câmera,
+(`phong-material`, `conduits`, `mirror-reflection`, `textures`), `core/` de câmera,
 renderizador e cena, `levels/level-loader` e `ui/hud`. Cada nível é um
 objeto de dados em `src/levels/data/`; `level-loader` o transforma em
 cena **uma vez**, ao carregar.
@@ -692,7 +694,10 @@ contagem, em `tests/unit/`):
   `phong-material.test.js` (coeficientes viram uniforms, o define
   `PER_VERTEX` recompila); `conduits.test.js` (a rota dos condutos);
   `wall.test.js` (parede = caixa unitária escalada, ordem errada
-  reversível); `mirror-reflection.test.js`; `quality.test.js`.
+  reversível); `mirror-reflection.test.js`; `quality.test.js`;
+  `events.test.js` (o barramento de eventos); `hud.test.js` (texto das dicas);
+  `storage.test.js` e `level-manager.test.js` (progresso salvo, inclusive
+  com o armazenamento bloqueado pelo navegador: o jogo inicia mesmo assim).
 - **Os dez níveis:** `levels.test.js` monta cada nível de verdade (objetos
   e sistema de feixes, sem renderizador), confere que começa **sem
   solução** (porta fechada) e que a `solution` declarada nele **abre a
@@ -702,7 +707,8 @@ contagem, em `tests/unit/`):
   Three em `vendor/` = a do npm).
 
 **O que os testes não cobrem** (dizer com franqueza se perguntarem): o
-desenho em si (shaders no GPU, a aparência) e o `main.js`. Isso fica por
+desenho em si (shaders no GPU, a aparência), o `main.js` e o painel do
+`debug.js`. Isso fica por
 conta do teste de ponta a ponta e do jogo.
 
 **Ponta a ponta** (`npm run e2e`, `tests/e2e/playthrough.mjs`): Chromium

@@ -10,17 +10,17 @@ import { createInteraction } from './core/interaction.js';
 import { createManipulation } from './core/manipulation.js';
 import { events } from './core/events.js';
 import { createLevelRuntime } from './levels/level-runtime.js';
-import { loadSavedLevelIndex, loadReachedLevelIndex, getLevels } from './levels/level-manager.js';
+import { loadReachedLevelIndex, getLevels } from './levels/level-manager.js';
 import { connectSfx, sfx, isMuted, setMuted } from './presentation/sfx.js';
 import { createCameraFx } from './presentation/camera-fx.js';
 import { setEnvMap } from './presentation/env-map.js';
 import { setMirrorReflections, setReflectionQuality, loadReflectionsOn, saveReflectionsOn, showReflections } from './presentation/mirror-reflection.js';
 import { loadQuality, saveQuality, pixelRatioFor } from './presentation/quality.js';
-import { toggleShadingMode, setShadingMode, getShadingMode, getPhongMaterials } from './presentation/phong-material.js';
-import { perspective, viewMatrix, projectPoint } from './core/matrix.js';
+import { toggleShadingMode } from './presentation/phong-material.js';
 import { createHud, manipulationHint } from './ui/hud.js';
 import { createMenu } from './ui/menu.js';
 import { createTransitions } from './ui/transitions.js';
+import { installDebugTools } from './debug.js';
 
 const FOV_STEP_DEGREES = 5;
 const ENDING_WHITEOUT_SECONDS = 1.1;
@@ -63,10 +63,15 @@ let sensitivity = loadSensitivity();
 look.setSensitivity(sensitivity);
 input.onMouseMove(look.handleMouseMove);
 
+// Construction runs top to bottom. Two things are read from the level
+// runtime before it exists, both lazily and only from the frame loop
+// (which starts at the end of this file): aim occluders and movement
+// colliders. The menu's callbacks and the runtime's onExit/onGameComplete
+// only fire after boot, so they may use anything defined in this file.
 const interactiveObjects = [];
-// Occluders come from the level runtime, created below (read lazily each frame).
 const interaction = createInteraction(camera, scene, interactiveObjects, () => levelRuntime.getOccluders());
 const manipulation = createManipulation({ input, look, interaction, camera });
+const movement = createMovementController(camera, input.keys, colliders, () => levelRuntime.getColliders(), sfx.footstep);
 
 const uiRoot = document.createElement('div');
 uiRoot.className = 'ui';
@@ -82,17 +87,61 @@ function requestLock() {
   result?.catch?.(() => menu.setHint('CLIQUE NA TELA PARA CONTINUAR'));
 }
 
+// The level title waits until the player is actually playing (not behind
+// the start menu).
+let pendingIntro = null;
+let hasPlayed = false;
+events.on('level:enter', ({ index, count, data }) => {
+  if (!hasPlayed) pendingIntro = [index, count, data.name];
+  else transitions.showIntro(index, count, data.name);
+});
+
+// Loads the saved level on creation: onLevelLoaded and 'level:enter' fire
+// right away, so everything they touch must already exist above.
+const levelRuntime = createLevelRuntime({
+  scene,
+  wallSegments,
+  interactiveObjects,
+  roomOccluders: occluders,
+  onLevelLoaded: ({ index, count, data, level }) => {
+    manipulation.exit();
+    movement.stop();
+    cameraFx.clearDoors();
+    camera.position.x = level.spawn.x;
+    camera.position.z = level.spawn.z;
+    look.setOrientation(level.spawn.yaw);
+    setAtmosphere(index, count);
+    hud.setLevel(index, count, data.name);
+  },
+  // Walking into an open exit: shutter closes, next chamber loads behind
+  // it, shutter opens. The last exit fades to white into the ending.
+  onExit: (next) => {
+    if (next.complete) transitions.whiteout(ENDING_WHITEOUT_SECONDS, () => levelRuntime.advance());
+    else transitions.cut(() => levelRuntime.advance());
+  },
+  onGameComplete: (stats) => {
+    manipulation.exit();
+    document.exitPointerLock();
+    menu.showEnding({ ...stats, levels: levelRuntime.getLevelCount() }, () => {
+      transitions.clearWhiteout();
+      levelRuntime.startNewGame();
+      requestLock();
+    });
+    setTimeout(() => transitions.clearWhiteout(), ENDING_FADE_MS);
+  },
+});
+
 function levelLabel() {
-  const index = levelRuntime ? levelRuntime.getCurrentIndex() : loadSavedLevelIndex(getLevels().length);
+  const index = levelRuntime.getCurrentIndex();
   const data = getLevels()[index];
   return `NÍVEL ${String(index + 1).padStart(2, '0')} · ${data.name}`;
 }
 
 const menu = createMenu(uiRoot, {
   getState: () => ({
-    hasProgress: (levelRuntime?.getCurrentIndex() ?? 0) > 0,
+    hasProgress: levelRuntime.getCurrentIndex() > 0,
     levelLabel: levelLabel(),
-    currentIndex: levelRuntime?.getCurrentIndex() ?? loadSavedLevelIndex(getLevels().length),
+    currentIndex: levelRuntime.getCurrentIndex(),
     reachedIndex: loadReachedLevelIndex(getLevels().length),
     levelName: (index) => getLevels()[index].name,
     quality,
@@ -136,51 +185,6 @@ const menu = createMenu(uiRoot, {
   },
 });
 
-// The level title waits until the player is actually playing (not behind
-// the start menu).
-let pendingIntro = null;
-let hasPlayed = false;
-events.on('level:enter', ({ index, count, data }) => {
-  if (!hasPlayed) pendingIntro = [index, count, data.name];
-  else transitions.showIntro(index, count, data.name);
-});
-let movement = null;
-
-// Created before movement so its getColliders() can be passed in directly —
-// level-runtime.js doesn't depend on movement/camera, so this order is safe.
-const levelRuntime = createLevelRuntime({
-  scene,
-  wallSegments,
-  interactiveObjects,
-  roomOccluders: occluders,
-  onLevelLoaded: ({ index, count, data, level }) => {
-    manipulation.exit();
-    movement?.stop();
-    cameraFx.clearDoors();
-    camera.position.x = level.spawn.x;
-    camera.position.z = level.spawn.z;
-    look.setOrientation(level.spawn.yaw);
-    setAtmosphere(index, count);
-    hud.setLevel(index, count, data.name);
-  },
-  // Walking into an open exit: shutter closes, next chamber loads behind
-  // it, shutter opens. The last exit fades to white into the ending.
-  onExit: (next) => {
-    if (next.complete) transitions.whiteout(ENDING_WHITEOUT_SECONDS, () => levelRuntime.advance());
-    else transitions.cut(() => levelRuntime.advance());
-  },
-  onGameComplete: (stats) => {
-    manipulation.exit();
-    document.exitPointerLock();
-    menu.showEnding({ ...stats, levels: levelRuntime.getLevelCount() }, () => {
-      transitions.clearWhiteout();
-      levelRuntime.startNewGame();
-      requestLock();
-    });
-    setTimeout(() => transitions.clearWhiteout(), ENDING_FADE_MS);
-  },
-});
-
 events.on('door:moving', ({ door }) => cameraFx.doorMoving(door));
 events.on('door:settled', ({ door, opening }) => cameraFx.doorSettled(door, opening));
 events.on('portal:player', () => transitions.flash());
@@ -219,85 +223,16 @@ document.addEventListener('pointerlockchange', () => {
     }
   } else if (!menu.isEndingVisible()) {
     menu.show('paused');
-    movement?.stop();
+    movement.stop();
   }
   hud.setVisible(input.isLocked() || debugMode);
 });
 
-// Dev/level-authoring aid: `?debug` exposes the runtime on window.__feixe,
-// shows a live readout (F3 toggles it), lets the player move without
-// pointer lock, and `?debug&level=N` jumps straight to level N (1-based).
-let debugVisible = debugMode;
-let wallOrder = 'TRS'; // debug demo state; a (re)loaded level builds its walls in T·R·S
-events.on('level:enter', () => { wallOrder = 'TRS'; });
-if (debugMode) {
-  window.__feixe = {
-    levelRuntime, camera, scene, renderer, hud, menu, transitions, look, interaction, events,
-    cameraFx, // FOV from the console: cameraFx.setBaseFov(100) (it rewrites camera.fov every frame)
-    wallOrder: (order) => {
-      wallOrder = order === 'TSR' ? 'TSR' : 'TRS';
-      const walls = levelRuntime.getCurrentLevel().walls;
-      let anyChanged = false;
-      for (const wall of walls) if (wall.setOrder(wallOrder)) anyChanged = true;
-      const label = wallOrder === 'TSR' ? 'T·S·R (ordem errada)' : 'T·R·S (ordem certa)';
-      if (walls.length === 0) return `${label} — sem paredes internas neste nível (use L2 ou L6)`;
-      if (!anyChanged) return `${label} — aqui R = I, nada muda (use L2 ou L6)`;
-      return label;
-    },
-    phong: { materials: getPhongMaterials, setShadingMode, getShadingMode },
-  };
-  const jumpTo = parseInt(params.get('level'), 10);
-  if (Number.isInteger(jumpTo)) levelRuntime.loadLevel(jumpTo - 1);
-  input.onKeyDown('F3', () => { debugVisible = !debugVisible; });
-  // Defence demo (enunciado §3 I): interior walls composed in the wrong
-  // order, T·S·R, and back to T·R·S. Visual only; R restarts the level.
-  input.onKeyDown('KeyT', () => hud.showToast(`Paredes: ${window.__feixe.wallOrder(wallOrder === 'TRS' ? 'TSR' : 'TRS')}`));
-}
-
-// Enunciado §3 II: the aimed object's centre projected by hand
-// (core/matrix.js: P · V · p, then divide by w) next to Three's own
-// Vector3.project, so the defence can show they agree and what w is.
-const _aimedPosition = new THREE.Vector3();
-const _projected = new THREE.Vector3();
-const _eye = [0, 0, 0];
-const _target = [0, 0, 0];
-const fmt3 = (v) => v.toFixed(3);
-function projectionLines(object) {
-  object.getWorldPosition(_aimedPosition);
-  camera.updateMatrixWorld();
-  _eye[0] = camera.position.x;
-  _eye[1] = camera.position.y;
-  _eye[2] = camera.position.z;
-  _target[0] = _aimedPosition.x;
-  _target[1] = _aimedPosition.y;
-  _target[2] = _aimedPosition.z;
-  const projection = perspective(camera.fov, camera.aspect, camera.near, camera.far);
-  const view = viewMatrix(_eye, camera.rotation.x, camera.rotation.y, camera.rotation.z);
-  const { w, ndc } = projectPoint(projection, view, _target);
-  const three = _projected.copy(_aimedPosition).project(camera);
-  return [
-    `à mão: w=${w.toFixed(2)}  ndc=(${fmt3(ndc[0])}, ${fmt3(ndc[1])}, ${fmt3(ndc[2])})`,
-    `Three: ndc=(${fmt3(three.x)}, ${fmt3(three.y)}, ${fmt3(three.z)})`,
-  ];
-}
-
-function debugText() {
-  const level = levelRuntime.getCurrentLevel();
-  const yaw = ((camera.rotation.y * 180) / Math.PI).toFixed(1);
-  const lines = [
-    `nível ${levelRuntime.getCurrentIndex() + 1}  [F3 oculta]`,
-    `jogador x=${camera.position.x.toFixed(2)} z=${camera.position.z.toFixed(2)} yaw=${yaw}°`,
-    `mira: ${interaction.getHovered()?.userData.debugInfo?.() ?? '-'}`,
-  ];
-  const aimed = interaction.getHovered();
-  if (aimed) lines.push(...projectionLines(aimed));
-  for (const r of level.receivers) lines.push(`receptor ${r.levelId} (${r.colorName}): ${r.isActive() ? 'ATIVO' : 'inativo'}`);
-  for (const b of level.blockers) if (b.trap) lines.push(`armadilha: ${b.isHit() ? 'ATINGIDA' : 'livre'}`);
-  for (const d of level.doors) lines.push(`porta ${d.levelId}: ${d.isOpen() ? 'destravada' : 'travada'} · ${Math.round(d.getOpenness() * 100)}%`);
-  return lines.join('\n');
-}
-
-movement = createMovementController(camera, input.keys, colliders, levelRuntime.getColliders, sfx.footstep);
+// `?debug`: window.__feixe, the F3 readout (with the by-hand projection),
+// the T wall-order demo and `&level=N` (src/debug.js).
+const debugTools = debugMode
+  ? installDebugTools({ params, levelRuntime, camera, scene, renderer, hud, menu, transitions, look, interaction, events, cameraFx, input })
+  : null;
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -336,7 +271,7 @@ function animate(timestamp) {
     camera,
     prompt: active ? manipulationHint(active) : hovered?.userData.prompt ?? null,
   });
-  hud.setDebugText(debugVisible ? debugText() : null);
+  hud.setDebugText(debugTools?.text() ?? null);
   transitions.update(deltaSeconds);
 
   cameraFx.apply(deltaSeconds);

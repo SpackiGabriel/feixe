@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createSteppedAngle } from '../../src/gameplay/rotation.js';
 import { mouseDeltaToManipulation, keyRotationStep } from '../../src/core/manipulation.js';
-import { railAxis } from '../../src/gameplay/rail.js';
+import { railAxis, slideAlongRail } from '../../src/gameplay/rail.js';
 
 const DEG = Math.PI / 180;
 
@@ -60,5 +60,30 @@ describe('screen-relative rail drag', () => {
 
   it('test_drag_sameMouse_longerRail_smallerFraction', () => {
     expect(mouseDeltaToManipulation(along(8, 0), 10).position).toBeCloseTo(mouseDeltaToManipulation(along(2, 0), 10).position / 4);
+  });
+});
+
+describe('slideAlongRail', () => {
+  it('test_slideAlongRail_insideRail_movesWithoutLimit', () => {
+    const step = slideAlongRail(0.5, 0.2);
+    expect(step.t).toBeCloseTo(0.7);
+    expect(step.hitLimit).toBe(false);
+  });
+
+  it('test_slideAlongRail_pastEnd_clampsAndHitsLimitOnce', () => {
+    const arrive = slideAlongRail(0.9, 0.3);
+    expect(arrive).toEqual({ t: 1, hitLimit: true });
+    // Still pushing at the end: no repeated bump.
+    expect(slideAlongRail(arrive.t, 0.3)).toEqual({ t: 1, hitLimit: false });
+  });
+
+  it('test_slideAlongRail_pastStart_clampsToZero', () => {
+    expect(slideAlongRail(0.1, -0.5)).toEqual({ t: 0, hitLimit: true });
+  });
+
+  it('test_slideAlongRail_leavingEnd_noLimit', () => {
+    const step = slideAlongRail(1, -0.25);
+    expect(step.t).toBeCloseTo(0.75);
+    expect(step.hitLimit).toBe(false);
   });
 });

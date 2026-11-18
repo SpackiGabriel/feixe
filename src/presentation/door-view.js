@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { doorTexture, glassTexture } from '../gameplay/textures.js';
+import { doorTexture, glassTexture } from './textures.js';
 import { damp } from './motion.js';
 import { CHAIN_DELAY } from './conduits.js';
 

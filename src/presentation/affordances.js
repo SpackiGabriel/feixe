@@ -1,22 +1,22 @@
 import * as THREE from 'three';
-import { dialTexture } from '../gameplay/textures.js';
+import { dialTexture } from './textures.js';
 import { damp } from './motion.js';
 
 // "What can I do with this?" shown in the world, not in a menu
 // (docs/presentation.md): a floor dial under anything that rotates, a rail
 // under anything that slides, nothing under fixed things. All of them are
 // faint while idle (so busy rooms stay calm) and brighten on hover/grab.
-const LEVELS = { idle: 0.12, hover: 0.7, grab: 1 };
+const OPACITY_STEPS = { idle: 0.12, hover: 0.7, grab: 1 };
 
 function createStateful(material, baseOpacity = 1) {
   let state = 'idle';
-  let level = LEVELS.idle;
+  let level = OPACITY_STEPS.idle;
   return {
     setState(next) {
       state = next;
     },
     update(deltaSeconds) {
-      level = damp(level, LEVELS[state], 14, deltaSeconds);
+      level = damp(level, OPACITY_STEPS[state], 14, deltaSeconds);
       material.opacity = level * baseOpacity;
     },
   };

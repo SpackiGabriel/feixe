@@ -177,7 +177,6 @@ export function createMenu(root, handlers) {
       menu.classList.remove('visible');
     },
     isVisible: () => mode !== null,
-    getMode: () => mode,
     setHint(text) {
       hint.textContent = text;
     },

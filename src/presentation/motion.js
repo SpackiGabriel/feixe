@@ -1,6 +1,6 @@
-// Shared timing and motion vocabulary (docs/presentation.md). Every
-// presentation animation takes its durations from TEMPO and its curves
-// from here, so the whole game moves with one rhythm. Pure, no Three.js.
+// Shared motion vocabulary (docs/presentation.md): easing curves, `damp`
+// and TEMPO's three beats (transitions use TEMPO.act; doors, conduits and
+// the HUD keep their own named durations). Pure, no Three.js.
 
 // Snap: acknowledgements (hover, grab, ticks). Act: a deliberate action
 // (charge, clamp release, shutter). Settle: the payoff (door lift, title).
@@ -11,7 +11,6 @@ export const TEMPO = {
 };
 
 export const clamp01 = (t) => (t < 0 ? 0 : t > 1 ? 1 : t);
-export const lerp = (a, b, t) => a + (b - a) * t;
 export const easeOutCubic = (t) => 1 - (1 - t) ** 3;
 export const easeInCubic = (t) => t * t * t;
 export const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
